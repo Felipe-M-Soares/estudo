@@ -2,18 +2,18 @@
 
 @theme {
   /* ===== Cores base — "terminal noturno" ===== */
-  --color-base-950: #07090c;
-  --color-base-900: #0b0e11;
-  --color-base-850: #0f1318;
-  --color-base-800: #151920;
-  --color-base-700: #1c212a;
-  --color-base-600: #262c37;
-  --color-base-500: #343c4a;
+  --color-base-950: #06080b;
+  --color-base-900: #0a0d11;
+  --color-base-850: #0e1217;
+  --color-base-800: #13171e;
+  --color-base-700: #1a1f28;
+  --color-base-600: #242a35;
+  --color-base-500: #333b48;
   --color-base-400: #4a5364;
   --color-base-300: #6b7585;
   --color-base-200: #99a2b0;
   --color-base-100: #c5cad2;
-  --color-base-50:  #e8eaed;
+  --color-base-50:  #eef0f2;
 
   /* ===== Accent verde — progresso / sucesso / "compila" ===== */
   --color-mint-900: #0a3a26;
@@ -47,6 +47,11 @@
 
   /* ===== Layout ===== */
   --breakpoint-xs: 420px;
+
+  /* ===== Sombras em camadas (profundidade real, não só borda) ===== */
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -8px rgba(0,0,0,0.5);
+  --shadow-card-hover: 0 2px 4px rgba(0,0,0,0.45), 0 16px 40px -12px rgba(0,0,0,0.6);
+  --shadow-pop: 0 4px 12px rgba(0,0,0,0.35), 0 24px 60px -16px rgba(0,0,0,0.7);
 }
 
 @layer base {
@@ -66,11 +71,42 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Atmosfera ambiente: gradientes radiais sutis fixos no fundo + grão fino.
+     Dá profundidade sem distrair do conteúdo. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 900px 600px at 12% -8%, color-mix(in oklab, var(--color-mint-500) 10%, transparent), transparent 60%),
+      radial-gradient(ellipse 800px 500px at 100% 10%, color-mix(in oklab, var(--color-violet-500) 7%, transparent), transparent 55%),
+      radial-gradient(ellipse 700px 700px at 50% 110%, color-mix(in oklab, var(--color-amber-500) 5%, transparent), transparent 60%);
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
+
+  #root {
+    position: relative;
+    z-index: 1;
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
   }
 
   ::selection {
@@ -132,6 +168,33 @@
 
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .scrollbar-none { scrollbar-width: none; }
+
+  /* Cartão padrão com profundidade real e borda sutil em gradiente */
+  .card-surface {
+    background: linear-gradient(165deg, var(--color-base-850), var(--color-base-900));
+    border: 1px solid var(--color-base-700);
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-surface-hover {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .card-surface-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .text-gradient-mint {
+    background: linear-gradient(120deg, var(--color-mint-300), var(--color-mint-400) 50%, var(--color-mint-500));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .noise-card {
+    position: relative;
+    overflow: hidden;
+  }
 }
 
 @keyframes pulse-soft {
@@ -147,5 +210,24 @@
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-rise-in {
-  animation: rise-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: rise-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+@keyframes scale-pop {
+  0% { opacity: 0; transform: scale(0.92) translateY(6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-scale-pop {
+  animation: scale-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes shimmer-sweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background-image: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer-sweep 2.2s ease-in-out infinite;
+}
+

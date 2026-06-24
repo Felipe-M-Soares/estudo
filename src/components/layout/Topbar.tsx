@@ -10,7 +10,7 @@ interface TopbarProps {
 
 export function Topbar({ progress, overallPercent, onMenuClick }: TopbarProps) {
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between border-b border-base-700 bg-base-900/90 px-4 py-3 backdrop-blur-md lg:px-6">
+    <header className="sticky top-0 z-20 flex items-center justify-between border-b border-base-700/80 bg-base-900/85 px-4 py-3 shadow-[0_1px_0_0_rgba(255,255,255,0.03)] backdrop-blur-md lg:px-6">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}

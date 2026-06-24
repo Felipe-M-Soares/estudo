@@ -27,7 +27,7 @@ export function SettingsPage({ apiKey, onSetApiKey, onClearApiKey, onResetProgre
         <h1 className="mt-1 font-display text-3xl font-bold text-base-50">Configurações</h1>
       </div>
 
-      <section className="mb-6 rounded-2xl border border-base-700 bg-base-850 p-5">
+      <section className="mb-6 rounded-2xl card-surface p-5">
         <h2 className="font-display text-base font-bold text-base-50">🤖 Mentor IA — Chave da DeepSeek</h2>
         <p className="mt-1.5 text-sm text-base-300">
           Sua chave é guardada <strong className="text-base-100">somente no localStorage deste navegador</strong> — ela nunca é
@@ -98,7 +98,7 @@ export function SettingsPage({ apiKey, onSetApiKey, onClearApiKey, onResetProgre
         </p>
       </section>
 
-      <section className="rounded-2xl border border-base-700 bg-base-850 p-5">
+      <section className="rounded-2xl card-surface p-5">
         <h2 className="font-display text-base font-bold text-base-50">Dados locais</h2>
         <p className="mt-1.5 text-sm text-base-300">
           Todo seu progresso (XP, checklist, exercícios) fica salvo no localStorage deste navegador. Limpar os dados do

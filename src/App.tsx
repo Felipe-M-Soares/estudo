@@ -10,10 +10,37 @@ import { AchievementsPage } from './pages/AchievementsPage';
 import { GamesPage } from './pages/GamesPage';
 import { MentorPage } from './pages/MentorPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ProfileGate } from './pages/ProfileGate';
 import { useProgress } from './hooks/useProgress';
 import { useSettings } from './hooks/useSettings';
+import { useProfiles } from './hooks/useProfiles';
 
 export default function App() {
+  const { profiles, activeProfile, createProfile, switchToProfile, logout, deleteProfile, avatarOptions } = useProfiles();
+
+  if (!activeProfile) {
+    return (
+      <ProfileGate
+        profiles={profiles}
+        avatarOptions={avatarOptions}
+        onCreateProfile={createProfile}
+        onSwitchToProfile={switchToProfile}
+        onDeleteProfile={deleteProfile}
+      />
+    );
+  }
+
+  return <AuthenticatedApp profileId={activeProfile.id} profileName={activeProfile.name} profileEmoji={activeProfile.avatarEmoji} onLogout={logout} />;
+}
+
+interface AuthenticatedAppProps {
+  profileId: string;
+  profileName: string;
+  profileEmoji: string;
+  onLogout: () => void;
+}
+
+function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: AuthenticatedAppProps) {
   const {
     progress,
     toggleChecklistItem,
@@ -25,13 +52,20 @@ export default function App() {
     lastXpGain,
     newAchievement,
     clearNewAchievement,
-  } = useProgress();
+  } = useProgress(profileId);
   const { settings, setApiKey, clearApiKey } = useSettings();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-base-950">
-      <Sidebar progress={progress} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        progress={progress}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        profileName={profileName}
+        profileEmoji={profileEmoji}
+        onLogout={onLogout}
+      />
 
       <div className="flex min-h-screen flex-1 flex-col lg:pl-0">
         <Topbar progress={progress} overallPercent={overallPercent} onMenuClick={() => setSidebarOpen(true)} />

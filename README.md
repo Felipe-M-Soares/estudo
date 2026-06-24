@@ -7,12 +7,14 @@ Funciona como **web app** (qualquer navegador) e como **app instalável no celul
 ## ✨ O que tem aqui
 
 - **18 módulos** (um por mês), cobrindo Lógica → HTML/CSS → JavaScript → Git/SQL → Node.js → React/TS → Java/Spring → Docker → Next.js → APIs avançadas → AWS → Microsserviços → Kubernetes → CI/CD → System Design → Liderança/Inglês → Projeto Final
-- **Conteúdo didático real** em cada módulo, não só links — explicações, exemplos de código, e por quês
-- **~90 exercícios interativos** em 5 formatos: múltipla escolha, completar código, ordenar passos, associar pares, verdadeiro/falso
-- **~22 mini-jogos** únicos, um por tema (labirinto lógico, dojo do flexbox, construtor de queries SQL, corrida de algoritmos de ordenação, detetive do console JS, e mais)
+- **Conteúdo didático real** em cada módulo — explicações, exemplos de código, e por quês
+- **Diagramas interativos e animados** nas lições mais conceituais: pilha vs fila, Event Loop, busca binária, Box Model do CSS, fluxo de autenticação JWT, CAP Theorem, Docker, e mais
+- **~118 exercícios interativos** em 5 formatos: múltipla escolha, completar código, ordenar passos, associar pares, verdadeiro/falso
+- **30 mini-jogos** únicos, vários com níveis progressivos de dificuldade
 - **Sistema de gamificação completo**: XP, níveis, sequência de estudo (streak) com mapa de constância estilo GitHub, conquistas com confetti
+- **Múltiplos perfis no mesmo navegador**: cada pessoa cria seu perfil com nome (e PIN opcional), e o progresso fica separado por perfil
 - **Mentor IA opcional** via API da DeepSeek, com contexto de onde você está na jornada
-- **100% dos seus dados ficam no seu navegador** (localStorage) — sem backend, sem conta, sem rastreamento
+- **100% dos seus dados ficam no seu navegador** (localStorage) — sem backend, sem conta na nuvem, sem rastreamento
 
 ## 🖥️ Como rodar localmente
 
@@ -40,6 +42,14 @@ Qualquer um destes funciona bem com este projeto (é só Vite + React, sem backe
 - **Netlify**: arraste a pasta `dist` (depois de `npm run build`) em [app.netlify.com/drop](https://app.netlify.com/drop)
 - **GitHub Pages**: rode `npm run build` e publique a pasta `dist` numa branch `gh-pages`
 
+## 👤 Perfis (múltiplas pessoas, mesmo navegador)
+
+Na primeira vez que abrir o app, você cria um perfil com um nome (e, se quiser, um PIN de 4+ dígitos). Esse PIN **não é uma senha de verdade** — é só uma trava simples para impedir que outra pessoa usando o mesmo navegador abra seu perfil por engano. Tudo fica salvo localmente, sem servidor.
+
+Quer usar com mais de uma pessoa? Cada uma cria seu próprio perfil, e o progresso (XP, módulos, conquistas) fica completamente separado entre eles. Para trocar de perfil, use o botão de logout no rodapé da barra lateral.
+
+> ⚠️ Perfis **não sincronizam entre dispositivos** — um perfil "João" criado no notebook é diferente de um perfil "João" no celular, mesmo com o mesmo nome.
+
 ## 🤖 Configurando o Mentor IA (opcional)
 
 O Mentor IA usa a API da DeepSeek. Isso é **opcional** — o app funciona 100% sem ele.
@@ -49,6 +59,8 @@ O Mentor IA usa a API da DeepSeek. Isso é **opcional** — o app funciona 100% 
 3. Pronto — sua chave fica só no seu navegador, nunca no código
 
 > ⚠️ **Nunca** cole sua chave de API em nenhum arquivo de código antes de subir para o GitHub. O app foi desenhado para isso nunca ser necessário: a chave é digitada por você, direto na interface, e fica salva localmente.
+
+> 💡 **Erro 402 (Insufficient Balance)?** Isso não é um bug — significa que sua conta DeepSeek está sem saldo. Acesse [platform.deepseek.com/usage](https://platform.deepseek.com/usage) e adicione um valor pequeno de crédito; sua chave continua válida, só falta saldo para a API processar as chamadas. O app mostra essa explicação automaticamente na tela do Mentor quando isso acontece.
 
 ## 🛠️ Stack técnica
 

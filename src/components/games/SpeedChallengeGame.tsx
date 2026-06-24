@@ -84,7 +84,7 @@ export function SpeedChallengeGame({
 
   if (!started) {
     return (
-      <div className="rounded-2xl border border-base-700 bg-base-850 p-6 text-center">
+      <div className="rounded-2xl card-surface p-6 text-center">
         <div className="text-3xl">{emoji}</div>
         <h3 className="mt-2 font-display text-base font-bold text-base-50">{title}</h3>
         <p className="mt-1 text-sm text-base-400">{description}</p>
@@ -102,7 +102,7 @@ export function SpeedChallengeGame({
   if (finished) {
     const pct = Math.round((score / order.length) * 100);
     return (
-      <div className="rounded-2xl border border-base-700 bg-base-850 p-6 text-center">
+      <div className="rounded-2xl card-surface p-6 text-center">
         <div className="text-3xl">{pct >= 80 ? '🏆' : pct >= 50 ? '👍' : '💪'}</div>
         <h3 className="mt-2 font-display text-lg font-bold text-base-50">{score}/{order.length} corretas</h3>
         <p className="mt-1 text-sm text-base-400">{pct}% de acerto</p>
@@ -117,7 +117,7 @@ export function SpeedChallengeGame({
   }
 
   return (
-    <div className="rounded-2xl border border-base-700 bg-base-850 p-5">
+    <div className="rounded-2xl card-surface p-5">
       <div className="mb-3 flex items-center justify-between text-xs text-base-400">
         <span>Pergunta {idx + 1}/{order.length}</span>
         <span className={`mono-num font-semibold ${timeLeft <= 5 ? 'text-ember-400' : 'text-base-300'}`}>⏱ {timeLeft}s</span>

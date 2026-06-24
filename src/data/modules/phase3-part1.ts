@@ -12,6 +12,13 @@ export const mes13: Module = {
     'Um monolito é mais simples no começo, mas escalar times e funcionalidades nele fica progressivamente mais difícil. Microsserviços dividem o sistema em serviços pequenos e independentes — cada um com seu próprio banco, deploy e ciclo de vida. O preço dessa flexibilidade é a complexidade de fazer esses serviços se comunicarem de forma confiável.',
   lessons: [
     {
+      id: 'l0',
+      heading: 'Monolito vs Microsserviços: o ponto de partida da decisão',
+      body:
+        'Antes de entrar nos detalhes técnicos, vale visualizar a diferença estrutural. Um monolito é uma aplicação única, onde todos os módulos (usuários, pedidos, pagamentos) vivem no mesmo processo e compartilham o mesmo banco. Microsserviços quebram isso em aplicações independentes, cada uma com seu próprio banco, que se comunicam pela rede.\n\nNenhuma das duas é "melhor" universalmente — é uma troca de simplicidade inicial por flexibilidade de escala e times independentes. Compare visualmente abaixo.',
+      diagramId: 'monolith-vs-micro',
+    },
+    {
       id: 'l1',
       heading: 'API Gateway e Service Discovery',
       body:
@@ -28,6 +35,18 @@ export const mes13: Module = {
       heading: 'Resiliência: Circuit Breaker e Retry',
       body:
         'Em um sistema distribuído, falhas parciais são normais — algum serviço vai estar lento ou fora do ar em algum momento. **Circuit Breaker** "desarma" chamadas para um serviço que está falhando repetidamente, evitando sobrecarregar ainda mais um sistema já com problema (e travar o serviço que está chamando).\n\n**Retry** com backoff exponencial tenta novamente após falhas transitórias, esperando progressivamente mais entre tentativas — evitando uma avalanche de retentativas simultâneas que piora a situação.',
+    },
+    {
+      id: 'l4',
+      heading: 'Idempotência: repetir uma operação sem duplicar efeitos',
+      body:
+        'Numa rede distribuída, uma requisição pode ser enviada duas vezes por acidente — o cliente não recebeu confirmação a tempo e tentou de novo, sem saber se a primeira chegou. Uma operação **idempotente** produz o mesmo resultado final independente de quantas vezes for executada: "marcar pedido #123 como pago" é idempotente; "adicionar R$ 50 ao saldo" não é, porque repetir duplica o efeito.\n\nNa prática, isso geralmente é resolvido com uma **chave de idempotência**: o cliente envia um identificador único junto com a requisição, e o servidor guarda quais chaves já processou, ignorando (ou retornando o mesmo resultado de) requisições repetidas com a mesma chave.',
+    },
+    {
+      id: 'l5',
+      heading: 'Saga: transações que atravessam múltiplos serviços',
+      body:
+        'Quando uma operação de negócio (ex: "finalizar pedido") precisa coordenar mudanças em vários microsserviços diferentes (pagamento, estoque, envio), não existe uma transação de banco tradicional que cubra todos eles ao mesmo tempo. O padrão Saga resolve isso executando uma sequência de passos locais, cada um com uma **ação compensatória** definida caso algo falhe no meio do caminho.\n\nSe o pagamento for aprovado mas o estoque não tiver o item, a Saga executa a compensação: cancela o pagamento já feito. Isso troca a garantia "tudo ou nada instantâneo" por "eventualmente consistente, com reversão automática em caso de falha".',
     },
   ],
   resources: [
@@ -78,12 +97,48 @@ export const mes13: Module = {
       explanation:
         'O Circuit Breaker "abre" e bloqueia novas chamadas temporariamente, dando tempo ao serviço problemático de se recuperar, e evitando que o problema se propague.',
     },
+    {
+      type: 'mcq',
+      id: 'm13-e4',
+      prompt: 'Qual destas operações é idempotente?',
+      options: [
+        '"Adicionar R$ 50 ao saldo da conta"',
+        '"Marcar o pedido #123 como entregue"',
+        '"Incrementar o contador de visualizações em 1"',
+        '"Enviar um e-mail de notificação"',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Marcar um pedido como entregue resulta no mesmo estado final independente de quantas vezes a operação for repetida. As outras opções acumulam efeito a cada repetição.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm13-e5',
+      prompt: 'O padrão Saga garante uma transação atômica tradicional (tudo ou nada, instantânea) entre múltiplos microsserviços.',
+      answer: false,
+      explanation:
+        'Saga não oferece atomicidade instantânea — ela coordena passos locais com ações compensatórias caso algo falhe, alcançando consistência eventual, não uma transação atômica clássica.',
+    },
+    {
+      type: 'code-fill',
+      id: 'm13-e6',
+      prompt: 'Complete o conceito: um identificador único enviado pelo cliente para evitar duplicar o efeito de uma requisição repetida.',
+      codeTemplate: 'Chave de ___',
+      answer: 'idempotência',
+      hint: 'O termo que descreve operações que produzem o mesmo resultado final mesmo se executadas múltiplas vezes.',
+      explanation: 'A chave de idempotência permite que o servidor identifique e ignore (ou retorne o mesmo resultado de) requisições duplicadas.',
+    },
   ],
   games: [
     {
       gameId: 'microservices-architect',
       label: 'Arquiteto de Microsserviços',
       description: 'Desenhe a topologia de um sistema dado um cenário de negócio, decidindo onde colocar gateway, filas e circuit breakers.',
+    },
+    {
+      gameId: 'architecture-builder',
+      label: 'Arquiteto de Sistemas',
+      description: 'Monte fluxos de componentes, incluindo o cenário de mensageria assíncrona com fila Kafka.',
     },
   ],
 };
@@ -126,6 +181,22 @@ export const mes14: Module = {
       heading: 'ConfigMaps e Secrets: separando configuração do código',
       body:
         '**ConfigMap** guarda configurações não-sensíveis (URL de um serviço, flags de feature) fora da imagem do container — assim você muda configuração sem rebuildar a imagem. **Secret** é semelhante, mas para dados sensíveis (senhas, chaves de API), armazenados de forma mais protegida dentro do cluster.',
+    },
+    {
+      id: 'l5',
+      heading: 'Liveness e Readiness Probes: como o Kubernetes sabe se um Pod está saudável',
+      body:
+        'Um **Liveness Probe** verifica periodicamente se o container ainda está funcionando — se falhar repetidamente, o Kubernetes reinicia o container automaticamente. Um **Readiness Probe** verifica se o container está pronto para receber tráfego — um Pod pode estar "vivo" mas ainda inicializando (carregando cache, conectando ao banco), e nesse caso o Service não deve enviar requisições para ele ainda.\n\nSem essas probes configuradas, o Kubernetes assume que qualquer Pod em execução está pronto para tráfego, o que pode causar erros para usuários durante deploys ou reinicializações.',
+      codeExample: {
+        lang: 'yaml',
+        code: 'livenessProbe:\n  httpGet:\n    path: /health\n    port: 8080\n  periodSeconds: 10\nreadinessProbe:\n  httpGet:\n    path: /ready\n    port: 8080',
+      },
+    },
+    {
+      id: 'l6',
+      heading: 'Horizontal Pod Autoscaler: escalando automaticamente',
+      body:
+        'O HPA (Horizontal Pod Autoscaler) monitora métricas (geralmente uso de CPU) e ajusta automaticamente o número de réplicas de um Deployment dentro de um intervalo mínimo e máximo definido por você. Em um pico de tráfego, mais Pods são criados; quando a demanda cai, Pods extras são removidos.\n\nEsse é o equivalente, dentro do cluster Kubernetes, ao Auto Scaling de instâncias EC2 que você viu no módulo de AWS — o princípio é o mesmo: capacidade que acompanha a demanda real, em vez de superprovisionar para o pior cenário 24 horas por dia.',
     },
   ],
   resources: [
@@ -179,6 +250,28 @@ export const mes14: Module = {
       hint: 'O campo que define o número desejado de instâncias do Pod.',
       explanation: '`replicas: 3` instrui o Kubernetes a manter sempre 3 instâncias daquele Pod rodando, recriando qualquer uma que falhe.',
     },
+    {
+      type: 'mcq',
+      id: 'm14-e5',
+      prompt: 'Qual a diferença prática entre Liveness Probe e Readiness Probe?',
+      options: [
+        'São a mesma coisa com nomes diferentes',
+        'Liveness reinicia o container se ele estiver travado; Readiness controla se ele deve receber tráfego agora',
+        'Liveness só funciona em produção',
+        'Readiness substitui completamente o Service',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Liveness Probe lida com "o container está vivo?" (reinicia se não). Readiness Probe lida com "o container está pronto para tráfego agora?" (o Service só envia requisições se sim).',
+    },
+    {
+      type: 'truefalse',
+      id: 'm14-e6',
+      prompt: 'O Horizontal Pod Autoscaler (HPA) e o Auto Scaling de EC2 resolvem essencialmente o mesmo tipo de problema, em camadas diferentes.',
+      answer: true,
+      explanation:
+        'Ambos ajustam capacidade automaticamente baseado em demanda — HPA escala Pods dentro de um cluster Kubernetes, enquanto Auto Scaling de EC2 escala máquinas virtuais inteiras.',
+    },
   ],
   games: [
     {
@@ -228,6 +321,18 @@ export const mes15: Module = {
       body:
         'Com dezenas de serviços, logs espalhados em cada máquina são inúteis na prática. **Elasticsearch** indexa logs para busca rápida, **Logstash** processa e encaminha logs de várias fontes, **Kibana** oferece interface visual para buscar e explorar esses logs centralizadamente.',
     },
+    {
+      id: 'l5',
+      heading: 'Estratégias de deploy: blue-green e canary',
+      body:
+        'Substituir a versão antiga pela nova de uma vez (deploy "big bang") significa que, se a nova versão tiver um bug, todos os usuários sentem o impacto imediatamente. Duas estratégias reduzem esse risco:\n\n**Blue-Green**: você mantém duas versões completas rodando em paralelo (azul = atual, verde = nova). Quando a verde está validada, o tráfego é redirecionado de uma vez — e se algo der errado, basta apontar de volta para a azul, sem novo deploy.\n\n**Canary**: a nova versão recebe só uma pequena fração do tráfego real (ex: 5%) primeiro. Se as métricas continuarem saudáveis, a fração aumenta gradualmente até 100%. Isso limita o "raio de explosão" de um bug a uma pequena parte dos usuários, com detecção antes do impacto total.',
+    },
+    {
+      id: 'l6',
+      heading: 'SLO, SLI e SLA: definindo o que "funcionando" significa',
+      body:
+        '**SLI** (Service Level Indicator) é uma métrica concreta: "porcentagem de requisições respondidas em menos de 200ms". **SLO** (Service Level Objective) é a meta interna para essa métrica: "99% das requisições em menos de 200ms, medido por mês". **SLA** (Service Level Agreement) é o compromisso formal com o cliente, geralmente com penalidade contratual se não for cumprido.\n\nA distinção importa: SLOs costumam ser mais rígidos que os SLAs prometidos a clientes, dando margem de segurança ("orçamento de erro") antes de efetivamente violar um compromisso contratual.',
+    },
   ],
   resources: [
     { label: 'GitHub Actions', url: 'https://docs.github.com/actions' },
@@ -274,6 +379,42 @@ export const mes15: Module = {
       answer: false,
       explanation:
         'Logs isolados por serviço não mostram o caminho completo de uma requisição entre serviços. Tracing distribuído conecta esses pontos com um identificador único compartilhado.',
+    },
+    {
+      type: 'mcq',
+      id: 'm15-e4',
+      prompt: 'Qual a principal vantagem de um deploy canary sobre substituir 100% do tráfego de uma vez?',
+      options: [
+        'É sempre mais rápido',
+        'Limita o impacto de um bug a uma pequena fração de usuários antes de liberar para todos',
+        'Não precisa de monitoramento',
+        'Elimina a necessidade de testes antes do deploy',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Ao direcionar só uma pequena fração do tráfego para a nova versão inicialmente, problemas são detectados com impacto limitado, antes de afetar todos os usuários.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm15-e5',
+      prompt: 'Em um deploy blue-green, reverter para a versão anterior em caso de problema exige um novo deploy completo.',
+      answer: false,
+      explanation:
+        'A vantagem do blue-green é justamente essa: como a versão antiga continua rodando em paralelo, reverter é só redirecionar o tráfego de volta para ela — sem precisar fazer deploy novamente.',
+    },
+    {
+      type: 'mcq',
+      id: 'm15-e6',
+      prompt: 'Qual a diferença entre SLO e SLA?',
+      options: [
+        'São sinônimos exatos',
+        'SLO é a meta interna da equipe; SLA é o compromisso formal (geralmente contratual) com o cliente',
+        'SLA é só para empresas pequenas',
+        'SLO mede só uptime, SLA mede só latência',
+      ],
+      correctIndex: 1,
+      explanation:
+        'SLOs costumam ser mais rígidos que os SLAs prometidos externamente, funcionando como uma margem de segurança antes de efetivamente violar um compromisso com o cliente.',
     },
   ],
   games: [

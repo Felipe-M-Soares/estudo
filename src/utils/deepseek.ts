@@ -11,7 +11,15 @@ export interface MentorMessage {
 
 const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
 
-export class MentorApiError extends Error {}
+export type MentorErrorCode = 'no-key' | 'invalid-key' | 'no-balance' | 'rate-limit' | 'unknown';
+
+export class MentorApiError extends Error {
+  code: MentorErrorCode;
+  constructor(message: string, code: MentorErrorCode = 'unknown') {
+    super(message);
+    this.code = code;
+  }
+}
 
 export async function askMentor(
   apiKey: string,
@@ -19,7 +27,7 @@ export async function askMentor(
   signal?: AbortSignal
 ): Promise<string> {
   if (!apiKey) {
-    throw new MentorApiError('Nenhuma chave de API configurada.');
+    throw new MentorApiError('Nenhuma chave de API configurada.', 'no-key');
   }
 
   const response = await fetch(DEEPSEEK_ENDPOINT, {
@@ -39,18 +47,24 @@ export async function askMentor(
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new MentorApiError('Chave de API inválida ou expirada. Confira nas Configurações.');
+      throw new MentorApiError('Chave de API inválida ou expirada. Confira nas Configurações.', 'invalid-key');
+    }
+    if (response.status === 402) {
+      throw new MentorApiError(
+        'Sua conta da DeepSeek está sem saldo. A chave está correta, mas a API não processa requisições sem crédito disponível.',
+        'no-balance'
+      );
     }
     if (response.status === 429) {
-      throw new MentorApiError('Limite de uso atingido. Tente novamente em alguns instantes.');
+      throw new MentorApiError('Limite de uso atingido. Tente novamente em alguns instantes.', 'rate-limit');
     }
-    throw new MentorApiError(`Erro na API (${response.status}). Tente novamente.`);
+    throw new MentorApiError(`Erro na API (${response.status}). Tente novamente.`, 'unknown');
   }
 
   const data = await response.json();
   const content = data?.choices?.[0]?.message?.content;
   if (typeof content !== 'string') {
-    throw new MentorApiError('Resposta inesperada da API.');
+    throw new MentorApiError('Resposta inesperada da API.', 'unknown');
   }
   return content;
 }

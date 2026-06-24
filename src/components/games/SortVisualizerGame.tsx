@@ -114,7 +114,7 @@ export function SortVisualizerGame({ onComplete }: SortVisualizerGameProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-base-700 bg-base-850 p-5">
+    <div className="rounded-2xl card-surface p-5">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="font-display text-base font-bold text-base-50">🏁 Corrida da Ordenação</h3>

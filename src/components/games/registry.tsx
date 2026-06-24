@@ -4,6 +4,10 @@ import { SortVisualizerGame } from './SortVisualizerGame';
 import { FlexboxDojoGame } from './FlexboxDojoGame';
 import { SqlQueryBuilderGame } from './SqlQueryBuilderGame';
 import { ConsoleDetectiveGame } from './ConsoleDetectiveGame';
+import { BugHunterGame } from './BugHunterGame';
+import { MemoryGame } from './MemoryGame';
+import { TerminalSimulatorGame } from './TerminalSimulatorGame';
+import { ArchitectureBuilderGame } from './ArchitectureBuilderGame';
 import { SpeedChallengeGame, type SpeedChallengeQuestion } from './SpeedChallengeGame';
 
 interface GameDef {
@@ -180,6 +184,10 @@ export const gameRegistry: Record<string, GameDef> = {
   'logic-maze': { render: (onComplete) => <LogicMazeGame onComplete={onComplete} /> },
   'sort-visualizer': { render: (onComplete) => <SortVisualizerGame onComplete={onComplete} /> },
   'flexbox-dojo': { render: (onComplete) => <FlexboxDojoGame onComplete={onComplete} /> },
+  'bug-hunter': { render: (onComplete) => <BugHunterGame onComplete={onComplete} /> },
+  'memory-concepts': { render: (onComplete) => <MemoryGame onComplete={onComplete} /> },
+  'terminal-simulator': { render: (onComplete) => <TerminalSimulatorGame onComplete={onComplete} /> },
+  'architecture-builder': { render: (onComplete) => <ArchitectureBuilderGame onComplete={onComplete} /> },
   'css-selector-hunt': {
     render: (onComplete) => (
       <SpeedChallengeGame

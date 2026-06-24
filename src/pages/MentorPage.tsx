@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Bot, AlertTriangle, Loader2 } from 'lucide-react';
-import { askMentor, MentorApiError, MENTOR_SYSTEM_PROMPT, type MentorMessage } from '../utils/deepseek';
+import { Send, Bot, AlertTriangle, Loader2, ExternalLink, Wallet } from 'lucide-react';
+import { askMentor, MentorApiError, MENTOR_SYSTEM_PROMPT, type MentorMessage, type MentorErrorCode } from '../utils/deepseek';
 import { modulesById } from '../data';
 
 interface MentorPageProps {
@@ -12,6 +12,11 @@ interface MentorPageProps {
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface MentorError {
+  message: string;
+  code: MentorErrorCode;
 }
 
 const SUGGESTIONS = [
@@ -25,14 +30,14 @@ export function MentorPage({ apiKey, currentModuleId }: MentorPageProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MentorError | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const currentModule = modulesById[currentModuleId];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, loading, error]);
 
   async function sendMessage(text: string) {
     if (!text.trim() || loading) return;
@@ -55,9 +60,9 @@ export function MentorPage({ apiKey, currentModuleId }: MentorPageProps) {
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
       if (err instanceof MentorApiError) {
-        setError(err.message);
+        setError({ message: err.message, code: err.code });
       } else {
-        setError('Não foi possível falar com o mentor agora. Tente novamente.');
+        setError({ message: 'Não foi possível falar com o mentor agora. Tente novamente.', code: 'unknown' });
       }
     } finally {
       setLoading(false);
@@ -94,14 +99,14 @@ export function MentorPage({ apiKey, currentModuleId }: MentorPageProps) {
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto pb-4">
-        {messages.length === 0 && (
+        {messages.length === 0 && !error && (
           <div className="space-y-2">
             <p className="text-sm text-base-400">Sugestões para começar:</p>
             {SUGGESTIONS.map((s) => (
               <button
                 key={s}
                 onClick={() => sendMessage(s)}
-                className="block w-full rounded-xl border border-base-700 bg-base-850 px-4 py-2.5 text-left text-sm text-base-200 hover:border-violet-400/40"
+                className="block w-full rounded-xl card-surface card-surface-hover px-4 py-2.5 text-left text-sm text-base-200"
               >
                 {s}
               </button>
@@ -113,7 +118,7 @@ export function MentorPage({ apiKey, currentModuleId }: MentorPageProps) {
           <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                m.role === 'user' ? 'bg-mint-400 text-base-950' : 'border border-base-700 bg-base-850 text-base-100'
+                m.role === 'user' ? 'bg-mint-400 text-base-950' : 'card-surface text-base-100'
               }`}
             >
               {m.content}
@@ -123,15 +128,41 @@ export function MentorPage({ apiKey, currentModuleId }: MentorPageProps) {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-2 rounded-2xl border border-base-700 bg-base-850 px-4 py-2.5 text-sm text-base-400">
+            <div className="flex items-center gap-2 rounded-2xl card-surface px-4 py-2.5 text-sm text-base-400">
               <Loader2 size={14} className="animate-spin" /> Pensando...
             </div>
           </div>
         )}
 
-        {error && (
+        {error?.code === 'no-balance' && (
+          <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-amber-300">
+              <Wallet size={15} /> Sua conta DeepSeek está sem saldo
+            </div>
+            <p className="mt-2 text-sm text-base-200">
+              Esse erro (402) não é um problema com o app ou com sua chave — ela está correta. A DeepSeek exige saldo
+              pré-pago na conta para processar chamadas de API, separado do chat gratuito no site deles.
+            </p>
+            <p className="mt-2 text-sm text-base-200">Para resolver:</p>
+            <ol className="mt-1 ml-4 list-decimal space-y-1 text-sm text-base-200">
+              <li>Acesse o painel de billing da DeepSeek</li>
+              <li>Adicione um valor pequeno de crédito (a API é bem barata)</li>
+              <li>Volte aqui e tente de novo — não precisa gerar uma chave nova</li>
+            </ol>
+            <a
+              href="https://platform.deepseek.com/usage"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3.5 py-2 text-sm font-semibold text-base-950 hover:opacity-90"
+            >
+              Adicionar saldo na DeepSeek <ExternalLink size={13} />
+            </a>
+          </div>
+        )}
+
+        {error && error.code !== 'no-balance' && (
           <div className="flex items-center gap-2 rounded-xl border border-ember-400/30 bg-ember-500/10 px-4 py-2.5 text-sm text-ember-300">
-            <AlertTriangle size={14} className="shrink-0" /> {error}
+            <AlertTriangle size={14} className="shrink-0" /> {error.message}
           </div>
         )}
       </div>

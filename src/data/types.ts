@@ -17,6 +17,7 @@ export interface LessonBlock {
     lang: string;
     code: string;
   };
+  diagramId?: string; // referência a um diagrama interativo (ver components/diagrams/registry)
 }
 
 export interface ChecklistItem {

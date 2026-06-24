@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { modules } from '../data';
 import { gameRegistry } from '../components/games/registry';
@@ -9,11 +9,25 @@ interface GamesPageProps {
   onGameComplete: (gameId: string, score: number) => void;
 }
 
+const phaseFilters = [
+  { id: 'all', label: 'Todos', dot: 'bg-base-400' },
+  { id: 1, label: 'Fase 1', dot: 'bg-mint-400' },
+  { id: 2, label: 'Fase 2', dot: 'bg-amber-400' },
+  { id: 3, label: 'Fase 3', dot: 'bg-violet-400' },
+] as const;
+
 export function GamesPage({ progress, onGameComplete }: GamesPageProps) {
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 1 | 2 | 3>('all');
 
-  const allGames = modules.flatMap((m) => m.games.map((g) => ({ ...g, moduleTitle: m.title, moduleEmoji: m.emoji })));
+  const allGames = modules.flatMap((m) =>
+    m.games.map((g) => ({ ...g, moduleTitle: m.title, moduleEmoji: m.emoji, phase: m.phase }))
+  );
   const uniqueGames = Array.from(new Map(allGames.map((g) => [g.gameId, g])).values());
+  const filteredGames = useMemo(
+    () => (filter === 'all' ? uniqueGames : uniqueGames.filter((g) => g.phase === filter)),
+    [filter, uniqueGames]
+  );
 
   if (activeGameId) {
     return (
@@ -29,21 +43,36 @@ export function GamesPage({ progress, onGameComplete }: GamesPageProps) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 lg:px-8">
       <div className="mb-6 animate-rise-in">
-        <p className="font-mono text-xs uppercase tracking-widest text-violet-400">Aprenda jogando</p>
-        <h1 className="mt-1 font-display text-3xl font-bold text-base-50">Mini-jogos</h1>
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-400">⟢ Aprenda jogando</p>
+        <h1 className="mt-2 font-display text-4xl font-bold text-base-50">Mini-jogos</h1>
         <p className="mt-2 text-base-300">
           {uniqueGames.length} jogos espalhados pela sua jornada, um para cada tema que você estuda.
         </p>
       </div>
 
+      <div className="mb-5 flex gap-1.5 overflow-x-auto scrollbar-none">
+        {phaseFilters.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              filter === f.id ? 'bg-violet-400 text-base-950' : 'bg-base-800 text-base-300 hover:bg-base-700'
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${filter === f.id ? 'bg-base-950' : f.dot}`} />
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2">
-        {uniqueGames.map((g) => {
+        {filteredGames.map((g) => {
           const best = progress.gamesScores[g.gameId];
           return (
             <button
               key={g.gameId}
               onClick={() => setActiveGameId(g.gameId)}
-              className="flex flex-col gap-1.5 rounded-2xl border border-base-700 bg-base-850 p-4 text-left transition-colors hover:border-violet-400/40"
+              className="card-surface card-surface-hover flex flex-col gap-1.5 rounded-2xl p-4 text-left"
             >
               <span className="font-mono text-[11px] text-base-500">{g.moduleEmoji} {g.moduleTitle}</span>
               <span className="font-display text-sm font-bold text-base-50">{g.label}</span>
