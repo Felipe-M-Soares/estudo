@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+@theme {
+  /* ===== Cores base — "terminal noturno" ===== */
+  --color-base-950: #07090c;
+  --color-base-900: #0b0e11;
+  --color-base-850: #0f1318;
+  --color-base-800: #151920;
+  --color-base-700: #1c212a;
+  --color-base-600: #262c37;
+  --color-base-500: #343c4a;
+  --color-base-400: #4a5364;
+  --color-base-300: #6b7585;
+  --color-base-200: #99a2b0;
+  --color-base-100: #c5cad2;
+  --color-base-50:  #e8eaed;
+
+  /* ===== Accent verde — progresso / sucesso / "compila" ===== */
+  --color-mint-900: #0a3a26;
+  --color-mint-700: #157a4d;
+  --color-mint-500: #25b876;
+  --color-mint-400: #3fe08a;
+  --color-mint-300: #6fedab;
+  --color-mint-200: #a6f5cc;
+
+  /* ===== Accent âmbar — XP / destaque / fase 2 ===== */
+  --color-amber-700: #8a5c12;
+  --color-amber-500: #d99020;
+  --color-amber-400: #f2a93b;
+  --color-amber-300: #f7c570;
+
+  /* ===== Accent violeta — fase 3 / integração ===== */
+  --color-violet-700: #4c2d8a;
+  --color-violet-500: #7c4fd1;
+  --color-violet-400: #9b75e0;
+  --color-violet-300: #bfa3ec;
+
+  /* ===== Accent vermelho — erro / quiz errado ===== */
+  --color-ember-500: #d6334d;
+  --color-ember-400: #f2415b;
+  --color-ember-300: #f77b8e;
+
+  /* ===== Tipografia ===== */
+  --font-display: "Space Grotesk", "Avenir Next", "Segoe UI Semibold", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+
+  /* ===== Layout ===== */
+  --breakpoint-xs: 420px;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-base-950);
+    color: var(--color-base-50);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: var(--color-mint-700);
+    color: white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-base-600);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-base-500);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-mint-400);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-base-700) 60%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-base-700) 60%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .mono-num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .glow-mint {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-mint-400) 35%, transparent), 0 0 24px -8px var(--color-mint-400);
+  }
+
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none { scrollbar-width: none; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2.2s ease-in-out infinite;
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise-in {
+  animation: rise-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

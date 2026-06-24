@@ -1,0 +1,89 @@
+import type { Module, PhaseInfo } from './types';
+import { mes01, mes02, mes03 } from './modules/phase1-part1';
+import { mes04, mes05, mes06 } from './modules/phase1-part2';
+import { mes07, mes08, mes09 } from './modules/phase2-part1';
+import { mes10, mes11, mes12 } from './modules/phase2-part2';
+import { mes13, mes14, mes15 } from './modules/phase3-part1';
+import { mes16, mes17, mes18 } from './modules/phase3-part2';
+
+export const modules: Module[] = [
+  mes01, mes02, mes03, mes04, mes05, mes06,
+  mes07, mes08, mes09, mes10, mes11, mes12,
+  mes13, mes14, mes15, mes16, mes17, mes18,
+];
+
+export const modulesById: Record<string, Module> = Object.fromEntries(
+  modules.map((m) => [m.id, m])
+);
+
+export const phases: PhaseInfo[] = [
+  {
+    phase: 1,
+    title: 'Fundamentos',
+    objective: 'Construir a base sólida',
+    months: [1, 2, 3, 4, 5, 6],
+    color: 'mint',
+  },
+  {
+    phase: 2,
+    title: 'Especialização',
+    objective: 'Aprofundar em tecnologias modernas',
+    months: [7, 8, 9, 10, 11, 12],
+    color: 'amber',
+  },
+  {
+    phase: 3,
+    title: 'Integração Full Stack',
+    objective: 'Arquitetura e escalabilidade',
+    months: [13, 14, 15, 16, 17, 18],
+    color: 'violet',
+  },
+];
+
+export function getModuleByMonth(month: number): Module | undefined {
+  return modules.find((m) => m.month === month);
+}
+
+export function getNextModule(currentId: string): Module | undefined {
+  const idx = modules.findIndex((m) => m.id === currentId);
+  if (idx === -1 || idx === modules.length - 1) return undefined;
+  return modules[idx + 1];
+}
+
+export function getPrevModule(currentId: string): Module | undefined {
+  const idx = modules.findIndex((m) => m.id === currentId);
+  if (idx <= 0) return undefined;
+  return modules[idx - 1];
+}
+
+export function totalExerciseCount(): number {
+  return modules.reduce((sum, m) => sum + m.exercises.length, 0);
+}
+
+export function totalChecklistCount(): number {
+  return modules.reduce((sum, m) => sum + m.checklist.length, 0);
+}
+
+export const library = [
+  { title: 'Código Limpo', author: 'Robert C. Martin', theme: 'Qualidade de código' },
+  { title: 'Arquitetura Limpa', author: 'Robert C. Martin', theme: 'Arquitetura de software' },
+  { title: 'Domain-Driven Design', author: 'Eric Evans', theme: 'Modelagem de domínio' },
+  { title: 'Designing Data-Intensive Applications', author: 'Martin Kleppmann', theme: 'Sistemas distribuídos' },
+  { title: 'The Pragmatic Programmer', author: 'Andrew Hunt', theme: 'Boas práticas' },
+  { title: 'Staff Engineer', author: 'Will Larson', theme: 'Liderança técnica' },
+  { title: 'Refactoring', author: 'Martin Fowler', theme: 'Refatoração de código' },
+];
+
+export const usefulLinks = [
+  { label: 'DIO', emoji: '🎓', url: 'https://www.dio.me' },
+  { label: 'Rocketseat', emoji: '🚀', url: 'https://www.rocketseat.com.br' },
+  { label: 'Alura', emoji: '📚', url: 'https://www.alura.com.br' },
+  { label: 'Udemy', emoji: '🎯', url: 'https://www.udemy.com' },
+  { label: 'AWS Skill Builder', emoji: '☁️', url: 'https://aws.amazon.com/training/digital/' },
+  { label: 'Coursera', emoji: '🎓', url: 'https://www.coursera.org' },
+  { label: 'Stack Overflow', emoji: '🧠', url: 'https://stackoverflow.com' },
+  { label: 'Dev.to', emoji: '✍️', url: 'https://dev.to' },
+  { label: 'Excalidraw', emoji: '✏️', url: 'https://excalidraw.com' },
+  { label: 'Roadmap.sh', emoji: '🗺️', url: 'https://roadmap.sh' },
+  { label: 'FreeCodeCamp', emoji: '📖', url: 'https://www.freecodecamp.org' },
+];

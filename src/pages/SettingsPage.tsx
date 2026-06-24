@@ -1,0 +1,131 @@
+import { useState } from 'react';
+import { Eye, EyeOff, ExternalLink, Trash2, ShieldCheck, AlertTriangle } from 'lucide-react';
+
+interface SettingsPageProps {
+  apiKey: string;
+  onSetApiKey: (key: string) => void;
+  onClearApiKey: () => void;
+  onResetProgress: () => void;
+}
+
+export function SettingsPage({ apiKey, onSetApiKey, onClearApiKey, onResetProgress }: SettingsPageProps) {
+  const [draft, setDraft] = useState(apiKey);
+  const [visible, setVisible] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  function handleSave() {
+    onSetApiKey(draft.trim());
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1800);
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 lg:px-8">
+      <div className="mb-6 animate-rise-in">
+        <p className="font-mono text-xs uppercase tracking-widest text-base-400">Preferências</p>
+        <h1 className="mt-1 font-display text-3xl font-bold text-base-50">Configurações</h1>
+      </div>
+
+      <section className="mb-6 rounded-2xl border border-base-700 bg-base-850 p-5">
+        <h2 className="font-display text-base font-bold text-base-50">🤖 Mentor IA — Chave da DeepSeek</h2>
+        <p className="mt-1.5 text-sm text-base-300">
+          Sua chave é guardada <strong className="text-base-100">somente no localStorage deste navegador</strong> — ela nunca é
+          enviada para nenhum servidor além da API oficial da DeepSeek, e nunca aparece no código do projeto que você sobe
+          para o GitHub.
+        </p>
+
+        <div className="mt-4 rounded-xl border border-mint-400/30 bg-mint-900/15 p-3.5 text-sm text-mint-100">
+          <p className="mb-1.5 flex items-center gap-1.5 font-semibold text-mint-300">
+            <ShieldCheck size={14} /> Como pegar sua chave
+          </p>
+          <ol className="ml-4 list-decimal space-y-1 text-base-200">
+            <li>
+              Acesse{' '}
+              <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-mint-300 underline">
+                platform.deepseek.com/api_keys <ExternalLink size={11} />
+              </a>
+            </li>
+            <li>Faça login ou crie uma conta gratuita</li>
+            <li>Clique em "Create new API key" e copie a chave gerada</li>
+            <li>Cole no campo abaixo e clique em Salvar</li>
+          </ol>
+        </div>
+
+        <div className="mt-4">
+          <label className="mb-1.5 block text-xs font-semibold text-base-300">Sua chave de API</label>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type={visible ? 'text' : 'password'}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="sk-..."
+                className="w-full rounded-lg border border-base-600 bg-base-900 px-3 py-2.5 pr-10 font-mono text-sm text-base-100 outline-none focus:border-mint-400"
+              />
+              <button
+                onClick={() => setVisible((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-base-400 hover:text-base-100"
+                aria-label={visible ? 'Esconder chave' : 'Mostrar chave'}
+                type="button"
+              >
+                {visible ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <button
+              onClick={handleSave}
+              className="shrink-0 rounded-lg bg-mint-400 px-4 py-2.5 text-sm font-semibold text-base-950 hover:opacity-90"
+            >
+              {saved ? '✓ Salvo' : 'Salvar'}
+            </button>
+          </div>
+          {apiKey && (
+            <button onClick={() => { onClearApiKey(); setDraft(''); }} className="mt-2 flex items-center gap-1.5 text-xs text-ember-400 hover:underline">
+              <Trash2 size={12} /> Remover chave salva
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-2xl border border-ember-400/30 bg-ember-500/5 p-5">
+        <h2 className="flex items-center gap-1.5 font-display text-base font-bold text-ember-300">
+          <AlertTriangle size={16} /> Sobre publicar este projeto no GitHub
+        </h2>
+        <p className="mt-1.5 text-sm text-base-200">
+          Esta chave fica <strong>apenas no seu navegador</strong> e nunca em nenhum arquivo do projeto — por isso é seguro
+          subir todo o código para um repositório público. Mesmo assim, nunca cole sua chave de API diretamente em nenhum
+          arquivo de código, commit, ou print de tela que você compartilhe publicamente.
+        </p>
+      </section>
+
+      <section className="rounded-2xl border border-base-700 bg-base-850 p-5">
+        <h2 className="font-display text-base font-bold text-base-50">Dados locais</h2>
+        <p className="mt-1.5 text-sm text-base-300">
+          Todo seu progresso (XP, checklist, exercícios) fica salvo no localStorage deste navegador. Limpar os dados do
+          navegador apaga esse progresso — não há sincronização com a nuvem.
+        </p>
+        {!confirmReset ? (
+          <button
+            onClick={() => setConfirmReset(true)}
+            className="mt-3 flex items-center gap-1.5 rounded-lg border border-ember-400/40 px-4 py-2 text-sm font-semibold text-ember-300 hover:bg-ember-500/10"
+          >
+            <Trash2 size={14} /> Resetar todo o progresso
+          </button>
+        ) : (
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-sm text-ember-300">Tem certeza? Isso não pode ser desfeito.</span>
+            <button
+              onClick={() => { onResetProgress(); setConfirmReset(false); }}
+              className="rounded-lg bg-ember-500 px-3 py-1.5 text-xs font-semibold text-white"
+            >
+              Sim, resetar
+            </button>
+            <button onClick={() => setConfirmReset(false)} className="rounded-lg border border-base-600 px-3 py-1.5 text-xs text-base-300">
+              Cancelar
+            </button>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
