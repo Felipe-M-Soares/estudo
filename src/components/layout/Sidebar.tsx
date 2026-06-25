@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { Home, Trophy, Gamepad2, Bot, Settings, X, Compass, LogOut, Briefcase } from 'lucide-react';
+import { Home, Trophy, Gamepad2, Bot, Settings, X, Compass, LogOut } from 'lucide-react';
 import { modules, phases } from '../../data';
 import type { UserProgress } from '../../data/types';
 
@@ -36,7 +36,7 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
       >
         <div className="flex items-center justify-between border-b border-base-700 px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-mint-400 to-mint-500 font-display text-sm font-bold text-base-950 shadow-[0_0_18px_-1px_theme(colors.mint.400)]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-mint-400 to-mint-500 font-display text-sm font-bold text-base-950 shadow-[0_2px_8px_-2px_theme(colors.mint.400)]">
               {'</>'}
             </div>
             <div>
@@ -53,7 +53,6 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
           <SidebarLink to="/" icon={<Home size={16} />} label="Painel" onClick={onClose} />
           <SidebarLink to="/conquistas" icon={<Trophy size={16} />} label="Conquistas" onClick={onClose} />
           <SidebarLink to="/jogos" icon={<Gamepad2 size={16} />} label="Mini-jogos" onClick={onClose} />
-          <SidebarLink to="/entrevista" icon={<Briefcase size={16} />} label="Modo Entrevista" onClick={onClose} highlight />
           <SidebarLink to="/mentor" icon={<Bot size={16} />} label="Mentor IA" onClick={onClose} />
           <SidebarLink to="/configuracoes" icon={<Settings size={16} />} label="Configurações" onClick={onClose} />
         </nav>
@@ -135,38 +134,19 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
   );
 }
 
-function SidebarLink({
-  to,
-  icon,
-  label,
-  onClick,
-  highlight = false,
-}: {
-  to: string;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-  highlight?: boolean;
-}) {
+function SidebarLink({ to, icon, label, onClick }: { to: string; icon: ReactNode; label: string; onClick: () => void }) {
   return (
     <NavLink
       to={to}
       onClick={onClick}
       className={({ isActive }) =>
         `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${
-          isActive
-            ? highlight
-              ? 'bg-cyan-400/15 text-cyan-300'
-              : 'bg-mint-400/10 text-mint-300'
-            : highlight
-              ? 'text-cyan-300/90 hover:bg-cyan-400/10 hover:text-cyan-200'
-              : 'text-base-300 hover:bg-base-800 hover:text-base-100'
+          isActive ? 'bg-mint-400/10 text-mint-300' : 'text-base-300 hover:bg-base-800 hover:text-base-100'
         }`
       }
     >
       {icon}
       {label}
-      {highlight && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_theme(colors.cyan.400)]" />}
     </NavLink>
   );
 }

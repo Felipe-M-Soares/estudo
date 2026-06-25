@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Profile, ProfilesState } from '../data/profileTypes';
-import { hashPin, verifyPin, legacyHashPin } from '../utils/pin';
+import { hashPin, verifyPin } from '../utils/pin';
 
 const PROFILES_KEY = 'devjourney:profiles:v1';
 
@@ -10,11 +10,7 @@ function loadState(): ProfilesState {
   try {
     const raw = localStorage.getItem(PROFILES_KEY);
     if (!raw) return { profiles: [], activeProfileId: null };
-    const parsed = JSON.parse(raw);
-    // Migração: perfis criados antes do salt por perfil existir têm pinSalt undefined/null
-    // mas pinHash preenchido — eles continuam funcionando via legacyHashPin até o usuário
-    // trocar o PIN (o que já gera um salt novo).
-    return parsed;
+    return JSON.parse(raw);
   } catch {
     return { profiles: [], activeProfileId: null };
   }
@@ -56,18 +52,11 @@ export function useProfiles() {
       if (exists) {
         return { success: false, error: 'Já existe um perfil com esse nome.' };
       }
-      let pinHash: string | null = null;
-      let pinSalt: string | null = null;
-      if (pin.trim()) {
-        const result = await hashPin(pin.trim());
-        pinHash = result.hash;
-        pinSalt = result.salt;
-      }
+      const pinHash = pin.trim() ? await hashPin(pin.trim()) : null;
       const newProfile: Profile = {
         id: `profile-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         name: trimmed,
         pinHash,
-        pinSalt,
         avatarEmoji: avatarEmoji ?? AVATAR_EMOJIS[Math.floor(Math.random() * AVATAR_EMOJIS.length)],
         createdAt: new Date().toISOString(),
       };
@@ -87,25 +76,7 @@ export function useProfiles() {
 
       if (profile.pinHash) {
         if (!pin.trim()) return { success: false, error: 'Esse perfil tem PIN. Digite o PIN para entrar.' };
-
-        let ok = false;
-        if (profile.pinSalt) {
-          ok = await verifyPin(pin.trim(), { hash: profile.pinHash, salt: profile.pinSalt });
-        } else {
-          // Perfil criado antes da migração de salt — verifica com o esquema legado
-          // e, se corresponder, migra silenciosamente para o novo esquema com salt.
-          const legacy = await legacyHashPin(pin.trim());
-          ok = legacy === profile.pinHash;
-          if (ok) {
-            const migrated = await hashPin(pin.trim());
-            setState((prev) => ({
-              ...prev,
-              profiles: prev.profiles.map((p) =>
-                p.id === profileId ? { ...p, pinHash: migrated.hash, pinSalt: migrated.salt } : p
-              ),
-            }));
-          }
-        }
+        const ok = await verifyPin(pin.trim(), profile.pinHash);
         if (!ok) return { success: false, error: 'PIN incorreto.' };
       }
 

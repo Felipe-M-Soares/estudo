@@ -1,21 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Bot, AlertTriangle, Loader2, ExternalLink, Wallet, Activity } from 'lucide-react';
-import {
-  askMentor,
-  MentorApiError,
-  MENTOR_SYSTEM_PROMPT,
-  buildPerformanceSummary,
-  type MentorMessage,
-  type MentorErrorCode,
-} from '../utils/deepseek';
-import { modules, modulesById } from '../data';
-import type { UserProgress } from '../data/types';
+import { Send, Bot, AlertTriangle, Loader2, ExternalLink, Wallet } from 'lucide-react';
+import { askMentor, MentorApiError, MENTOR_SYSTEM_PROMPT, type MentorMessage, type MentorErrorCode } from '../utils/deepseek';
+import { modulesById } from '../data';
 
 interface MentorPageProps {
   apiKey: string;
   currentModuleId: string;
-  progress: UserProgress;
 }
 
 interface ChatMessage {
@@ -35,7 +26,7 @@ const SUGGESTIONS = [
   'Qual a diferença entre SQL e NoSQL na prática?',
 ];
 
-export function MentorPage({ apiKey, currentModuleId, progress }: MentorPageProps) {
+export function MentorPage({ apiKey, currentModuleId }: MentorPageProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,38 +34,6 @@ export function MentorPage({ apiKey, currentModuleId, progress }: MentorPageProp
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const currentModule = modulesById[currentModuleId];
-
-  const overallPercent = useMemo(() => {
-    const total = modules.length * 100;
-    const sum = modules.reduce((acc, m) => acc + (progress.moduleProgress[m.id] ?? 0), 0);
-    return total === 0 ? 0 : Math.round((sum / total) * 100);
-  }, [progress.moduleProgress]);
-
-  const moduleStats = useMemo(() => {
-    return modules.map((m) => {
-      const exerciseIds = m.exercises.map((e) => e.id);
-      const totalAttempted = exerciseIds.reduce((sum, id) => sum + (progress.exerciseAttempts[id] ?? 0), 0);
-      const correctCount = exerciseIds.filter((id) => progress.completedExercises[id]).length;
-      return { moduleTitle: m.title, correctCount, totalAttempted };
-    });
-  }, [progress.exerciseAttempts, progress.completedExercises]);
-
-  const strugglingExerciseCount = useMemo(() => {
-    return Object.entries(progress.exerciseAttempts).filter(
-      ([exerciseId, attempts]) => attempts >= 3 && !progress.completedExercises[exerciseId]
-    ).length;
-  }, [progress.exerciseAttempts, progress.completedExercises]);
-
-  const performanceSummary = useMemo(
-    () =>
-      buildPerformanceSummary({
-        moduleStats,
-        strugglingExerciseCount,
-        streakDays: progress.streakDays,
-        overallPercent,
-      }),
-    [moduleStats, strugglingExerciseCount, progress.streakDays, overallPercent]
-  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -90,12 +49,11 @@ export function MentorPage({ apiKey, currentModuleId, progress }: MentorPageProp
     setLoading(true);
 
     try {
-      const moduleContext = currentModule
-        ? `\n\nContexto do módulo: a pessoa está atualmente estudando "${currentModule.title}" (Mês ${currentModule.month}).`
+      const context = currentModule
+        ? `\n\nContexto: a pessoa está atualmente estudando o módulo "${currentModule.title}" (Mês ${currentModule.month}).`
         : '';
-      const performanceContext = `\n\nResumo de desempenho real da pessoa (use para personalizar, sem citar números de forma fria): ${performanceSummary}`;
       const apiMessages: MentorMessage[] = [
-        { role: 'system', content: MENTOR_SYSTEM_PROMPT + moduleContext + performanceContext },
+        { role: 'system', content: MENTOR_SYSTEM_PROMPT + context },
         ...nextMessages.map((m) => ({ role: m.role, content: m.content })),
       ];
       const reply = await askMentor(apiKey, apiMessages);
@@ -137,11 +95,6 @@ export function MentorPage({ apiKey, currentModuleId, progress }: MentorPageProp
         <h1 className="font-display text-xl font-bold text-base-50">🤖 Mentor IA</h1>
         {currentModule && (
           <p className="text-xs text-base-400">Sabe que você está em: {currentModule.emoji} {currentModule.title}</p>
-        )}
-        {(strugglingExerciseCount > 0 || overallPercent > 0) && (
-          <p className="mt-1 flex items-center gap-1.5 text-[11px] text-violet-300">
-            <Activity size={11} /> Também ajusta as respostas com base no seu desempenho real
-          </p>
         )}
       </div>
 

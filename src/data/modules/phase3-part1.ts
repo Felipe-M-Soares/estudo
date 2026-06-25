@@ -141,32 +141,6 @@ export const mes13: Module = {
       description: 'Monte fluxos de componentes, incluindo o cenário de mensageria assíncrona com fila Kafka.',
     },
   ],
-  scenarios: [
-    {
-      id: 'mes13-cen1',
-      context: 'trabalho',
-      title: 'Um serviço lento derruba o sistema inteiro',
-      emoji: '🕸️',
-      situation:
-        'O serviço de envio de e-mails fica lento (problema num provedor externo), e isso causa lentidão em cascata em todo o sistema — até funcionalidades que não dependem de e-mail ficam travadas.',
-      whatHappens:
-        'Sem Circuit Breaker, cada chamada ao serviço de e-mail fica esperando indefinidamente por uma resposta. Como threads/conexões ficam ocupadas esperando, o sistema inteiro fica sem capacidade para atender outras requisições, mesmo não relacionadas.',
-      howToSolve:
-        'Um Circuit Breaker nas chamadas a esse serviço detecta as falhas repetidas e "abre o circuito" — passa a falhar rápido em vez de esperar, dando tempo do serviço de e-mail se recuperar sem arrastar o resto do sistema junto.',
-    },
-    {
-      id: 'mes13-cen2',
-      context: 'pessoal',
-      title: 'Organizando tarefas domésticas entre moradores da casa',
-      emoji: '🏠',
-      situation:
-        'Numa casa compartilhada, cada pessoa cuida de uma responsabilidade (compras, limpeza, contas) de forma independente, mas tudo precisa "se encontrar" no fim do mês.',
-      whatHappens:
-        'É uma boa analogia para microsserviços: cada pessoa (serviço) é independente e tem sua própria responsabilidade, mas eventualmente precisam se comunicar (ex: "já paguei a conta de luz") sem que uma trave o trabalho da outra.',
-      howToSolve:
-        'Um grupo de mensagens (WhatsApp, por exemplo) funciona como a "fila de eventos" da casa — cada pessoa publica uma atualização quando termina sua parte, e as outras reagem quando podem, sem precisar de sincronização em tempo real constante.',
-    },
-  ],
 };
 
 export const mes14: Module = {
@@ -304,32 +278,6 @@ export const mes14: Module = {
       gameId: 'k8s-resource-builder',
       label: 'Montador de Recursos K8s',
       description: 'Monte o YAML de Deployment, Service e Ingress corretos para um cenário de aplicação dado.',
-    },
-  ],
-  scenarios: [
-    {
-      id: 'mes14-cen1',
-      context: 'trabalho',
-      title: 'Deploy "trava" usuários por alguns segundos',
-      emoji: '⏸️',
-      situation:
-        'Toda vez que uma nova versão é implantada, usuários relatam alguns segundos de erro 502 — mesmo o time garantindo que o código novo "funciona perfeitamente".',
-      whatHappens:
-        'O Kubernetes está enviando tráfego para Pods novos antes deles estarem realmente prontos para receber requisições (ainda conectando ao banco, carregando cache) — sem Readiness Probe configurada, o cluster assume erroneamente que todo Pod em execução já está pronto.',
-      howToSolve:
-        'Configurar uma Readiness Probe que só responde "pronto" depois que a aplicação realmente terminou sua inicialização garante que o Service só direcione tráfego para Pods de fato capazes de atender — eliminando essa janela de erro durante deploys.',
-    },
-    {
-      id: 'mes14-cen2',
-      context: 'pessoal',
-      title: 'Entendendo por que o Wi-Fi de casa as vezes cai',
-      emoji: '📶',
-      situation:
-        'Seu roteador de casa às vezes "trava" e precisa ser reiniciado manualmente quando muitos dispositivos estão conectados ao mesmo tempo.',
-      whatHappens:
-        'Isso é, em miniatura, o problema que Health Checks e auto-restart resolvem em produção: um sistema (seu roteador, ou um Pod no Kubernetes) que entra num estado ruim e precisa de um reinício para voltar a funcionar normalmente.',
-      howToSolve:
-        'Da mesma forma que o Kubernetes reinicia automaticamente um Pod que falha numa Liveness Probe, alguns roteadores domésticos têm "auto-reboot agendado" — uma solução pragmática até a causa raiz (geralmente firmware ou hardware limitado) ser endereçada.',
     },
   ],
 };
@@ -474,32 +422,6 @@ export const mes15: Module = {
       gameId: 'cicd-pipeline-builder',
       label: 'Montador de Pipeline',
       description: 'Ordene os estágios de uma pipeline CI/CD (lint, teste, build, deploy) na sequência correta e mais eficiente.',
-    },
-  ],
-  scenarios: [
-    {
-      id: 'mes15-cen1',
-      context: 'trabalho',
-      title: 'Um bug "óbvio" chega em produção mesmo assim',
-      emoji: '🙃',
-      situation:
-        'Um bug que quebra a tela de login chega para todos os usuários em produção, e quando o time investiga, percebe que um teste que cobriria exatamente esse caso existia, mas estava marcado como "ignorado" há meses.',
-      whatHappens:
-        'Testes ignorados (skip) acumulam silenciosamente — cada um parecia razoável de pular "só essa vez", mas com o tempo a suíte de testes para de proteger contra exatamente os bugs que ela foi escrita para pegar.',
-      howToSolve:
-        'Pipelines de CI deveriam falhar (não só avisar) quando a cobertura de testes cai abaixo de um limite, e testes ignorados deveriam ter prazo de validade — revisar periodicamente o que está marcado como skip evita que a rede de segurança vá se esvaziando sem ninguém notar.',
-    },
-    {
-      id: 'mes15-cen2',
-      context: 'pessoal',
-      title: 'Automatizando backup de fotos importantes',
-      emoji: '📸',
-      situation:
-        'Você quer garantir que suas fotos pessoais sejam copiadas automaticamente para outro lugar (nuvem, disco externo) sem precisar lembrar de fazer isso manualmente.',
-      whatHappens:
-        'Isso é o mesmo princípio de CI/CD aplicado à vida pessoal: em vez de confiar na memória humana para repetir uma tarefa importante, você automatiza para que aconteça sempre, de forma confiável, sem intervenção.',
-      howToSolve:
-        'Um script agendado (cron no Linux/Mac, Agendador de Tarefas no Windows) que copia uma pasta para outro destino periodicamente resolve isso — o mesmo conceito de "pipeline automatizada" que você está aprendendo, só num contexto pessoal em vez de deploy de software.',
     },
   ],
 };

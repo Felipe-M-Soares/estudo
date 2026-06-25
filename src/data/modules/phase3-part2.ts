@@ -135,32 +135,6 @@ export const mes16: Module = {
       description: 'Revise termos de infraestrutura e cloud antes de ir para o projeto final.',
     },
   ],
-  scenarios: [
-    {
-      id: 'mes16-cen1',
-      context: 'trabalho',
-      title: 'Promoção da Black Friday derruba o site',
-      emoji: '🛍️',
-      situation:
-        'Numa campanha de grande tráfego, o site de um cliente fica fora do ar nos primeiros 10 minutos — exatamente quando mais pessoas estavam acessando.',
-      whatHappens:
-        'O sistema foi desenhado para o tráfego do dia a dia, sem prever picos de 50x o normal. Sem cache na frente do banco, sem auto-scaling configurado, e sem load balancer distribuindo bem a carga, o primeiro gargalo (geralmente o banco de dados) trava tudo que depende dele.',
-      howToSolve:
-        'Para eventos de pico previsíveis, a prática é fazer teste de carga (simular o tráfego esperado) antes do evento, garantir auto-scaling com limites adequados, e colocar cache agressivo na frente de qualquer dado que não precisa ser 100% em tempo real (como contagem de estoque aproximada).',
-    },
-    {
-      id: 'mes16-cen2',
-      context: 'pessoal',
-      title: 'Pensando em como o WhatsApp aguenta bilhões de mensagens',
-      emoji: '🤔',
-      situation:
-        'Você se pergunta, curioso, como aplicativos como WhatsApp conseguem entregar mensagens instantaneamente para bilhões de pessoas sem travar.',
-      whatHappens:
-        'É uma pergunta de System Design de verdade — a resposta envolve várias das técnicas deste módulo trabalhando juntas: sharding (dados de usuários diferentes em servidores diferentes), replicação (cópias para tolerância a falha), e filas de mensagens para garantir entrega mesmo se o destinatário estiver offline.',
-      howToSolve:
-        'Exercite isso você mesmo: pegue um sistema que você usa todo dia (WhatsApp, Instagram, Uber) e tente desenhar, no papel, como ele provavelmente é estruturado por trás — esse tipo de prática mental é exatamente o que entrevistas de System Design avaliam.',
-    },
-  ],
 };
 
 export const mes17: Module = {
@@ -286,32 +260,6 @@ export const mes17: Module = {
       description: 'Pratique vocabulário técnico em inglês usado em código, PRs e reuniões do dia a dia.',
     },
   ],
-  scenarios: [
-    {
-      id: 'mes17-cen1',
-      context: 'trabalho',
-      title: 'Um comentário de review gera atrito no time',
-      emoji: '😤',
-      situation:
-        'Um desenvolvedor júnior fica visivelmente desmotivado depois de receber vários comentários secos como "isso está errado" num Pull Request, sem nenhuma explicação do porquê.',
-      whatHappens:
-        'Feedback sem contexto nem sugestão de caminho não ensina nada — só comunica "errado", deixando quem recebeu sem saber como melhorar, e gerando desconfiança em pedir ajuda nas próximas vezes.',
-      howToSolve:
-        'Comentários de review eficazes explicam o porquê ("esse loop pode ficar lento com listas grandes") e sugerem uma direção ("que acha de usar um Map aqui?"), tratando o código como o assunto, nunca a pessoa.',
-    },
-    {
-      id: 'mes17-cen2',
-      context: 'pessoal',
-      title: 'Lendo documentação técnica em inglês sem travar',
-      emoji: '📖',
-      situation:
-        'Você quer aprender uma biblioteca nova, mas a documentação oficial só existe em inglês, e isso te deixa mais lento que gostaria.',
-      whatHappens:
-        'A maior parte da documentação técnica de qualidade é escrita primeiro (e às vezes exclusivamente) em inglês — não é sobre fluência de conversação, é sobre reconhecer um vocabulário técnico relativamente pequeno e repetitivo.',
-      howToSolve:
-        'Em vez de traduzir tudo, foque em memorizar os termos técnicos que aparecem o tempo todo (deploy, rollback, threshold, throughput, race condition) — uma vez que esse vocabulário fica automático, ler documentação técnica em inglês deixa de ser um obstáculo.',
-    },
-  ],
 };
 
 export const mes18: Module = {
@@ -431,32 +379,6 @@ export const mes18: Module = {
       gameId: 'architecture-review-board',
       label: 'Banca de Revisão de Arquitetura',
       description: 'Apresente decisões do seu projeto final a uma "banca" simulada e receba perguntas típicas de entrevista de arquitetura.',
-    },
-  ],
-  scenarios: [
-    {
-      id: 'mes18-cen1',
-      context: 'trabalho',
-      title: 'O projeto de portfólio que nunca termina',
-      emoji: '♾️',
-      situation:
-        'Um candidato a vaga sênior trabalha no mesmo projeto pessoal há 8 meses, sempre adicionando "só mais uma funcionalidade" antes de considerá-lo pronto para mostrar.',
-      whatHappens:
-        'Sem um escopo fechado definido desde o início, projetos pessoais tendem a crescer indefinidamente — cada funcionalidade nova parece necessária no momento, mas o projeto nunca chega a um estado "pronto para mostrar", e o tempo que poderia render uma entrevista é gasto em polimento infinito.',
-      howToSolve:
-        'Defina por escrito, antes de começar a codar, as 3-5 funcionalidades que tornam o projeto "completo" — e pare ali. Funcionalidades extras viram itens de "próximos passos" no README, demonstrando visão sem precisar implementá-las todas antes de mostrar o trabalho.',
-    },
-    {
-      id: 'mes18-cen2',
-      context: 'pessoal',
-      title: 'Decidindo o que realmente construir como projeto final',
-      emoji: '🎯',
-      situation:
-        'Depois de 18 meses estudando, surge a paralisia de escolha: construir um clone de rede social? Um sistema de e-commerce? Algo totalmente original?',
-      whatHappens:
-        'Projetos clichê (mais um clone de Twitter, mais um To-Do list) competem com milhares de outros parecidos no portfólio de quem está entrando no mercado — eles provam que você sabe codar, mas não destacam você de ninguém.',
-      howToSolve:
-        'O projeto mais forte geralmente resolve um problema real que você mesmo tem ou conhece bem — isso naturalmente traz decisões de produto mais interessantes para justificar em entrevista do que um clone genérico, mesmo usando exatamente a mesma stack técnica.',
     },
   ],
   projectBrief: {

@@ -182,44 +182,6 @@ export const mes04: Module = {
       description: 'Digite comandos reais de Git num terminal simulado — sem multiple choice, é você e o teclado.',
     },
   ],
-  scenarios: [
-    {
-      id: 'mes04-cen1',
-      context: 'trabalho',
-      title: '"Sumiram" 2 dias de trabalho de um colega',
-      emoji: '😱',
-      situation:
-        'Um colega de time roda um comando de Git sem entender bem o que faz, e de repente o código que ele escreveu nos últimos 2 dias parece ter desaparecido da branch.',
-      whatHappens:
-        'Provavelmente ele rodou algo como `git reset --hard` apontando para um commit antigo, ou fez checkout para outra branch sem commitar antes — o trabalho não commitado fica perdido (ou fica "preso" em outra branch, dependendo do caso).',
-      howToSolve:
-        'Antes de qualquer comando que reescreve histórico (`reset --hard`, `rebase`, `push --force`), comite ou pelo menos salve um stash do trabalho em progresso. E na maioria dos casos, `git reflog` consegue recuperar commits que pareciam perdidos — ele guarda um histórico de tudo que o HEAD apontou recentemente.',
-    },
-    {
-      id: 'mes04-cen2',
-      context: 'pessoal',
-      title: 'Organizando uma coleção pessoal (livros, jogos, receitas)',
-      emoji: '📚',
-      situation:
-        'Você quer montar um catálogo dos seus livros com autor, ano, e quais já leu, e poder perguntar coisas como "quais livros de um autor X eu ainda não li".',
-      whatHappens:
-        'Isso é exatamente o que um banco relacional com algumas tabelas relacionadas resolve bem — muito mais flexível que uma planilha quando as perguntas que você quer fazer aos dados vão ficando mais específicas.',
-      howToSolve:
-        'Uma tabela `livros` com colunas (titulo, autor, ano, lido) já resolve casos simples. `SELECT titulo FROM livros WHERE autor = \'Autor X\' AND lido = false` responde exatamente a pergunta, sem precisar abrir e escanear visualmente uma planilha inteira.',
-    },
-    {
-      id: 'mes04-cen3',
-      context: 'trabalho',
-      title: 'Dois devs editaram o mesmo arquivo — conflito no merge',
-      emoji: '⚔️',
-      situation:
-        'Você abre um Pull Request para juntar sua branch na main, e o GitHub avisa que há conflitos — duas pessoas mudaram a mesma função de formas diferentes.',
-      whatHappens:
-        'O Git não tem como adivinhar qual das duas versões (ou uma combinação delas) é a correta, então ele marca o trecho com `<<<<<<<`, `=======`, `>>>>>>>` e espera uma decisão humana.',
-      howToSolve:
-        'Abra o arquivo conflitante, leia as duas versões com calma (geralmente conversando com quem fez a outra mudança), decida qual manter ou como combiná-las, remova os marcadores, e comite a resolução. Conflitos são normais em qualquer time — não é sinal de que algo está errado.',
-    },
-  ],
 };
 
 export const mes05: Module = {
@@ -393,44 +355,6 @@ export const mes05: Module = {
       description: 'Ordene middlewares (auth, validação, logging) na sequência certa para que uma requisição passe com sucesso.',
     },
   ],
-  scenarios: [
-    {
-      id: 'mes05-cen1',
-      context: 'trabalho',
-      title: 'API "cai" sempre que alguém manda dado errado',
-      emoji: '💥',
-      situation:
-        'O time de mobile reporta que o app trava quando o usuário deixa um campo vazio no cadastro — e olhando os logs do servidor, a API simplesmente parou de responder (status 500) sem mensagem útil.',
-      whatHappens:
-        'Uma rota está acessando `req.body.email.toLowerCase()` sem checar se `email` realmente existe. Quando ele vem `undefined`, chamar `.toLowerCase()` nele lança uma exceção que não foi capturada, derrubando aquela requisição (e, sem tratamento de erro global, possivelmente o processo).',
-      howToSolve:
-        'Validação de entrada (com algo como Zod) deveria rejeitar a requisição com um 400 claro antes mesmo de chegar na lógica de negócio. E um middleware de erro global garante que qualquer exceção não prevista vire uma resposta 500 controlada, em vez de derrubar o servidor.',
-    },
-    {
-      id: 'mes05-cen2',
-      context: 'pessoal',
-      title: 'Automatizando um lembrete pessoal',
-      emoji: '⏰',
-      situation:
-        'Você quer um pequeno script que roda todo dia de manhã e te manda uma mensagem (ou só imprime no terminal) lembrando dos compromissos do dia.',
-      whatHappens:
-        'Isso é um pequeno servidor Node.js de propósito único — não precisa de banco de dados nem de frontend, só de uma rotina que executa uma tarefa e produz um resultado, exatamente os conceitos básicos de um servidor que você está aprendendo.',
-      howToSolve:
-        'Um script Node simples com `setInterval` (para rodar enquanto o processo está ativo) ou agendado via cron do sistema operacional, fazendo uma chamada HTTP para uma API de mensagens (ex: Telegram Bot API), resolve isso em poucas linhas.',
-    },
-    {
-      id: 'mes05-cen3',
-      context: 'trabalho',
-      title: 'Chave secreta vazou no GitHub',
-      emoji: '🔓',
-      situation:
-        'Alguém do time commitou por engano um arquivo com a senha do banco de dados de produção escrita direto no código, e isso foi enviado para o repositório (mesmo que privado).',
-      whatHappens:
-        'Uma vez que um segredo entra no histórico do Git, ele continua lá mesmo se o arquivo for deletado depois — qualquer pessoa com acesso ao histórico (ou bots, se o repo for público) pode encontrá-lo.',
-      howToSolve:
-        'A correção imediata é trocar a senha/chave exposta — apagar do código não resolve, porque o histórico já a expôs. A prevenção é usar variáveis de ambiente (`.env` no `.gitignore`) desde o primeiro commit do projeto, nunca escrevendo segredos direto no código-fonte.',
-    },
-  ],
 };
 
 export const mes06: Module = {
@@ -542,32 +466,6 @@ export const mes06: Module = {
       gameId: 'architecture-builder',
       label: 'Arquiteto de Sistemas',
       description: 'Monte o fluxo correto de componentes para cenários reais, do básico ao uso de filas assíncronas.',
-    },
-  ],
-  scenarios: [
-    {
-      id: 'mes06-cen1',
-      context: 'trabalho',
-      title: 'Usuário consegue ver tarefas de outra pessoa',
-      emoji: '🚨',
-      situation:
-        'Um usuário percebe, por acaso, que mudando o número no final da URL (`/tarefas/41` para `/tarefas/42`) consegue ver a tarefa de outra pessoa.',
-      whatHappens:
-        'A rota verifica se o usuário está autenticado (tem um token válido), mas não verifica se aquela tarefa específica pertence a ele — autenticação sem autorização. Qualquer usuário logado pode acessar dados de qualquer outro só adivinhando IDs.',
-      howToSolve:
-        'Toda consulta a um recurso específico precisa checar a propriedade: `WHERE id = $1 AND usuario_id = $2`, nunca só `WHERE id = $1`. Esse tipo de falha (chamada de "IDOR" — Insecure Direct Object Reference) é uma das mais comuns e mais graves em aplicações reais.',
-    },
-    {
-      id: 'mes06-cen2',
-      context: 'pessoal',
-      title: 'Construindo seu próprio gerenciador de hábitos',
-      emoji: '✅',
-      situation:
-        'Você quer uma versão simples e sua de um app de hábitos — marcar o que fez no dia, ver sequência de dias seguidos, sem depender de um app de terceiros com anúncios.',
-      whatHappens:
-        'É literalmente o mesmo projeto que você está construindo neste módulo (CRUD + autenticação), só trocando "tarefa" por "hábito" — a estrutura de dados e a lógica de autenticação são idênticas.',
-      howToSolve:
-        'Reaproveite a mesma base: tabela de usuários, tabela de hábitos (ou tarefas) ligada ao usuário, autenticação JWT. Adicione um campo de "streak" calculado a partir das datas marcadas — exercício prático de transformar o que você aprendeu num projeto pessoal de verdade.',
     },
   ],
   projectBrief: {

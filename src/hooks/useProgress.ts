@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ProjectNote, UserProgress, InterviewHistoryEntry } from '../data/types';
+import type { UserProgress } from '../data/types';
 import { achievements, XP_PER_CHECKLIST, XP_PER_EXERCISE, XP_PER_GAME_PLAY } from '../data/achievements';
 import { modules } from '../data';
 import { progressStorageKey } from './useProfiles';
-import { scheduleNextReview } from '../data/spacedReview';
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -30,9 +29,6 @@ function defaultProgress(): UserProgress {
     moduleProgress: {},
     currentModuleId: 'mes-01',
     notes: {},
-    projectNotes: {},
-    spacedReview: {},
-    interviewHistory: [],
   };
 }
 
@@ -161,11 +157,7 @@ export function useProgress(profileId: string) {
         ? { ...prev.completedExercises, [exerciseId]: true }
         : prev.completedExercises;
 
-      const existingReview = prev.spacedReview[exerciseId];
-      const reviewItem = scheduleNextReview(exerciseId, moduleId, correct, existingReview);
-      const spacedReview = { ...prev.spacedReview, [exerciseId]: reviewItem };
-
-      let next = { ...prev, exerciseAttempts, completedExercises, spacedReview };
+      let next = { ...prev, exerciseAttempts, completedExercises };
       next = recomputeModuleProgress(next, moduleId);
 
       if (correct && !alreadyCompleted) {
@@ -197,33 +189,6 @@ export function useProgress(profileId: string) {
     setProgress((prev) => ({ ...prev, notes: { ...prev.notes, [moduleId]: text } }));
   }, []);
 
-  const saveProjectNote = useCallback((moduleId: string, text: string, links: { label: string; url: string }[]) => {
-    setProgress((prev) => {
-      const note: ProjectNote = { moduleId, text, links, updatedAt: new Date().toISOString() };
-      return { ...prev, projectNotes: { ...prev.projectNotes, [moduleId]: note } };
-    });
-  }, []);
-
-  const addInterviewResult = useCallback((entry: Omit<InterviewHistoryEntry, 'id'>) => {
-    setProgress((prev) => {
-      const withId: InterviewHistoryEntry = { ...entry, id: `iv-${Date.now()}` };
-      const interviewHistory = [withId, ...prev.interviewHistory].slice(0, 50);
-      return { ...prev, interviewHistory };
-    });
-  }, []);
-
-  const markReviewDone = useCallback((exerciseId: string, moduleId: string, correct: boolean) => {
-    setProgress((prev) => {
-      const existing = prev.spacedReview[exerciseId];
-      const reviewItem = scheduleNextReview(exerciseId, moduleId, correct, existing);
-      return { ...prev, spacedReview: { ...prev.spacedReview, [exerciseId]: reviewItem } };
-    });
-  }, []);
-
-  const importProgress = useCallback((imported: UserProgress) => {
-    setProgress({ ...defaultProgress(), ...imported });
-  }, []);
-
   const resetProgress = useCallback(() => {
     const fresh = defaultProgress();
     setProgress(fresh);
@@ -244,10 +209,6 @@ export function useProgress(profileId: string) {
     recordGameScore,
     setCurrentModule,
     setNote,
-    saveProjectNote,
-    addInterviewResult,
-    markReviewDone,
-    importProgress,
     resetProgress,
     overallPercent,
     lastXpGain,

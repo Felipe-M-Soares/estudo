@@ -184,44 +184,6 @@ export const mes01: Module = {
       description: 'Jogo da memória com termos e definições de estruturas de dados, APIs e infraestrutura.',
     },
   ],
-  scenarios: [
-    {
-      id: 'mes01-cen1',
-      context: 'trabalho',
-      title: 'O sistema "trava" com muitos dados',
-      emoji: '🐢',
-      situation:
-        'Um colega avisa que a tela de relatórios, que sempre foi rápida nos testes, está demorando mais de 30 segundos para carregar agora que a empresa tem 200 mil clientes cadastrados.',
-      whatHappens:
-        'O código usa dois loops aninhados para comparar cada cliente com todos os outros — um algoritmo O(n²). Com 100 clientes isso é invisível (10 mil operações). Com 200 mil clientes, são 40 bilhões de operações.',
-      howToSolve:
-        'Antes de otimizar "no escuro", meça onde o tempo está indo (profiling). Depois, troque a estrutura: em vez de comparar todo mundo com todo mundo, usar um índice (como um objeto/Map para busca O(1)) costuma resolver boa parte desses casos, transformando O(n²) em O(n).',
-    },
-    {
-      id: 'mes01-cen2',
-      context: 'pessoal',
-      title: 'Organizando as tarefas da semana',
-      emoji: '📋',
-      situation:
-        'Você quer decidir em que ordem fazer 5 tarefas de casa, algumas dependendo de outras terem sido feitas antes (ex: "lavar roupa" antes de "passar roupa").',
-      whatHappens:
-        'Isso é exatamente o problema que listas e filas resolvem na programação: você tem itens com uma ordem de dependência, e precisa decidir uma sequência válida — o mesmo princípio usado para ordenar etapas de deploy ou tarefas de um pipeline.',
-      howToSolve:
-        'Liste as dependências de cada tarefa (o que precisa estar pronto antes). Tarefas sem dependência pendente entram primeiro na fila. Conforme cada uma é concluída, libera as que dependiam dela — isso, formalizado em código, se chama ordenação topológica.',
-    },
-    {
-      id: 'mes01-cen3',
-      context: 'trabalho',
-      title: 'Loop infinito derruba o servidor',
-      emoji: '🔥',
-      situation:
-        'Em produção, o servidor para de responder de repente e o uso de CPU vai a 100%. Os logs simplesmente paravam de aparecer no meio de uma função.',
-      whatHappens:
-        'Uma condição de parada do `while` dependia de uma variável que, por um caminho específico do código, nunca era atualizada — o loop roda para sempre, consumindo CPU e travando o processo.',
-      howToSolve:
-        'Sempre garanta que toda condição de saída de um loop seja alcançável em qualquer caminho possível do código, não só no caminho "feliz". Em produção, limites de tempo (timeouts) e monitoramento de CPU são a rede de segurança que avisa antes que isso derrube o sistema inteiro.',
-    },
-  ],
 };
 
 export const mes02: Module = {
@@ -425,44 +387,6 @@ export const mes02: Module = {
       description: 'Encontre o seletor CSS certo para acertar exatamente os elementos destacados na tela.',
     },
   ],
-  scenarios: [
-    {
-      id: 'mes02-cen1',
-      context: 'trabalho',
-      title: 'O layout quebra "só no celular do cliente"',
-      emoji: '📱',
-      situation:
-        'O site fica perfeito no seu notebook, mas o cliente manda um print do celular dele mostrando os botões cortados e o texto saindo da tela.',
-      whatHappens:
-        'O CSS foi escrito pensando primeiro na tela grande, com larguras fixas em pixels (`width: 800px`) que não cabem numa tela de 375px. Sem testar em telas pequenas durante o desenvolvimento, esses problemas só aparecem depois.',
-      howToSolve:
-        'Use o DevTools do navegador (F12 → ícone de celular) para testar em vários tamanhos de tela enquanto desenvolve, não só no final. Prefira unidades relativas (`%`, `rem`, `minmax()`) a pixels fixos, e adote mobile-first como hábito, não como correção posterior.',
-    },
-    {
-      id: 'mes02-cen2',
-      context: 'pessoal',
-      title: 'Organizando o orçamento doméstico numa tabela',
-      emoji: '💰',
-      situation:
-        'Você quer montar uma página simples para acompanhar gastos do mês, com categorias alinhadas em colunas e linhas, sem usar planilha.',
-      whatHappens:
-        'Esse é exatamente o problema que Grid resolve — organizar conteúdo em linhas E colunas ao mesmo tempo, como uma tabela, mas com controle total de espaçamento e responsividade que uma tabela HTML tradicional não dá tão facilmente.',
-      howToSolve:
-        '`display: grid` com `grid-template-columns: repeat(auto-fit, minmax(120px, 1fr))` cria colunas que se ajustam automaticamente ao tamanho da tela — no celular vira 1-2 colunas, no monitor vira 4-5, sem escrever uma media query para cada caso.',
-    },
-    {
-      id: 'mes02-cen3',
-      context: 'trabalho',
-      title: 'Reclamação de acessibilidade chega ao time',
-      emoji: '♿',
-      situation:
-        'Um usuário que usa leitor de tela abre um chamado dizendo que não consegue preencher o formulário de cadastro — ele não sabe o que cada campo pede.',
-      whatHappens:
-        'Os campos `<input>` foram estilizados visualmente com um texto ao lado (que parece um label), mas sem a tag `<label>` de verdade associada via `for`/`id`. Leitores de tela não têm como adivinhar essa associação visual.',
-      howToSolve:
-        'Toda entrada de formulário precisa de um `<label>` real associado, não só um texto próximo visualmente. É uma correção rápida que evita excluir uma parte real dos usuários — e em muitos países é também uma exigência legal para serviços públicos e empresas grandes.',
-    },
-  ],
 };
 
 export const mes03: Module = {
@@ -647,44 +571,6 @@ export const mes03: Module = {
       gameId: 'bug-hunter',
       label: 'Caça-Bug',
       description: 'Encontre a linha com erro em trechos reais de JavaScript — 7 desafios, do fácil ao difícil.',
-    },
-  ],
-  scenarios: [
-    {
-      id: 'mes03-cen1',
-      context: 'trabalho',
-      title: 'O botão de salvar "não faz nada" às vezes',
-      emoji: '🖱️',
-      situation:
-        'Um usuário relata que, de vez em quando, clica em "Salvar" e nada acontece — sem erro visível, sem confirmação, só silêncio.',
-      whatHappens:
-        'O código faz uma chamada `fetch` sem `await` e sem `.catch()`. Quando a API demora ou falha, a Promise é rejeitada silenciosamente, e como ninguém está "escutando" esse erro, ele desaparece no console sem afetar a interface.',
-      howToSolve:
-        'Toda Promise precisa de um destino para o caso de erro — `try/catch` com `await`, ou `.catch()` no encadeamento. Além disso, é boa prática dar feedback visual imediato ("Salvando...") para o usuário nunca ficar sem saber se algo está acontecendo.',
-    },
-    {
-      id: 'mes03-cen2',
-      context: 'pessoal',
-      title: 'Organizando uma lista de compras que repete itens',
-      emoji: '🛒',
-      situation:
-        'Você anotou itens de compras em vários momentos do dia e quer uma lista final sem duplicatas, com tudo somado (ex: "2 leites" + "1 leite" = "3 leites").',
-      whatHappens:
-        'Esse é um problema clássico de agregação de dados — o mesmo padrão usado para somar vendas por produto ou contar visitas por página em um sistema real.',
-      howToSolve:
-        'Um objeto (ou `Map`) usando o nome do item como chave resolve isso elegantemente: para cada item novo, você soma à quantidade já existente naquela chave (ou cria com quantidade 1, se for a primeira vez). Isso é o mesmo princípio do `reduce` que você aprendeu nesse módulo.',
-    },
-    {
-      id: 'mes03-cen3',
-      context: 'trabalho',
-      title: 'Página fica lenta ao digitar no campo de busca',
-      emoji: '⌨️',
-      situation:
-        'Um campo de busca que filtra uma lista em tempo real está fazendo o navegador travar a cada letra digitada, especialmente em listas grandes.',
-      whatHappens:
-        'Uma função cara (que faz uma chamada de API ou um cálculo pesado) está sendo executada a cada tecla pressionada — se você digita "notebook" são 8 chamadas, uma para cada letra, a maioria descartada antes mesmo de terminar.',
-      howToSolve:
-        '"Debounce" é a técnica padrão: espera um pequeno intervalo (ex: 300ms) sem novas teclas antes de disparar a busca de verdade. Isso reduz drasticamente o número de chamadas, sem prejudicar a experiência percebida pelo usuário.',
     },
   ],
 };

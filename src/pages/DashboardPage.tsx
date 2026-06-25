@@ -4,14 +4,12 @@ import { ArrowRight, Flame, Trophy, Target, BookOpenCheck, Gamepad2 } from 'luci
 import { modules, phases } from '../data';
 import { XpBar } from '../components/ui/XpBar';
 import { StreakMap } from '../components/ui/StreakMap';
-import { SpacedReviewPanel } from '../components/ui/SpacedReviewPanel';
 import type { UserProgress } from '../data/types';
 import { achievements } from '../data/achievements';
 
 interface DashboardPageProps {
   progress: UserProgress;
   overallPercent: number;
-  onReviewResult: (moduleId: string, exerciseId: string, correct: boolean) => void;
 }
 
 const phaseStyles: Record<number, { ring: string; text: string; bar: string }> = {
@@ -20,7 +18,7 @@ const phaseStyles: Record<number, { ring: string; text: string; bar: string }> =
   3: { ring: 'ring-violet-400/20', text: 'text-violet-400', bar: 'bg-violet-400' },
 };
 
-export function DashboardPage({ progress, overallPercent, onReviewResult }: DashboardPageProps) {
+export function DashboardPage({ progress, overallPercent }: DashboardPageProps) {
   const currentModule = modules.find((m) => m.id === progress.currentModuleId) ?? modules[0];
   const unlockedCount = progress.unlockedAchievements.length;
   const completedExerciseCount = Object.values(progress.completedExercises).filter(Boolean).length;
@@ -64,10 +62,6 @@ export function DashboardPage({ progress, overallPercent, onReviewResult }: Dash
           </div>
         </Link>
         <XpBar xp={progress.xp} />
-      </div>
-
-      <div className="mb-7">
-        <SpacedReviewPanel spacedReview={progress.spacedReview} onReviewResult={onReviewResult} />
       </div>
 
       <div className="mb-7 grid gap-4 lg:grid-cols-[1fr_1fr]">
