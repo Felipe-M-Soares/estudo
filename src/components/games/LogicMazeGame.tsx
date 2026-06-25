@@ -7,6 +7,7 @@ interface Level {
   grid: number[][]; // 0 = livre, 1 = parede
   start: { x: number; y: number; dir: 0 | 1 | 2 | 3 }; // 0=N,1=E,2=S,3=O
   goal: { x: number; y: number };
+  difficulty: 'Fácil' | 'Médio' | 'Difícil' | 'Mestre';
 }
 
 const levels: Level[] = [
@@ -18,6 +19,7 @@ const levels: Level[] = [
     ],
     start: { x: 0, y: 0, dir: 1 },
     goal: { x: 2, y: 2 },
+    difficulty: 'Fácil',
   },
   {
     grid: [
@@ -28,8 +30,67 @@ const levels: Level[] = [
     ],
     start: { x: 0, y: 0, dir: 2 },
     goal: { x: 3, y: 3 },
+    difficulty: 'Fácil',
+  },
+  {
+    grid: [
+      [0, 0, 0, 0, 1],
+      [1, 1, 0, 1, 0],
+      [0, 0, 0, 1, 0],
+      [0, 1, 1, 1, 0],
+      [0, 0, 0, 0, 0],
+    ],
+    start: { x: 0, y: 0, dir: 1 },
+    goal: { x: 4, y: 4 },
+    difficulty: 'Médio',
+  },
+  {
+    grid: [
+      [0, 0, 1, 0, 0],
+      [0, 1, 1, 0, 1],
+      [0, 0, 0, 0, 1],
+      [1, 1, 0, 1, 1],
+      [0, 0, 0, 0, 0],
+    ],
+    start: { x: 0, y: 0, dir: 2 },
+    goal: { x: 0, y: 4 },
+    difficulty: 'Médio',
+  },
+  {
+    grid: [
+      [0, 0, 0, 1, 0, 0],
+      [1, 1, 0, 1, 0, 1],
+      [0, 0, 0, 0, 0, 1],
+      [0, 1, 1, 1, 0, 0],
+      [0, 0, 0, 1, 0, 1],
+      [1, 1, 0, 0, 0, 0],
+    ],
+    start: { x: 0, y: 0, dir: 1 },
+    goal: { x: 5, y: 5 },
+    difficulty: 'Difícil',
+  },
+  {
+    grid: [
+      [0, 0, 0, 0, 1, 0, 0],
+      [1, 1, 1, 0, 1, 0, 1],
+      [0, 0, 0, 0, 0, 0, 1],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 1, 1, 1, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+    ],
+    start: { x: 0, y: 0, dir: 1 },
+    goal: { x: 6, y: 6 },
+    difficulty: 'Mestre',
   },
 ];
+
+const difficultyColor: Record<Level['difficulty'], string> = {
+  Fácil: 'text-mint-400 bg-mint-900/30',
+  Médio: 'text-amber-400 bg-amber-500/15',
+  Difícil: 'text-ember-400 bg-ember-500/15',
+  Mestre: 'text-violet-400 bg-violet-500/15',
+};
 
 const DIRS = [
   { dx: 0, dy: -1 }, // N
@@ -47,8 +108,9 @@ export function LogicMazeGame({ onComplete }: LogicMazeGameProps) {
   const [program, setProgram] = useState<Command[]>([]);
   const [running, setRunning] = useState(false);
   const [robot, setRobot] = useState(levels[0].start);
-  const [status, setStatus] = useState<'idle' | 'won' | 'crashed'>('idle');
+  const [status, setStatus] = useState<'idle' | 'won' | 'crashed' | 'finished'>('idle');
   const [stepIdx, setStepIdx] = useState(-1);
+  const [levelsCleared, setLevelsCleared] = useState(0);
 
   const level = levels[levelIdx];
 
@@ -72,7 +134,7 @@ export function LogicMazeGame({ onComplete }: LogicMazeGameProps) {
     setRobot(current);
 
     for (let i = 0; i < program.length; i++) {
-      await new Promise((r) => setTimeout(r, 350));
+      await new Promise((r) => setTimeout(r, 320));
       setStepIdx(i);
       const cmd = program[i];
 
@@ -100,15 +162,25 @@ export function LogicMazeGame({ onComplete }: LogicMazeGameProps) {
     setRunning(false);
     if (current.x === level.goal.x && current.y === level.goal.y) {
       setStatus('won');
-      const score = Math.max(100 - program.length * 5, 20);
-      onComplete(score);
+      const newCleared = levelsCleared + 1;
+      setLevelsCleared(newCleared);
+      if (levelIdx === levels.length - 1) {
+        onComplete(100);
+      } else {
+        const score = Math.round((newCleared / levels.length) * 100);
+        onComplete(score);
+      }
     } else {
       setStatus('crashed');
     }
   }
 
   function nextLevel() {
-    const next = (levelIdx + 1) % levels.length;
+    if (levelIdx + 1 >= levels.length) {
+      setStatus('finished');
+      return;
+    }
+    const next = levelIdx + 1;
     setLevelIdx(next);
     setProgram([]);
     setRobot(levels[next].start);
@@ -116,15 +188,40 @@ export function LogicMazeGame({ onComplete }: LogicMazeGameProps) {
     setStepIdx(-1);
   }
 
+  function restartAll() {
+    setLevelIdx(0);
+    setProgram([]);
+    setRobot(levels[0].start);
+    setStatus('idle');
+    setStepIdx(-1);
+    setLevelsCleared(0);
+  }
+
   const rotation = robot.dir * 90;
 
+  if (status === 'finished') {
+    return (
+      <div className="rounded-2xl card-surface p-6 text-center">
+        <div className="text-3xl">🏆</div>
+        <h3 className="mt-2 font-display text-lg font-bold text-base-50">Labirinto dominado!</h3>
+        <p className="mt-1 text-sm text-base-400">Você completou todos os {levels.length} níveis, do fácil ao mestre.</p>
+        <button onClick={restartAll} className="mt-4 rounded-lg border border-base-600 px-4 py-2 text-sm text-base-200 hover:bg-base-800">
+          Jogar de novo
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-2xl border border-base-700 bg-base-850 p-5">
+    <div className="rounded-2xl card-surface p-5">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="font-display text-base font-bold text-base-50">🧩 Labirinto Lógico</h3>
           <p className="text-xs text-base-400">Nível {levelIdx + 1} de {levels.length} — guie o robô até a bandeira.</p>
         </div>
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${difficultyColor[level.difficulty]}`}>
+          {level.difficulty}
+        </span>
       </div>
 
       <div
@@ -204,11 +301,9 @@ export function LogicMazeGame({ onComplete }: LogicMazeGameProps) {
       {status === 'won' && (
         <div className="mt-4 flex items-center justify-between rounded-xl border border-mint-400/30 bg-mint-900/20 p-3 text-sm text-mint-200">
           <span>🎉 Resolvido com {program.length} comandos!</span>
-          {levelIdx < levels.length - 1 && (
-            <button onClick={nextLevel} className="rounded-lg bg-mint-400 px-3 py-1.5 text-xs font-semibold text-base-950">
-              Próximo nível →
-            </button>
-          )}
+          <button onClick={nextLevel} className="rounded-lg bg-mint-400 px-3 py-1.5 text-xs font-semibold text-base-950">
+            {levelIdx < levels.length - 1 ? 'Próximo nível →' : 'Ver resultado 🏆'}
+          </button>
         </div>
       )}
       {status === 'crashed' && (

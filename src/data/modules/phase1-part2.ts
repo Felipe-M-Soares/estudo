@@ -47,6 +47,26 @@ export const mes04: Module = {
       body:
         'Um diagrama ERD (Entity-Relationship Diagram) mapeia entidades (tabelas) e seus relacionamentos antes de você escrever uma linha de SQL. Pensar nisso primeiro evita retrabalho doloroso depois.\n\nÍndices são estruturas que aceleram busca em colunas específicas — sem índice, o banco varre a tabela inteira linha por linha (scan completo). Com índice numa coluna muito consultada (como `email` numa tabela de usuários), a busca vira praticamente instantânea, mesmo com milhões de linhas.',
     },
+    {
+      id: 'l5',
+      heading: 'Conflitos de merge: quando o Git não consegue decidir por você',
+      body:
+        'Um conflito acontece quando duas branches alteram a mesma linha de um arquivo de formas diferentes — o Git não sabe qual versão manter, então marca o trecho conflitante no arquivo com `<<<<<<<`, `=======` e `>>>>>>>`, e espera você decidir manualmente.\n\nResolver um conflito é: abrir o arquivo, escolher (ou combinar) qual versão deve ficar, remover os marcadores, e fazer um novo commit. Conflitos não são "erro" — são esperados em qualquer projeto colaborativo, e saber resolvê-los com calma é uma habilidade básica, não avançada.',
+      codeExample: {
+        lang: 'text',
+        code: '<<<<<<< HEAD\nconst taxa = 0.05;\n=======\nconst taxa = 0.08;\n>>>>>>> feature/nova-taxa',
+      },
+    },
+    {
+      id: 'l6',
+      heading: 'Tipos de JOIN: nem toda combinação de tabelas é igual',
+      body:
+        '`INNER JOIN` retorna só as linhas que têm correspondência em ambas as tabelas — se um cliente não tem pedido nenhum, ele não aparece. `LEFT JOIN` retorna todas as linhas da tabela da esquerda, mesmo sem correspondência na direita (preenchendo com `NULL` o que não existe) — essencial para perguntas como "quais clientes nunca fizeram um pedido?".\n\nEscolher o JOIN errado é uma das causas mais comuns de bugs sutis em relatórios: um `INNER JOIN` onde deveria haver um `LEFT JOIN` simplesmente faz registros desaparecerem do resultado, sem erro nenhum.',
+      codeExample: {
+        lang: 'sql',
+        code: '-- Clientes que NUNCA fizeram pedido\nSELECT clientes.nome\nFROM clientes\nLEFT JOIN pedidos ON pedidos.cliente_id = clientes.id\nWHERE pedidos.id IS NULL;',
+      },
+    },
   ],
   resources: [
     { label: 'Guia Git — Atlassian', url: 'https://www.atlassian.com/br/git/tutorials' },
@@ -113,17 +133,91 @@ export const mes04: Module = {
       explanation:
         'Esse é o fluxo padrão de feature branch workflow, usado pela maioria dos times de desenvolvimento profissionais.',
     },
+    {
+      type: 'mcq',
+      id: 'm4-e6',
+      prompt: 'Você quer listar todos os clientes, incluindo os que nunca fizeram nenhum pedido. Qual JOIN usar?',
+      options: ['INNER JOIN', 'LEFT JOIN (a partir de clientes)', 'Não é possível com SQL', 'GROUP JOIN'],
+      correctIndex: 1,
+      explanation:
+        'LEFT JOIN mantém todas as linhas da tabela à esquerda (clientes), preenchendo com NULL os campos da tabela à direita quando não há correspondência.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm4-e7',
+      prompt: 'Um conflito de merge no Git significa que o repositório está corrompido.',
+      answer: false,
+      explanation:
+        'Conflito de merge é uma situação normal e esperada: significa apenas que duas branches alteraram a mesma parte de um arquivo de formas diferentes, e o Git precisa que você decida manualmente qual versão manter.',
+    },
+    {
+      type: 'mcq',
+      id: 'm4-e8',
+      prompt: 'Em um arquivo com marcadores de conflito (<<<<<<<, =======, >>>>>>>), qual é o passo correto após decidir qual código manter?',
+      options: [
+        'Deixar os marcadores no arquivo para referência futura',
+        'Remover os marcadores e fazer um novo commit',
+        'Apagar o arquivo inteiro',
+        'Reverter para a versão anterior ao conflito automaticamente',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Depois de escolher (ou combinar) o código correto, é preciso remover todos os marcadores de conflito e commitar o arquivo já resolvido.',
+    },
   ],
   games: [
     {
       gameId: 'sql-query-builder',
       label: 'Construtor de Queries',
-      description: 'Monte queries SQL arrastando cláusulas (SELECT, WHERE, JOIN) para resolver desafios de dados reais.',
+      description: 'Monte queries SQL arrastando cláusulas (SELECT, WHERE, JOIN, LEFT JOIN) — 5 desafios progressivos.',
     },
     {
       gameId: 'git-branch-simulator',
       label: 'Simulador de Branches',
       description: 'Visualize e pratique git checkout, merge e resolução de conflitos num simulador visual de árvore de commits.',
+    },
+    {
+      gameId: 'terminal-simulator',
+      label: 'Terminal Simulado',
+      description: 'Digite comandos reais de Git num terminal simulado — sem multiple choice, é você e o teclado.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes04-cen1',
+      context: 'trabalho',
+      title: '"Sumiram" 2 dias de trabalho de um colega',
+      emoji: '😱',
+      situation:
+        'Um colega de time roda um comando de Git sem entender bem o que faz, e de repente o código que ele escreveu nos últimos 2 dias parece ter desaparecido da branch.',
+      whatHappens:
+        'Provavelmente ele rodou algo como `git reset --hard` apontando para um commit antigo, ou fez checkout para outra branch sem commitar antes — o trabalho não commitado fica perdido (ou fica "preso" em outra branch, dependendo do caso).',
+      howToSolve:
+        'Antes de qualquer comando que reescreve histórico (`reset --hard`, `rebase`, `push --force`), comite ou pelo menos salve um stash do trabalho em progresso. E na maioria dos casos, `git reflog` consegue recuperar commits que pareciam perdidos — ele guarda um histórico de tudo que o HEAD apontou recentemente.',
+    },
+    {
+      id: 'mes04-cen2',
+      context: 'pessoal',
+      title: 'Organizando uma coleção pessoal (livros, jogos, receitas)',
+      emoji: '📚',
+      situation:
+        'Você quer montar um catálogo dos seus livros com autor, ano, e quais já leu, e poder perguntar coisas como "quais livros de um autor X eu ainda não li".',
+      whatHappens:
+        'Isso é exatamente o que um banco relacional com algumas tabelas relacionadas resolve bem — muito mais flexível que uma planilha quando as perguntas que você quer fazer aos dados vão ficando mais específicas.',
+      howToSolve:
+        'Uma tabela `livros` com colunas (titulo, autor, ano, lido) já resolve casos simples. `SELECT titulo FROM livros WHERE autor = \'Autor X\' AND lido = false` responde exatamente a pergunta, sem precisar abrir e escanear visualmente uma planilha inteira.',
+    },
+    {
+      id: 'mes04-cen3',
+      context: 'trabalho',
+      title: 'Dois devs editaram o mesmo arquivo — conflito no merge',
+      emoji: '⚔️',
+      situation:
+        'Você abre um Pull Request para juntar sua branch na main, e o GitHub avisa que há conflitos — duas pessoas mudaram a mesma função de formas diferentes.',
+      whatHappens:
+        'O Git não tem como adivinhar qual das duas versões (ou uma combinação delas) é a correta, então ele marca o trecho com `<<<<<<<`, `=======`, `>>>>>>>` e espera uma decisão humana.',
+      howToSolve:
+        'Abra o arquivo conflitante, leia as duas versões com calma (geralmente conversando com quem fez a outra mudança), decida qual manter ou como combiná-las, remova os marcadores, e comite a resolução. Conflitos são normais em qualquer time — não é sinal de que algo está errado.',
     },
   ],
 };
@@ -169,6 +263,26 @@ export const mes05: Module = {
       codeExample: {
         lang: 'javascript',
         code: 'app.use((err, req, res, next) => {\n  console.error(err);\n  res.status(500).json({ erro: "Algo deu errado" });\n});',
+      },
+    },
+    {
+      id: 'l5',
+      heading: 'Variáveis de ambiente: segredos fora do código',
+      body:
+        'Senhas de banco, chaves de API e outras configurações sensíveis nunca devem ficar escritas direto no código — se isso for versionado no Git, qualquer pessoa com acesso ao repositório (ou, em repositórios públicos, qualquer pessoa do mundo) vê esses segredos.\n\nVariáveis de ambiente resolvem isso: valores são definidos fora do código (geralmente em um arquivo `.env`, que fica no `.gitignore` e nunca é commitado) e lidos em tempo de execução via `process.env.NOME_DA_VARIAVEL`. Isso também permite usar configurações diferentes em desenvolvimento e produção sem mudar uma linha de código.',
+      codeExample: {
+        lang: 'javascript',
+        code: '// .env (nunca commitado)\nDATABASE_URL=postgres://user:senha@localhost/meubanco\n\n// no código\nconst conexao = process.env.DATABASE_URL;',
+      },
+    },
+    {
+      id: 'l6',
+      heading: 'Validação de entrada: nunca confie no que chega na requisição',
+      body:
+        'Todo dado que chega numa API — seja do formulário de um usuário bem-intencionado ou de um atacante testando seu sistema — deve ser validado antes de ser usado. Sem validação, campos podem chegar vazios, em formato errado, ou maliciosamente construídos para explorar falhas (como SQL Injection, quando texto não validado é inserido direto numa query).\n\nBibliotecas como Zod ou Joi permitem declarar exatamente a forma esperada dos dados (quais campos, quais tipos, quais obrigatórios) e rejeitar automaticamente qualquer requisição que não corresponda, antes mesmo de chegar na lógica de negócio.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'const schema = z.object({\n  nome: z.string().min(2),\n  email: z.string().email(),\n});\n\nconst resultado = schema.safeParse(req.body);\nif (!resultado.success) {\n  return res.status(400).json({ erro: "Dados inválidos" });\n}',
       },
     },
   ],
@@ -235,6 +349,37 @@ export const mes05: Module = {
       explanation:
         'O event loop não bloqueia a thread principal esperando operações de I/O (disco, rede, banco) — ele delega e retoma via callback quando o resultado está pronto.',
     },
+    {
+      type: 'truefalse',
+      id: 'm5-e6',
+      prompt: 'É seguro commitar um arquivo .env com a senha do banco de dados em um repositório privado no GitHub.',
+      answer: false,
+      explanation:
+        'Mesmo em repositórios privados, segredos não deveriam ser commitados: pessoas podem ganhar acesso ao repo depois, ferramentas de CI podem expor logs, e o histórico do Git mantém esses dados mesmo se o arquivo for removido depois. O padrão é sempre usar .gitignore para arquivos .env.',
+    },
+    {
+      type: 'mcq',
+      id: 'm5-e7',
+      prompt: 'Por que validar dados de entrada na API é importante mesmo se o frontend já valida o formulário?',
+      options: [
+        'Não é importante, validação duplicada é desperdício',
+        'Porque qualquer pessoa pode enviar requisições diretamente à API, ignorando o frontend completamente',
+        'Porque o frontend nunca tem bugs',
+        'Porque o banco de dados já rejeita tudo que é inválido',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Validação no frontend é só para experiência do usuário — qualquer pessoa pode usar ferramentas como Postman ou curl para enviar requisições direto à API, contornando completamente qualquer validação da interface.',
+    },
+    {
+      type: 'code-fill',
+      id: 'm5-e8',
+      prompt: 'Complete a forma correta de ler uma variável de ambiente em Node.js.',
+      codeTemplate: 'const urlBanco = process.___.DATABASE_URL;',
+      answer: 'env',
+      hint: 'O objeto global do Node.js que expõe as variáveis de ambiente do processo.',
+      explanation: '`process.env` é o objeto que contém todas as variáveis de ambiente disponíveis para o processo Node.js em execução.',
+    },
   ],
   games: [
     {
@@ -246,6 +391,44 @@ export const mes05: Module = {
       gameId: 'middleware-pipeline',
       label: 'Pipeline de Middlewares',
       description: 'Ordene middlewares (auth, validação, logging) na sequência certa para que uma requisição passe com sucesso.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes05-cen1',
+      context: 'trabalho',
+      title: 'API "cai" sempre que alguém manda dado errado',
+      emoji: '💥',
+      situation:
+        'O time de mobile reporta que o app trava quando o usuário deixa um campo vazio no cadastro — e olhando os logs do servidor, a API simplesmente parou de responder (status 500) sem mensagem útil.',
+      whatHappens:
+        'Uma rota está acessando `req.body.email.toLowerCase()` sem checar se `email` realmente existe. Quando ele vem `undefined`, chamar `.toLowerCase()` nele lança uma exceção que não foi capturada, derrubando aquela requisição (e, sem tratamento de erro global, possivelmente o processo).',
+      howToSolve:
+        'Validação de entrada (com algo como Zod) deveria rejeitar a requisição com um 400 claro antes mesmo de chegar na lógica de negócio. E um middleware de erro global garante que qualquer exceção não prevista vire uma resposta 500 controlada, em vez de derrubar o servidor.',
+    },
+    {
+      id: 'mes05-cen2',
+      context: 'pessoal',
+      title: 'Automatizando um lembrete pessoal',
+      emoji: '⏰',
+      situation:
+        'Você quer um pequeno script que roda todo dia de manhã e te manda uma mensagem (ou só imprime no terminal) lembrando dos compromissos do dia.',
+      whatHappens:
+        'Isso é um pequeno servidor Node.js de propósito único — não precisa de banco de dados nem de frontend, só de uma rotina que executa uma tarefa e produz um resultado, exatamente os conceitos básicos de um servidor que você está aprendendo.',
+      howToSolve:
+        'Um script Node simples com `setInterval` (para rodar enquanto o processo está ativo) ou agendado via cron do sistema operacional, fazendo uma chamada HTTP para uma API de mensagens (ex: Telegram Bot API), resolve isso em poucas linhas.',
+    },
+    {
+      id: 'mes05-cen3',
+      context: 'trabalho',
+      title: 'Chave secreta vazou no GitHub',
+      emoji: '🔓',
+      situation:
+        'Alguém do time commitou por engano um arquivo com a senha do banco de dados de produção escrita direto no código, e isso foi enviado para o repositório (mesmo que privado).',
+      whatHappens:
+        'Uma vez que um segredo entra no histórico do Git, ele continua lá mesmo se o arquivo for deletado depois — qualquer pessoa com acesso ao histórico (ou bots, se o repo for público) pode encontrá-lo.',
+      howToSolve:
+        'A correção imediata é trocar a senha/chave exposta — apagar do código não resolve, porque o histórico já a expôs. A prevenção é usar variáveis de ambiente (`.env` no `.gitignore`) desde o primeiro commit do projeto, nunca escrevendo segredos direto no código-fonte.',
     },
   ],
 };
@@ -265,17 +448,19 @@ export const mes06: Module = {
       id: 'l1',
       heading: 'Arquitetura do projeto: como as peças se conectam',
       body:
-        'Frontend e backend são processos separados que conversam por HTTP. O frontend roda no navegador do usuário; o backend roda em um servidor e fala com o banco de dados.\n\nO fluxo típico: usuário interage na UI → JavaScript do frontend faz um `fetch` para a API → Express recebe, valida, consulta/grava no PostgreSQL → retorna JSON → frontend atualiza a tela. Desenhar esse fluxo no papel antes de codar evita confusão depois.',
+        'Frontend e backend são processos separados que conversam por HTTP. O frontend roda no navegador do usuário; o backend roda em um servidor e fala com o banco de dados.\n\nO fluxo típico: usuário interage na UI → JavaScript do frontend faz um `fetch` para a API → Express recebe, valida, consulta/grava no PostgreSQL → retorna JSON → frontend atualiza a tela. Desenhar esse fluxo no papel antes de codar evita confusão depois. Simule esse fluxo completo abaixo.',
+      diagramId: 'http-flow',
     },
     {
       id: 'l2',
       heading: 'Autenticação com JWT: provando quem é o usuário sem guardar sessão',
       body:
-        'JWT (JSON Web Token) é um token assinado que contém informações do usuário (como o ID) e pode ser verificado sem consultar o banco a cada requisição. No login, o backend gera o token; o frontend guarda (geralmente em memória ou localStorage) e envia no header `Authorization` em toda requisição protegida.\n\nUm middleware de autenticação verifica e decodifica esse token antes de deixar a requisição passar para a rota protegida — se inválido ou ausente, retorna `401`.',
+        'JWT (JSON Web Token) é um token assinado que contém informações do usuário (como o ID) e pode ser verificado sem consultar o banco a cada requisição. No login, o backend gera o token; o frontend guarda (geralmente em memória ou localStorage) e envia no header `Authorization` em toda requisição protegida.\n\nUm middleware de autenticação verifica e decodifica esse token antes de deixar a requisição passar para a rota protegida — se inválido ou ausente, retorna `401`. Veja o fluxo completo simulado abaixo.',
       codeExample: {
         lang: 'javascript',
         code: 'function autenticar(req, res, next) {\n  const token = req.headers.authorization?.split(" ")[1];\n  if (!token) return res.status(401).json({ erro: "Não autenticado" });\n  try {\n    req.usuario = jwt.verify(token, process.env.JWT_SECRET);\n    next();\n  } catch {\n    res.status(401).json({ erro: "Token inválido" });\n  }\n}',
       },
+      diagramId: 'jwt-flow',
     },
     {
       id: 'l3',
@@ -352,6 +537,37 @@ export const mes06: Module = {
       gameId: 'fullstack-wiring',
       label: 'Conecte o Sistema',
       description: 'Arraste conexões entre frontend, rotas da API, middlewares e banco de dados para montar a arquitetura correta.',
+    },
+    {
+      gameId: 'architecture-builder',
+      label: 'Arquiteto de Sistemas',
+      description: 'Monte o fluxo correto de componentes para cenários reais, do básico ao uso de filas assíncronas.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes06-cen1',
+      context: 'trabalho',
+      title: 'Usuário consegue ver tarefas de outra pessoa',
+      emoji: '🚨',
+      situation:
+        'Um usuário percebe, por acaso, que mudando o número no final da URL (`/tarefas/41` para `/tarefas/42`) consegue ver a tarefa de outra pessoa.',
+      whatHappens:
+        'A rota verifica se o usuário está autenticado (tem um token válido), mas não verifica se aquela tarefa específica pertence a ele — autenticação sem autorização. Qualquer usuário logado pode acessar dados de qualquer outro só adivinhando IDs.',
+      howToSolve:
+        'Toda consulta a um recurso específico precisa checar a propriedade: `WHERE id = $1 AND usuario_id = $2`, nunca só `WHERE id = $1`. Esse tipo de falha (chamada de "IDOR" — Insecure Direct Object Reference) é uma das mais comuns e mais graves em aplicações reais.',
+    },
+    {
+      id: 'mes06-cen2',
+      context: 'pessoal',
+      title: 'Construindo seu próprio gerenciador de hábitos',
+      emoji: '✅',
+      situation:
+        'Você quer uma versão simples e sua de um app de hábitos — marcar o que fez no dia, ver sequência de dias seguidos, sem depender de um app de terceiros com anúncios.',
+      whatHappens:
+        'É literalmente o mesmo projeto que você está construindo neste módulo (CRUD + autenticação), só trocando "tarefa" por "hábito" — a estrutura de dados e a lógica de autenticação são idênticas.',
+      howToSolve:
+        'Reaproveite a mesma base: tabela de usuários, tabela de hábitos (ou tarefas) ligada ao usuário, autenticação JWT. Adicione um campo de "streak" calculado a partir das datas marcadas — exercício prático de transformar o que você aprendeu num projeto pessoal de verdade.',
     },
   ],
   projectBrief: {

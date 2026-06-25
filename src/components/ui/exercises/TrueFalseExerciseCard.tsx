@@ -19,7 +19,7 @@ export function TrueFalseExerciseCard({ exercise, onResult }: TrueFalseProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-base-700 bg-base-850 p-5">
+    <div className="rounded-2xl card-surface p-5">
       <p className="text-sm font-medium text-base-50">{exercise.prompt}</p>
 
       <div className="mt-3 grid grid-cols-2 gap-3">

@@ -16,6 +16,55 @@ export const modulesById: Record<string, Module> = Object.fromEntries(
   modules.map((m) => [m.id, m])
 );
 
+export const exercisesById: Record<string, Module['exercises'][number]> = Object.fromEntries(
+  modules.flatMap((m) => m.exercises.map((e) => [e.id, e]))
+);
+
+export interface SearchResult {
+  type: 'module' | 'lesson' | 'exercise' | 'game';
+  moduleId: string;
+  moduleTitle: string;
+  moduleEmoji: string;
+  title: string;
+  snippet: string;
+}
+
+export function searchContent(query: string): SearchResult[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const results: SearchResult[] = [];
+
+  for (const m of modules) {
+    if (m.title.toLowerCase().includes(q) || m.tagline.toLowerCase().includes(q)) {
+      results.push({ type: 'module', moduleId: m.id, moduleTitle: m.title, moduleEmoji: m.emoji, title: m.title, snippet: m.tagline });
+    }
+    for (const lesson of m.lessons) {
+      if (lesson.heading.toLowerCase().includes(q) || lesson.body.toLowerCase().includes(q)) {
+        results.push({
+          type: 'lesson',
+          moduleId: m.id,
+          moduleTitle: m.title,
+          moduleEmoji: m.emoji,
+          title: lesson.heading,
+          snippet: lesson.body.slice(0, 120).replace(/\*\*/g, ''),
+        });
+      }
+    }
+    for (const ex of m.exercises) {
+      if (ex.prompt.toLowerCase().includes(q)) {
+        results.push({ type: 'exercise', moduleId: m.id, moduleTitle: m.title, moduleEmoji: m.emoji, title: ex.prompt.slice(0, 80), snippet: 'Exercício' });
+      }
+    }
+    for (const g of m.games) {
+      if (g.label.toLowerCase().includes(q) || g.description.toLowerCase().includes(q)) {
+        results.push({ type: 'game', moduleId: m.id, moduleTitle: m.title, moduleEmoji: m.emoji, title: g.label, snippet: g.description });
+      }
+    }
+  }
+
+  return results.slice(0, 30);
+}
+
 export const phases: PhaseInfo[] = [
   {
     phase: 1,

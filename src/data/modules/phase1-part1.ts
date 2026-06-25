@@ -41,13 +41,32 @@ export const mes01: Module = {
       id: 'l4',
       heading: 'Estruturas de dados básicas: onde guardar as coisas',
       body:
-        'Dados precisam de um lugar para morar. As estruturas mudam **como** você acessa e organiza a informação:\n\n- **Array/Lista**: uma fileira numerada de itens. Acesso direto por posição (índice).\n- **Pilha (stack)**: o último que entra é o primeiro que sai — como uma pilha de pratos. Usada em "desfazer" (Ctrl+Z) e em chamadas de função.\n- **Fila (queue)**: o primeiro que entra é o primeiro que sai — como fila de banco. Usada em processamento de tarefas em ordem.\n- **Árvore**: cada item pode ter "filhos" — usada para representar hierarquias, como pastas de arquivos ou o DOM de uma página web.\n\nVocê vai encontrar essas quatro estruturas em praticamente todo sistema que construir daqui pra frente.',
+        'Dados precisam de um lugar para morar. As estruturas mudam **como** você acessa e organiza a informação:\n\n- **Array/Lista**: uma fileira numerada de itens. Acesso direto por posição (índice).\n- **Pilha (stack)**: o último que entra é o primeiro que sai — como uma pilha de pratos. Usada em "desfazer" (Ctrl+Z) e em chamadas de função.\n- **Fila (queue)**: o primeiro que entra é o primeiro que sai — como fila de banco. Usada em processamento de tarefas em ordem.\n- **Árvore**: cada item pode ter "filhos" — usada para representar hierarquias, como pastas de arquivos ou o DOM de uma página web.\n\nVocê vai encontrar essas quatro estruturas em praticamente todo sistema que construir daqui pra frente. Experimente a simulação abaixo para sentir a diferença entre pilha e fila na prática.',
+      diagramId: 'stack-queue',
     },
     {
       id: 'l5',
       heading: 'Ordenação e busca: os primeiros algoritmos clássicos',
       body:
-        '**Bubble sort** compara pares vizinhos e troca se estiverem na ordem errada, repetindo até tudo estar ordenado. É lento (O(n²)) mas é o jeito mais intuitivo de entender ordenação.\n\n**Merge sort** divide a lista pela metade recursivamente até sobrar 1 elemento, depois junta as partes já ordenadas. É muito mais rápido (O(n log n)) e é a base de algoritmos usados em produção.\n\n**Busca binária** só funciona em listas já ordenadas: você compara o item do meio, e se não for o que procura, descarta a metade errada e repete. Por isso ela acha um item em uma lista de 1 milhão de elementos em só ~20 comparações.',
+        '**Bubble sort** compara pares vizinhos e troca se estiverem na ordem errada, repetindo até tudo estar ordenado. É lento (O(n²)) mas é o jeito mais intuitivo de entender ordenação.\n\n**Merge sort** divide a lista pela metade recursivamente até sobrar 1 elemento, depois junta as partes já ordenadas. É muito mais rápido (O(n log n)) e é a base de algoritmos usados em produção.\n\n**Busca binária** só funciona em listas já ordenadas: você compara o item do meio, e se não for o que procura, descarta a metade errada e repete. Por isso ela acha um item em uma lista de 1 milhão de elementos em só ~20 comparações. Veja o passo a passo animado abaixo.',
+      diagramId: 'binary-search',
+    },
+    {
+      id: 'l6',
+      heading: 'Recursão: uma função que chama a si mesma',
+      body:
+        'Recursão é quando uma função resolve um problema chamando uma versão menor de si mesma, até chegar a um caso tão simples que pode ser resolvido direto — o **caso base**. Sem caso base, a função chama a si mesma para sempre e o programa quebra (stack overflow).\n\nO exemplo clássico é o fatorial: `fatorial(5) = 5 × fatorial(4)`, e `fatorial(4) = 4 × fatorial(3)`, até chegar em `fatorial(1) = 1` (o caso base, que não chama mais nada).\n\nRecursão não é "mais avançada" que loops — é só outra forma de expressar repetição, mais natural para problemas que já são definidos em termos de si mesmos, como percorrer uma árvore de pastas ou o próprio merge sort que você acabou de ver.',
+      codeExample: {
+        lang: 'pseudocódigo',
+        code: 'funcao fatorial(n)\n    se n <= 1\n        retornar 1        // caso base\n    senao\n        retornar n * fatorial(n - 1)',
+      },
+    },
+    {
+      id: 'l7',
+      heading: 'Complexidade: por que "funciona" não é a única pergunta',
+      body:
+        'Dois algoritmos podem dar a resposta certa, mas um pode ser inutilizável em escala. **Notação Big O** descreve como o tempo (ou memória) que um algoritmo gasta cresce conforme a entrada cresce — não o tempo exato em segundos, mas a **tendência**.\n\n- `O(1)`: tempo constante, não importa o tamanho da entrada (acessar um item de array pelo índice)\n- `O(log n)`: cresce bem devagar (busca binária)\n- `O(n)`: cresce proporcional ao tamanho (percorrer uma lista uma vez)\n- `O(n²)`: cresce muito rápido (bubble sort, loops aninhados sobre os mesmos dados)\n\nNa prática: um algoritmo O(n²) que roda em 1 segundo com 1.000 itens pode levar quase **3 horas** com 1.000.000 de itens. Entender isso é o que separa "funciona no meu teste" de "funciona em produção". Arraste o slider abaixo e veja a diferença crescer.',
+      diagramId: 'big-o',
     },
   ],
   resources: [
@@ -116,17 +135,91 @@ export const mes01: Module = {
       explanation:
         'A cada passo, busca binária elimina metade do espaço de busca, por isso o número de comparações cresce em log(n) em vez de n.',
     },
+    {
+      type: 'mcq',
+      id: 'm1-e6',
+      prompt: 'O que acontece se uma função recursiva nunca atinge seu caso base?',
+      options: [
+        'Ela retorna undefined automaticamente',
+        'Ela chama a si mesma infinitamente até travar (stack overflow)',
+        'O JavaScript corrige isso automaticamente',
+        'Ela funciona normalmente, só mais lenta',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Sem um caso base alcançável, a recursão nunca para de empilhar chamadas, e a memória reservada para essas chamadas (a pilha de execução) eventualmente esgota.',
+    },
+    {
+      type: 'order',
+      id: 'm1-e7',
+      prompt: 'Ordene as classes de complexidade da mais rápida (cresce menos) para a mais lenta, conforme a entrada cresce.',
+      steps: ['O(1) — tempo constante', 'O(log n) — busca binária', 'O(n) — percorrer a lista uma vez', 'O(n²) — loops aninhados'],
+      explanation:
+        'Essa é a ordem clássica de crescimento: tempo constante não muda com o tamanho da entrada, enquanto O(n²) cresce drasticamente mais rápido que as outras conforme os dados aumentam.',
+    },
+    {
+      type: 'code-fill',
+      id: 'm1-e8',
+      prompt: 'Complete o caso base da função recursiva de fatorial.',
+      codeTemplate: 'funcao fatorial(n)\n    se n ___ 1\n        retornar 1\n    senao\n        retornar n * fatorial(n - 1)',
+      answer: '<=',
+      hint: 'Que comparação garante que a recursão para tanto para n=1 quanto para n=0?',
+      explanation: 'Usar `<= 1` cobre tanto o caso n=1 quanto eventuais chamadas com n=0, evitando recursão infinita para entradas no limite.',
+    },
   ],
   games: [
     {
       gameId: 'logic-maze',
       label: 'Labirinto Lógico',
-      description: 'Monte uma sequência de comandos (sequência, decisão, repetição) para guiar um robô até o objetivo.',
+      description: 'Monte uma sequência de comandos (sequência, decisão, repetição) para guiar um robô até o objetivo. 6 níveis, do fácil ao mestre.',
     },
     {
       gameId: 'sort-visualizer',
       label: 'Corrida da Ordenação',
       description: 'Veja bubble sort e merge sort competindo em tempo real e entenda visualmente por que um é mais rápido.',
+    },
+    {
+      gameId: 'memory-concepts',
+      label: 'Memória de Conceitos',
+      description: 'Jogo da memória com termos e definições de estruturas de dados, APIs e infraestrutura.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes01-cen1',
+      context: 'trabalho',
+      title: 'O sistema "trava" com muitos dados',
+      emoji: '🐢',
+      situation:
+        'Um colega avisa que a tela de relatórios, que sempre foi rápida nos testes, está demorando mais de 30 segundos para carregar agora que a empresa tem 200 mil clientes cadastrados.',
+      whatHappens:
+        'O código usa dois loops aninhados para comparar cada cliente com todos os outros — um algoritmo O(n²). Com 100 clientes isso é invisível (10 mil operações). Com 200 mil clientes, são 40 bilhões de operações.',
+      howToSolve:
+        'Antes de otimizar "no escuro", meça onde o tempo está indo (profiling). Depois, troque a estrutura: em vez de comparar todo mundo com todo mundo, usar um índice (como um objeto/Map para busca O(1)) costuma resolver boa parte desses casos, transformando O(n²) em O(n).',
+    },
+    {
+      id: 'mes01-cen2',
+      context: 'pessoal',
+      title: 'Organizando as tarefas da semana',
+      emoji: '📋',
+      situation:
+        'Você quer decidir em que ordem fazer 5 tarefas de casa, algumas dependendo de outras terem sido feitas antes (ex: "lavar roupa" antes de "passar roupa").',
+      whatHappens:
+        'Isso é exatamente o problema que listas e filas resolvem na programação: você tem itens com uma ordem de dependência, e precisa decidir uma sequência válida — o mesmo princípio usado para ordenar etapas de deploy ou tarefas de um pipeline.',
+      howToSolve:
+        'Liste as dependências de cada tarefa (o que precisa estar pronto antes). Tarefas sem dependência pendente entram primeiro na fila. Conforme cada uma é concluída, libera as que dependiam dela — isso, formalizado em código, se chama ordenação topológica.',
+    },
+    {
+      id: 'mes01-cen3',
+      context: 'trabalho',
+      title: 'Loop infinito derruba o servidor',
+      emoji: '🔥',
+      situation:
+        'Em produção, o servidor para de responder de repente e o uso de CPU vai a 100%. Os logs simplesmente paravam de aparecer no meio de uma função.',
+      whatHappens:
+        'Uma condição de parada do `while` dependia de uma variável que, por um caminho específico do código, nunca era atualizada — o loop roda para sempre, consumindo CPU e travando o processo.',
+      howToSolve:
+        'Sempre garanta que toda condição de saída de um loop seja alcançável em qualquer caminho possível do código, não só no caminho "feliz". Em produção, limites de tempo (timeouts) e monitoramento de CPU são a rede de segurança que avisa antes que isso derrube o sistema inteiro.',
     },
   ],
 };
@@ -164,6 +257,17 @@ export const mes02: Module = {
     },
     {
       id: 'l3',
+      heading: 'O Box Model: a régua invisível de todo elemento',
+      body:
+        'Todo elemento HTML é, para o CSS, uma caixa retangular composta por quatro camadas, de dentro para fora: **conteúdo** (o texto/imagem em si), **padding** (espaço interno, entre o conteúdo e a borda), **border** (a borda visível) e **margin** (espaço externo, que empurra outros elementos para longe).\n\nUm erro clássico de quem está aprendendo: aumentar o `padding` de um elemento com largura fixa e ele "estourar" o layout — isso acontece porque, por padrão, `width` define só a largura do **conteúdo**, e padding/border se somam a ela. `box-sizing: border-box` resolve isso fazendo `width` incluir padding e border, o que é o comportamento que a maioria dos projetos modernos usa por padrão.',
+      codeExample: {
+        lang: 'css',
+        code: '* {\n  box-sizing: border-box; /* padding e border não estouram a largura */\n}\n\n.card {\n  width: 200px;\n  padding: 16px;\n  border: 4px solid #f2a93b;\n  margin: 16px;\n}',
+      },
+      diagramId: 'box-model',
+    },
+    {
+      id: 'l4',
       heading: 'Flexbox: alinhar em uma direção',
       body:
         'Flexbox resolve "como alinho estes itens numa linha ou coluna". O container vira `display: flex`, e os filhos se organizam ao longo de um eixo principal.\n\n`justify-content` controla o eixo principal (geralmente horizontal). `align-items` controla o eixo transversal (geralmente vertical). `gap` cria espaçamento entre os itens sem precisar de margin manual.\n\nUse flexbox para: barras de navegação, cards em linha, qualquer alinhamento "1D".',
@@ -173,7 +277,7 @@ export const mes02: Module = {
       },
     },
     {
-      id: 'l4',
+      id: 'l5',
       heading: 'CSS Grid: alinhar em duas direções',
       body:
         'Grid resolve "como organizo isso em linhas E colunas ao mesmo tempo". Você define `grid-template-columns` para descrever quantas colunas existem e quanto espaço cada uma ocupa.\n\n`repeat(auto-fit, minmax(200px, 1fr))` é um padrão extremamente útil: cria quantas colunas de no mínimo 200px couberem, e distribui o espaço restante igualmente — isso sozinho resolve grande parte dos layouts responsivos sem media query.',
@@ -183,10 +287,30 @@ export const mes02: Module = {
       },
     },
     {
-      id: 'l5',
+      id: 'l6',
       heading: 'Mobile-first: comece pequeno, expanda depois',
       body:
         'Mobile-first significa escrever o CSS base pensando na tela pequena, e usar `@media (min-width: ...)` para adicionar regras conforme a tela cresce — nunca o contrário. Isso evita uma cascata de overrides confusos e reflete a realidade: a maioria do tráfego web hoje é mobile.\n\n```css\n.card { padding: 12px; }\n\n@media (min-width: 768px) {\n  .card { padding: 24px; }\n}\n```\n\nDesign system básico significa definir, antes de estilizar qualquer coisa: sua paleta de cores, escala de espaçamento (4px, 8px, 16px, 24px...) e escala tipográfica. Isso evita estilizar "no olho" cada componente.',
+    },
+    {
+      id: 'l7',
+      heading: 'Variáveis CSS: design system de verdade, sem pré-processador',
+      body:
+        'Variáveis CSS nativas (`--cor-primaria: #2b6cb0`) permitem definir um valor uma vez e reutilizá-lo em toda a folha de estilo com `var(--cor-primaria)`. A grande vantagem sobre simplesmente repetir o valor: mudar a variável em um lugar atualiza tudo que a usa — essencial para temas (claro/escuro) e manutenção em projetos grandes.\n\nVariáveis definidas em `:root` ficam disponíveis globalmente. Você também pode redefinir a mesma variável dentro de um seletor específico para criar variações locais.',
+      codeExample: {
+        lang: 'css',
+        code: ':root {\n  --cor-primaria: #2b6cb0;\n  --espaco-md: 16px;\n}\n\n.botao {\n  background: var(--cor-primaria);\n  padding: var(--espaco-md);\n}',
+      },
+    },
+    {
+      id: 'l8',
+      heading: 'Transições e animações: movimento com propósito',
+      body:
+        '`transition` anima a mudança de uma propriedade entre dois estados (ex: cor ao passar o mouse), de forma simples: você diz qual propriedade, duração e curva de aceleração. `@keyframes` + `animation` dá controle total sobre uma sequência de estados ao longo do tempo, útil para algo mais elaborado que um simples hover.\n\nRegra de bom gosto: anime `transform` e `opacity` sempre que possível — o navegador consegue acelerar essas duas por hardware, enquanto animar `width`, `height` ou `margin` força o navegador a recalcular o layout inteiro a cada frame, podendo travar em dispositivos mais fracos.',
+      codeExample: {
+        lang: 'css',
+        code: '.botao {\n  transition: transform 0.2s ease, background 0.2s ease;\n}\n.botao:hover {\n  transform: translateY(-2px);\n}',
+      },
     },
   ],
   resources: [
@@ -257,6 +381,37 @@ export const mes02: Module = {
       explanation:
         'Cada tag HTML5 semântica comunica uma função estrutural específica, ajudando navegação assistiva e organização do código.',
     },
+    {
+      type: 'code-fill',
+      id: 'm2-e6',
+      prompt: 'Complete a sintaxe para usar uma variável CSS chamada --cor-primaria.',
+      codeTemplate: '.botao {\n  background: ___(--cor-primaria);\n}',
+      answer: 'var',
+      hint: 'A função que lê o valor de uma variável CSS customizada.',
+      explanation: '`var(--nome-da-variavel)` lê o valor armazenado naquela variável CSS, permitindo reutilização e atualização centralizada.',
+    },
+    {
+      type: 'mcq',
+      id: 'm2-e7',
+      prompt: 'Por que é recomendado animar `transform` e `opacity` em vez de `width` ou `margin`?',
+      options: [
+        'Não há diferença real de performance',
+        'transform e opacity podem ser acelerados pelo hardware gráfico, sem recalcular o layout inteiro',
+        'width e margin não podem ser animados',
+        'opacity sempre deixa elementos invisíveis',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Animar propriedades de layout (width, height, margin) força o navegador a recalcular posições de toda a página a cada frame, o que é custoso. transform e opacity evitam esse recálculo.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm2-e8',
+      prompt: 'Uma variável CSS definida dentro de um seletor específico só se aplica dentro daquele seletor e seus descendentes.',
+      answer: true,
+      explanation:
+        'Variáveis CSS seguem a cascata normal: redefinir uma variável dentro de um seletor cria uma versão local que sobrescreve a global apenas para aquele escopo.',
+    },
   ],
   games: [
     {
@@ -268,6 +423,44 @@ export const mes02: Module = {
       gameId: 'css-selector-hunt',
       label: 'Caça ao Seletor CSS',
       description: 'Encontre o seletor CSS certo para acertar exatamente os elementos destacados na tela.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes02-cen1',
+      context: 'trabalho',
+      title: 'O layout quebra "só no celular do cliente"',
+      emoji: '📱',
+      situation:
+        'O site fica perfeito no seu notebook, mas o cliente manda um print do celular dele mostrando os botões cortados e o texto saindo da tela.',
+      whatHappens:
+        'O CSS foi escrito pensando primeiro na tela grande, com larguras fixas em pixels (`width: 800px`) que não cabem numa tela de 375px. Sem testar em telas pequenas durante o desenvolvimento, esses problemas só aparecem depois.',
+      howToSolve:
+        'Use o DevTools do navegador (F12 → ícone de celular) para testar em vários tamanhos de tela enquanto desenvolve, não só no final. Prefira unidades relativas (`%`, `rem`, `minmax()`) a pixels fixos, e adote mobile-first como hábito, não como correção posterior.',
+    },
+    {
+      id: 'mes02-cen2',
+      context: 'pessoal',
+      title: 'Organizando o orçamento doméstico numa tabela',
+      emoji: '💰',
+      situation:
+        'Você quer montar uma página simples para acompanhar gastos do mês, com categorias alinhadas em colunas e linhas, sem usar planilha.',
+      whatHappens:
+        'Esse é exatamente o problema que Grid resolve — organizar conteúdo em linhas E colunas ao mesmo tempo, como uma tabela, mas com controle total de espaçamento e responsividade que uma tabela HTML tradicional não dá tão facilmente.',
+      howToSolve:
+        '`display: grid` com `grid-template-columns: repeat(auto-fit, minmax(120px, 1fr))` cria colunas que se ajustam automaticamente ao tamanho da tela — no celular vira 1-2 colunas, no monitor vira 4-5, sem escrever uma media query para cada caso.',
+    },
+    {
+      id: 'mes02-cen3',
+      context: 'trabalho',
+      title: 'Reclamação de acessibilidade chega ao time',
+      emoji: '♿',
+      situation:
+        'Um usuário que usa leitor de tela abre um chamado dizendo que não consegue preencher o formulário de cadastro — ele não sabe o que cada campo pede.',
+      whatHappens:
+        'Os campos `<input>` foram estilizados visualmente com um texto ao lado (que parece um label), mas sem a tag `<label>` de verdade associada via `for`/`id`. Leitores de tela não têm como adivinhar essa associação visual.',
+      howToSolve:
+        'Toda entrada de formulário precisa de um `<label>` real associado, não só um texto próximo visualmente. É uma correção rápida que evita excluir uma parte real dos usuários — e em muitos países é também uma exigência legal para serviços públicos e empresas grandes.',
     },
   ],
 };
@@ -307,11 +500,12 @@ export const mes03: Module = {
       id: 'l3',
       heading: 'Promises e async/await: lidando com o tempo',
       body:
-        'Buscar dados de um servidor leva tempo — o JavaScript não pode simplesmente "esperar parado", porque isso travaria a página inteira. Uma **Promise** representa "um valor que vai existir no futuro": ela pode estar pendente, cumprida ou rejeitada.\n\n`async/await` é açúcar sintático sobre Promises que faz o código assíncrono **parecer** síncrono, sem o encadeamento confuso de `.then().then().then()`. Hoje é o padrão da indústria.',
+        'Buscar dados de um servidor leva tempo — o JavaScript não pode simplesmente "esperar parado", porque isso travaria a página inteira. Uma **Promise** representa "um valor que vai existir no futuro": ela pode estar pendente, cumprida ou rejeitada.\n\n`async/await` é açúcar sintático sobre Promises que faz o código assíncrono **parecer** síncrono, sem o encadeamento confuso de `.then().then().then()`. Hoje é o padrão da indústria. A simulação abaixo mostra a ordem real de execução — repare que Promises sempre rodam antes de setTimeout, mesmo com delay 0.',
       codeExample: {
         lang: 'javascript',
         code: 'async function buscarUsuario(id) {\n  try {\n    const resposta = await fetch(`/api/usuarios/${id}`);\n    const dados = await resposta.json();\n    return dados;\n  } catch (erro) {\n    console.error("Falhou:", erro);\n  }\n}',
       },
+      diagramId: 'event-loop',
     },
     {
       id: 'l4',
@@ -321,6 +515,26 @@ export const mes03: Module = {
       codeExample: {
         lang: 'javascript',
         code: 'const botao = document.querySelector("#enviar");\n\nbotao.addEventListener("click", () => {\n  console.log("Clicado!");\n});',
+      },
+    },
+    {
+      id: 'l5',
+      heading: 'Higher-order functions: funções que recebem ou retornam outras funções',
+      body:
+        'Uma higher-order function é qualquer função que recebe outra função como parâmetro, retorna uma função, ou ambos. `map`, `filter` e `reduce` são os três exemplos mais usados no dia a dia: `map` transforma cada item de um array, `filter` mantém só os itens que passam um teste, e `reduce` combina todos os itens em um único valor.\n\nEsse estilo (programação funcional) tende a gerar código mais curto e com menos bugs do que escrever o mesmo loop manualmente, porque a intenção fica explícita no nome do método.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'const precos = [10, 25, 8, 40];\n\nconst comDesconto = precos.map(p => p * 0.9);\nconst caros = precos.filter(p => p > 15);\nconst total = precos.reduce((soma, p) => soma + p, 0);',
+      },
+    },
+    {
+      id: 'l6',
+      heading: 'Closures: funções que "lembram" de onde nasceram',
+      body:
+        'Uma closure acontece quando uma função interna continua tendo acesso às variáveis da função externa, mesmo depois que a função externa já terminou de executar. Isso parece abstrato, mas é a base de padrões extremamente comuns: contadores privados, debounce/throttle, e até como hooks do React guardam estado entre renderizações.\n\nNo exemplo abaixo, cada chamada de `criarContador()` cria uma variável `contagem` independente, e a função retornada "lembra" da sua própria cópia dessa variável para sempre.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'function criarContador() {\n  let contagem = 0;\n  return function () {\n    contagem++;\n    return contagem;\n  };\n}\n\nconst contador1 = criarContador();\ncontador1(); // 1\ncontador1(); // 2',
       },
     },
   ],
@@ -391,6 +605,32 @@ export const mes03: Module = {
       explanation:
         'Esse é o fluxo padrão de qualquer chamada de API no frontend: requisitar, esperar, converter o formato, e então renderizar.',
     },
+    {
+      type: 'mcq',
+      id: 'm3-e6',
+      prompt: 'Qual método de array você usaria para transformar `[1, 2, 3]` em `[2, 4, 6]`?',
+      code: '[1, 2, 3] → [2, 4, 6]',
+      options: ['filter', 'map', 'reduce', 'forEach'],
+      correctIndex: 1,
+      explanation: '`map` cria um novo array aplicando uma transformação a cada elemento — exatamente o caso de multiplicar cada item por 2.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm3-e7',
+      prompt: 'Uma closure perde acesso às variáveis da função externa depois que essa função externa termina de executar.',
+      answer: false,
+      explanation:
+        'É exatamente o contrário: a característica central de uma closure é que a função interna continua tendo acesso a essas variáveis mesmo depois que a função externa já retornou.',
+    },
+    {
+      type: 'code-fill',
+      id: 'm3-e8',
+      prompt: 'Complete o uso de reduce para somar todos os números de um array.',
+      codeTemplate: 'const total = numeros.___((soma, n) => soma + n, 0);',
+      answer: 'reduce',
+      hint: 'O método de array que combina todos os elementos em um único valor acumulado.',
+      explanation: '`reduce` percorre o array acumulando um resultado — aqui, somando cada número ao total acumulado, começando de 0.',
+    },
   ],
   games: [
     {
@@ -402,6 +642,49 @@ export const mes03: Module = {
       gameId: 'tic-tac-toe-build',
       label: 'Construtor de Jogo da Velha',
       description: 'Monte a lógica de um jogo da velha arrastando blocos de lógica na ordem certa.',
+    },
+    {
+      gameId: 'bug-hunter',
+      label: 'Caça-Bug',
+      description: 'Encontre a linha com erro em trechos reais de JavaScript — 7 desafios, do fácil ao difícil.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes03-cen1',
+      context: 'trabalho',
+      title: 'O botão de salvar "não faz nada" às vezes',
+      emoji: '🖱️',
+      situation:
+        'Um usuário relata que, de vez em quando, clica em "Salvar" e nada acontece — sem erro visível, sem confirmação, só silêncio.',
+      whatHappens:
+        'O código faz uma chamada `fetch` sem `await` e sem `.catch()`. Quando a API demora ou falha, a Promise é rejeitada silenciosamente, e como ninguém está "escutando" esse erro, ele desaparece no console sem afetar a interface.',
+      howToSolve:
+        'Toda Promise precisa de um destino para o caso de erro — `try/catch` com `await`, ou `.catch()` no encadeamento. Além disso, é boa prática dar feedback visual imediato ("Salvando...") para o usuário nunca ficar sem saber se algo está acontecendo.',
+    },
+    {
+      id: 'mes03-cen2',
+      context: 'pessoal',
+      title: 'Organizando uma lista de compras que repete itens',
+      emoji: '🛒',
+      situation:
+        'Você anotou itens de compras em vários momentos do dia e quer uma lista final sem duplicatas, com tudo somado (ex: "2 leites" + "1 leite" = "3 leites").',
+      whatHappens:
+        'Esse é um problema clássico de agregação de dados — o mesmo padrão usado para somar vendas por produto ou contar visitas por página em um sistema real.',
+      howToSolve:
+        'Um objeto (ou `Map`) usando o nome do item como chave resolve isso elegantemente: para cada item novo, você soma à quantidade já existente naquela chave (ou cria com quantidade 1, se for a primeira vez). Isso é o mesmo princípio do `reduce` que você aprendeu nesse módulo.',
+    },
+    {
+      id: 'mes03-cen3',
+      context: 'trabalho',
+      title: 'Página fica lenta ao digitar no campo de busca',
+      emoji: '⌨️',
+      situation:
+        'Um campo de busca que filtra uma lista em tempo real está fazendo o navegador travar a cada letra digitada, especialmente em listas grandes.',
+      whatHappens:
+        'Uma função cara (que faz uma chamada de API ou um cálculo pesado) está sendo executada a cada tecla pressionada — se você digita "notebook" são 8 chamadas, uma para cada letra, a maioria descartada antes mesmo de terminar.',
+      howToSolve:
+        '"Debounce" é a técnica padrão: espera um pequeno intervalo (ex: 300ms) sem novas teclas antes de disparar a busca de verdade. Isso reduz drasticamente o número de chamadas, sem prejudicar a experiência percebida pelo usuário.',
     },
   ],
 };

@@ -33,6 +33,22 @@ export const mes10: Module = {
       body:
         'NextAuth.js (Auth.js) abstrai a complexidade de autenticação: login social (Google, GitHub), sessões, e proteção de rotas, tudo configurável declarativamente. Em vez de implementar OAuth do zero — um processo cheio de detalhes de segurança fáceis de errar — você configura provedores e o NextAuth cuida do fluxo.',
     },
+    {
+      id: 'l4',
+      heading: 'Server Components: renderizando sem enviar JavaScript ao navegador',
+      body:
+        'No App Router do Next.js, componentes são Server Components por padrão: eles rodam só no servidor, e o navegador recebe apenas o HTML já pronto — sem baixar o JavaScript daquele componente. Isso reduz drasticamente o tamanho do bundle enviado ao cliente.\n\nUm componente só precisa ser Client Component (com a diretiva `"use client"` no topo do arquivo) quando precisa de interatividade real no navegador: `useState`, `useEffect`, eventos de clique. A estratégia recomendada é manter o máximo possível como Server Component, e isolar a interatividade em componentes Client pequenos e específicos.',
+      codeExample: {
+        lang: 'tsx',
+        code: '// Server Component (padrão, sem diretiva)\nasync function ListaPosts() {\n  const posts = await db.post.findMany();\n  return <ul>{posts.map(p => <li key={p.id}>{p.titulo}</li>)}</ul>;\n}\n\n// Client Component (precisa de interatividade)\n"use client";\nfunction BotaoCurtir() {\n  const [curtido, setCurtido] = useState(false);\n  return <button onClick={() => setCurtido(!curtido)}>👍</button>;\n}',
+      },
+    },
+    {
+      id: 'l5',
+      heading: 'Otimização automática de imagens e fontes',
+      body:
+        'O componente `<Image>` do Next.js redimensiona, otimiza o formato (WebP/AVIF quando suportado) e carrega imagens de forma "lazy" (só quando estão próximas de aparecer na tela) automaticamente — algo que, feito manualmente, exigiria bastante configuração de build.\n\nO mesmo princípio se aplica a fontes via `next/font`: elas são baixadas em tempo de build e auto-hospedadas, eliminando uma requisição externa a serviços como Google Fonts e evitando o "flash" de texto sem estilo (FOUT) comum quando fontes externas demoram para carregar.',
+    },
   ],
   resources: [
     { label: 'Next.js Docs', url: 'https://nextjs.org/docs' },
@@ -77,12 +93,60 @@ export const mes10: Module = {
       explanation:
         'Código que roda no navegador é sempre visível ao usuário. API Routes rodam no servidor, então chaves secretas usadas ali nunca chegam ao cliente.',
     },
+    {
+      type: 'mcq',
+      id: 'm10-e4',
+      prompt: 'Quando um componente precisa ser marcado como Client Component ("use client") no App Router?',
+      options: [
+        'Sempre, em todo componente',
+        'Quando ele usa hooks de estado/efeito ou eventos do navegador (useState, onClick, etc.)',
+        'Nunca, isso não existe no Next.js',
+        'Só em componentes que usam CSS',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Server Components não suportam hooks de estado/efeito nem handlers de evento do navegador — qualquer componente que precise disso deve ser explicitamente marcado como Client Component.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm10-e5',
+      prompt: 'Server Components enviam seu código JavaScript para o navegador, assim como Client Components.',
+      answer: false,
+      explanation:
+        'Essa é a principal vantagem de Server Components: eles rodam só no servidor e enviam apenas o HTML resultante — o JavaScript daquele componente nunca é baixado pelo navegador.',
+    },
   ],
   games: [
     {
       gameId: 'rendering-strategy-picker',
       label: 'Escolha a Estratégia',
       description: 'Receba cenários de páginas reais e escolha SSR, SSG ou ISR — veja o impacto em velocidade e atualização.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes10-cen1',
+      context: 'trabalho',
+      title: 'Google "não vê" o conteúdo do site',
+      emoji: '🔍',
+      situation:
+        'O time de marketing reclama que páginas de produto não aparecem bem no Google, mesmo o conteúdo estando visivelmente lá quando você abre o site.',
+      whatHappens:
+        'Um app React puro (CSR) entrega um HTML quase vazio inicialmente, e só preenche o conteúdo via JavaScript depois que carrega no navegador — alguns crawlers de busca têm dificuldade ou demora para esperar esse processo, resultando em indexação pior.',
+      howToSolve:
+        'Migrar páginas importantes para SEO (produto, blog, landing pages) para SSR ou SSG no Next.js faz o servidor entregar o HTML já preenchido com o conteúdo, visível imediatamente tanto para usuários quanto para crawlers.',
+    },
+    {
+      id: 'mes10-cen2',
+      context: 'pessoal',
+      title: 'Criando um blog pessoal que carrega instantâneo',
+      emoji: '✍️',
+      situation:
+        'Você quer publicar textos pessoais num blog simples, e quer que carregue rápido mesmo num celular com internet ruim.',
+      whatHappens:
+        'Posts de blog raramente mudam depois de publicados — são o caso perfeito para SSG: gerar o HTML uma vez, no momento da publicação, e servir esse arquivo estático instantaneamente, sem nenhum processamento por visita.',
+      howToSolve:
+        'Next.js com `generateStaticParams` (App Router) gera uma página HTML estática para cada post no momento do build. Resultado: tempo de carregamento próximo de zero, e o site funciona até em conexões ruins.',
     },
   ],
 };
@@ -123,6 +187,22 @@ export const mes11: Module = {
       heading: 'Documentação com Swagger/OpenAPI',
       body:
         'OpenAPI é um formato padronizado para descrever uma API REST — quais endpoints existem, quais parâmetros aceitam, quais respostas retornam. Swagger UI transforma essa descrição em uma página interativa onde qualquer dev pode testar a API direto do navegador, sem precisar ler código.\n\nDocumentar a API não é burocracia — é o que permite que outro time (ou você mesmo, meses depois) integre com seu sistema sem precisar te perguntar nada.',
+    },
+    {
+      id: 'l4',
+      heading: 'Rate limiting: protegendo a API de uso excessivo',
+      body:
+        'Rate limiting restringe quantas requisições um cliente (identificado por IP, token, ou usuário) pode fazer em um intervalo de tempo. Sem isso, um único cliente — mal-intencionado ou só com um bug em loop — pode sobrecarregar seu servidor e degradar a experiência de todos os outros usuários.\n\nUma resposta de rate limit geralmente usa o status `429 Too Many Requests`, e boas APIs incluem headers informando quantas requisições restam e quando o limite reseta, para que o cliente possa se ajustar sem adivinhar.',
+      codeExample: {
+        lang: 'http',
+        code: 'HTTP/1.1 429 Too Many Requests\nX-RateLimit-Limit: 100\nX-RateLimit-Remaining: 0\nX-RateLimit-Reset: 1718900000',
+      },
+    },
+    {
+      id: 'l5',
+      heading: 'Versionamento de API: evoluindo sem quebrar quem já usa',
+      body:
+        'Depois que uma API está em produção sendo consumida por outros sistemas, mudar um campo ou comportamento pode quebrar tudo que depende dela. Versionamento (ex: `/api/v1/usuarios` vs `/api/v2/usuarios`) permite evoluir a API mantendo a versão antiga funcionando até que todos os consumidores migrem.\n\nAlternativas incluem versionar via header (`Accept: application/vnd.empresa.v2+json`) em vez da URL — mais "correto" semanticamente, mas menos óbvio para quem está explorando a API pela primeira vez. Na prática, versionar via URL é mais comum por ser mais simples de entender e testar.',
     },
   ],
   resources: [
@@ -182,12 +262,68 @@ export const mes11: Module = {
       explanation:
         'OpenAPI padroniza a descrição da API, permitindo gerar documentação interativa (Swagger UI) e até gerar código cliente automaticamente.',
     },
+    {
+      type: 'mcq',
+      id: 'm11-e5',
+      prompt: 'Qual status HTTP indica que um cliente excedeu o limite de requisições permitido (rate limit)?',
+      options: ['400', '404', '429', '500'],
+      correctIndex: 2,
+      explanation: '`429 Too Many Requests` é o status padronizado para indicar que o cliente atingiu o limite de requisições naquele intervalo.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm11-e6',
+      prompt: 'Rate limiting existe principalmente para melhorar a velocidade de resposta da API.',
+      answer: false,
+      explanation:
+        'Rate limiting existe para proteger a API de sobrecarga (uso abusivo ou bugs em loop de algum cliente), garantindo disponibilidade justa para todos os usuários — não para acelerar respostas individuais.',
+    },
+    {
+      type: 'mcq',
+      id: 'm11-e7',
+      prompt: 'Por que versionar uma API (ex: /api/v1/ vs /api/v2/) é importante em produção?',
+      options: [
+        'Para deixar a URL mais longa',
+        'Para permitir evoluir a API sem quebrar sistemas que já dependem da versão antiga',
+        'Não tem utilidade real',
+        'É exigido pelo protocolo HTTP',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Versionamento permite manter a versão antiga funcionando enquanto a nova coexiste, dando tempo para os consumidores migrarem sem quebra abrupta.',
+    },
   ],
   games: [
     {
       gameId: 'graphql-query-shaper',
       label: 'Moldando Queries GraphQL',
       description: 'Escreva queries GraphQL que retornem exatamente os campos pedidos pelo desafio — nem mais, nem menos.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes11-cen1',
+      context: 'trabalho',
+      title: 'Um usuário "sozinho" derruba a API para todo mundo',
+      emoji: '⚠️',
+      situation:
+        'Um script mal escrito de um cliente está fazendo 500 requisições por segundo à API, deixando o serviço lento para todos os outros usuários.',
+      whatHappens:
+        'Sem rate limiting, a API trata todas as requisições com a mesma prioridade, independente de quantas vêm da mesma origem — um único cliente com bug (ou má intenção) consegue monopolizar a capacidade do servidor.',
+      howToSolve:
+        'Rate limiting por IP ou por token de API (ex: "máximo 100 requisições por minuto") protege o sistema, retornando 429 para quem excede o limite, em vez de deixar o excesso degradar a experiência de todos.',
+    },
+    {
+      id: 'mes11-cen2',
+      context: 'pessoal',
+      title: 'Criando um chat simples com um amigo',
+      emoji: '💬',
+      situation:
+        'Você quer fazer um chat bem simples, só para você e um amigo, sem precisar instalar nenhum app de terceiros.',
+      whatHappens:
+        'Um chat precisa que mensagens apareçam para o outro lado sem a pessoa precisar "atualizar a página" — exatamente o problema que WebSocket resolve, mantendo uma conexão aberta nos dois sentidos.',
+      howToSolve:
+        'Socket.io no backend Node.js, com um evento `mensagem` que o servidor retransmite para todos conectados, resolve isso em poucas linhas — o mesmo princípio usado em qualquer chat de produção, só numa escala menor.',
     },
   ],
 };
@@ -230,6 +366,18 @@ export const mes12: Module = {
       heading: 'CloudWatch: observando o que está rodando',
       body:
         'Colocar algo em produção sem monitoramento é voar no escuro. CloudWatch coleta métricas (uso de CPU, memória, latência), logs, e permite configurar alarmes que te avisam antes que um problema pequeno se torne uma queda total do sistema.',
+    },
+    {
+      id: 'l5',
+      heading: 'CloudFront: aproximando seu conteúdo do usuário',
+      body:
+        'CloudFront é a CDN (Content Delivery Network) da AWS: ela distribui cópias do seu conteúdo estático (imagens, CSS, JS) em servidores espalhados pelo mundo, fazendo o usuário baixar do ponto mais próximo geograficamente, em vez de sempre ir até o servidor original.\n\nIsso reduz drasticamente a latência percebida — um usuário no Brasil acessando um site hospedado nos EUA pode esperar muito menos se o conteúdo estático estiver em um nó CloudFront em São Paulo, em vez de atravessar o oceano a cada requisição.',
+    },
+    {
+      id: 'l6',
+      heading: 'Auto Scaling: crescendo (e encolhendo) com a demanda',
+      body:
+        'Auto Scaling adiciona ou remove instâncias EC2 automaticamente baseado em métricas (geralmente uso de CPU ou número de requisições). Em um pico de tráfego, novas instâncias entram para absorver a carga; quando o tráfego cai, instâncias extras são removidas — você paga só pelo que realmente precisa em cada momento.\n\nIsso normalmente trabalha em conjunto com um **Load Balancer**, que distribui as requisições entrantes entre todas as instâncias disponíveis, garantindo que nenhuma fique sobrecarregada enquanto outras ficam ociosas.',
     },
   ],
   resources: [
@@ -292,12 +440,60 @@ export const mes12: Module = {
       explanation:
         'Monitoramento proativo identifica tendências preocupantes (uso crescente de recursos, aumento de erros) antes que se tornem incidentes graves.',
     },
+    {
+      type: 'mcq',
+      id: 'm12-e5',
+      prompt: 'Qual o papel principal do CloudFront (CDN) numa arquitetura web?',
+      options: [
+        'Substituir o banco de dados',
+        'Distribuir conteúdo estático por servidores geograficamente próximos do usuário, reduzindo latência',
+        'Gerenciar permissões de usuários',
+        'Executar funções sem servidor',
+      ],
+      correctIndex: 1,
+      explanation:
+        'CloudFront serve conteúdo a partir do ponto de presença mais próximo do usuário final, reduzindo a distância física que os dados precisam percorrer.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm12-e6',
+      prompt: 'Auto Scaling sempre mantém o mesmo número fixo de instâncias EC2, independente da demanda.',
+      answer: false,
+      explanation:
+        'O propósito do Auto Scaling é justamente o contrário: ajustar dinamicamente o número de instâncias para mais ou para menos, conforme métricas de demanda real.',
+    },
   ],
   games: [
     {
       gameId: 'aws-service-matcher',
       label: 'Mapeando Serviços AWS',
       description: 'Receba um cenário de produto e escolha a combinação certa de serviços AWS para resolvê-lo com custo eficiente.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes12-cen1',
+      context: 'trabalho',
+      title: 'A conta da AWS chega com um valor 10x maior',
+      emoji: '💸',
+      situation:
+        'O time financeiro pergunta por que a fatura da AWS triplicou esse mês, sem nenhuma mudança óbvia no produto.',
+      whatHappens:
+        'É comum que instâncias EC2 de teste, esquecidas rodando, ou um Auto Scaling configurado sem limite máximo, gerem custo inesperado — a AWS cobra por recurso provisionado, mesmo que ele não esteja sendo efetivamente usado.',
+      howToSolve:
+        'Configurar alertas de orçamento (Budget Alerts) avisa antes do gasto sair do controle. Revisar periodicamente recursos órfãos (instâncias paradas mas não terminadas, volumes não anexados) e sempre definir um máximo no Auto Scaling evita boa parte das surpresas.',
+    },
+    {
+      id: 'mes12-cen2',
+      context: 'pessoal',
+      title: 'Hospedando um site pessoal de graça',
+      emoji: '🌐',
+      situation:
+        'Você terminou um projeto pessoal e quer colocá-lo no ar para mostrar no LinkedIn/portfólio, sem gastar dinheiro com hospedagem.',
+      whatHappens:
+        'Para sites estáticos ou aplicações simples, o nível gratuito da AWS (S3 + CloudFront, por exemplo) ou serviços como Vercel/Netlify cobrem exatamente esse caso de uso sem custo, desde que o tráfego não seja gigantesco.',
+      howToSolve:
+        'S3 para hospedar os arquivos estáticos + CloudFront na frente (CDN, HTTPS gratuito, domínio próprio) é uma combinação clássica para portfólio pessoal. Para projetos fullstack com backend, Vercel/Railway têm planos gratuitos mais simples de configurar que AWS pura.',
     },
   ],
 };

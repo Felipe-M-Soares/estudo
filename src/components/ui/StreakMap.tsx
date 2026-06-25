@@ -8,7 +8,6 @@ function buildWeeks(activeDates: string[]): { date: string; active: boolean }[][
   const today = new Date();
   const days: { date: string; active: boolean }[] = [];
 
-  // 119 dias atrás até hoje (~17 semanas), alinhado terminando hoje
   for (let i = 118; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
@@ -27,10 +26,10 @@ export function StreakMap({ activeDates, streakDays }: StreakMapProps) {
   const weeks = buildWeeks(activeDates);
 
   return (
-    <div className="rounded-2xl border border-base-700 bg-base-850 p-4">
-      <div className="mb-3 flex items-center justify-between">
+    <div className="card-surface rounded-2xl p-5">
+      <div className="mb-3.5 flex items-center justify-between">
         <span className="font-display text-sm font-semibold text-base-50">Constância</span>
-        <span className="flex items-center gap-1.5 rounded-full bg-mint-900/40 px-2.5 py-1 text-xs font-semibold text-mint-300">
+        <span className="flex items-center gap-1.5 rounded-full bg-mint-900/40 px-2.5 py-1 text-xs font-semibold text-mint-300 ring-1 ring-mint-400/20">
           🔥 {streakDays} {streakDays === 1 ? 'dia' : 'dias'}
         </span>
       </div>
@@ -41,17 +40,17 @@ export function StreakMap({ activeDates, streakDays }: StreakMapProps) {
               <div
                 key={day.date}
                 title={day.date}
-                className={`h-[11px] w-[11px] rounded-[3px] ${
+                className={`h-[11px] w-[11px] rounded-[3px] transition-colors ${
                   day.active
-                    ? 'bg-mint-400'
-                    : 'bg-base-700'
+                    ? 'bg-mint-400 shadow-[0_0_6px_-1px_theme(colors.mint.400)]'
+                    : 'bg-base-700/70 ring-1 ring-inset ring-black/10'
                 }`}
               />
             ))}
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[11px] text-base-400">Cada quadrado é um dia em que você estudou.</p>
+      <p className="mt-2.5 text-[11px] text-base-400">Cada quadrado é um dia em que você estudou.</p>
     </div>
   );
 }

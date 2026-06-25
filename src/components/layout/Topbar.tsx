@@ -1,5 +1,7 @@
-import { Menu } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Menu, Search } from 'lucide-react';
 import { XpBar } from '../ui/XpBar';
+import { SearchModal } from '../ui/SearchModal';
 import type { UserProgress } from '../../data/types';
 
 interface TopbarProps {
@@ -9,8 +11,21 @@ interface TopbarProps {
 }
 
 export function Topbar({ progress, overallPercent, onMenuClick }: TopbarProps) {
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between border-b border-base-700 bg-base-900/90 px-4 py-3 backdrop-blur-md lg:px-6">
+    <header className="sticky top-0 z-20 flex items-center justify-between border-b border-base-700/80 bg-base-900/85 px-4 py-3 shadow-[0_1px_0_0_rgba(255,255,255,0.03)] backdrop-blur-md lg:px-6">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
@@ -30,12 +45,21 @@ export function Topbar({ progress, overallPercent, onMenuClick }: TopbarProps) {
           <span className="mono-num text-xs text-base-300">{overallPercent}%</span>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="flex items-center gap-2 rounded-lg border border-base-700 bg-base-800/60 px-2.5 py-1.5 text-xs text-base-400 transition-colors hover:border-cyan-400/40 hover:text-base-200"
+        >
+          <Search size={13} />
+          <span className="hidden sm:inline">Buscar</span>
+          <kbd className="hidden rounded bg-base-700 px-1.5 py-0.5 font-mono text-[10px] text-base-400 sm:inline">⌘K</kbd>
+        </button>
         <span className="hidden items-center gap-1 rounded-full bg-mint-900/40 px-2.5 py-1 text-xs font-semibold text-mint-300 sm:flex">
           🔥 {progress.streakDays}
         </span>
         <XpBar xp={progress.xp} compact />
       </div>
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }

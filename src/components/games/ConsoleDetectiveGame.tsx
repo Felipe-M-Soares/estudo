@@ -44,6 +44,30 @@ const challenges: ConsoleChallenge[] = [
     correctIndex: 1,
     explanation: 'Strings são iteráveis, então o spread operator as transforma em um array de caracteres individuais.',
   },
+  {
+    code: 'function criarContador() {\n  let c = 0;\n  return () => ++c;\n}\nconst contar = criarContador();\ncontar();\nconsole.log(contar())',
+    options: ['1', '2', 'undefined', 'Erro'],
+    correctIndex: 1,
+    explanation: 'Closure: a função retornada mantém acesso à variável "c" entre chamadas. A primeira chamada de contar() incrementa para 1 (não exibida), a segunda para 2 (exibida).',
+  },
+  {
+    code: 'console.log([1, [2, 3], [4, [5]]].flat(Infinity))',
+    options: ['[1, 2, 3, 4, 5]', '[1, [2,3], [4,[5]]]', 'Erro', '5'],
+    correctIndex: 0,
+    explanation: '`.flat(Infinity)` achata arrays aninhados em qualquer profundidade, resultando em um único array sem sub-arrays.',
+  },
+  {
+    code: 'const obj = { nome: "Ana" };\nconst { nome, idade = 30 } = obj;\nconsole.log(idade)',
+    options: ['undefined', '30', 'Erro', 'null'],
+    correctIndex: 1,
+    explanation: 'Destructuring permite definir um valor padrão (= 30) que é usado quando a propriedade não existe no objeto original.',
+  },
+  {
+    code: 'console.log(typeof NaN)',
+    options: ['"NaN"', '"number"', '"undefined"', '"object"'],
+    correctIndex: 1,
+    explanation: 'Apesar do nome "Not a Number", NaN é tecnicamente do tipo "number" em JavaScript — uma das peculiaridades mais citadas da linguagem.',
+  },
 ];
 
 interface ConsoleDetectiveGameProps {
@@ -77,7 +101,7 @@ export function ConsoleDetectiveGame({ onComplete }: ConsoleDetectiveGameProps) 
 
   if (finished) {
     return (
-      <div className="rounded-2xl border border-base-700 bg-base-850 p-6 text-center">
+      <div className="rounded-2xl card-surface p-6 text-center">
         <div className="text-3xl">🕵️</div>
         <h3 className="mt-2 font-display text-lg font-bold text-base-50">{score}/{challenges.length} previsões corretas</h3>
         <p className="mt-1 text-sm text-base-400">Você decifrou as pegadinhas do JavaScript.</p>
@@ -86,7 +110,7 @@ export function ConsoleDetectiveGame({ onComplete }: ConsoleDetectiveGameProps) 
   }
 
   return (
-    <div className="rounded-2xl border border-base-700 bg-base-850 p-5">
+    <div className="rounded-2xl card-surface p-5">
       <h3 className="font-display text-base font-bold text-base-50">🕵️ Detetive do Console</h3>
       <p className="mt-1 text-xs text-base-400">Pergunta {idx + 1}/{challenges.length} — qual é a saída exata?</p>
 

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { UserProgress } from '../data/types';
+import type { ProjectNote, UserProgress, InterviewHistoryEntry } from '../data/types';
 import { achievements, XP_PER_CHECKLIST, XP_PER_EXERCISE, XP_PER_GAME_PLAY } from '../data/achievements';
 import { modules } from '../data';
-
-const STORAGE_KEY = 'devjourney:progress:v1';
+import { progressStorageKey } from './useProfiles';
+import { scheduleNextReview } from '../data/spacedReview';
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -30,12 +30,15 @@ function defaultProgress(): UserProgress {
     moduleProgress: {},
     currentModuleId: 'mes-01',
     notes: {},
+    projectNotes: {},
+    spacedReview: {},
+    interviewHistory: [],
   };
 }
 
-function loadProgress(): UserProgress {
+function loadProgress(profileId: string): UserProgress {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(progressStorageKey(profileId));
     if (!raw) return defaultProgress();
     const parsed = JSON.parse(raw);
     return { ...defaultProgress(), ...parsed };
@@ -44,9 +47,9 @@ function loadProgress(): UserProgress {
   }
 }
 
-function saveProgress(p: UserProgress) {
+function saveProgress(profileId: string, p: UserProgress) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+    localStorage.setItem(progressStorageKey(profileId), JSON.stringify(p));
   } catch {
     // armazenamento indisponível (modo privado etc.) — falha silenciosamente
   }
@@ -58,10 +61,16 @@ export interface XpGainEvent {
   key: number;
 }
 
-export function useProgress() {
-  const [progress, setProgress] = useState<UserProgress>(() => loadProgress());
+export function useProgress(profileId: string) {
+  const [progress, setProgress] = useState<UserProgress>(() => loadProgress(profileId));
   const [lastXpGain, setLastXpGain] = useState<XpGainEvent | null>(null);
   const [newAchievement, setNewAchievement] = useState<string | null>(null);
+
+  // Recarrega o progresso sempre que o perfil ativo mudar
+  useEffect(() => {
+    setProgress(loadProgress(profileId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId]);
 
   // Atualiza streak na primeira carga do dia
   useEffect(() => {
@@ -89,11 +98,11 @@ export function useProgress() {
       return { ...prev, streakDays, lastActiveDate: today, activeDates };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [profileId]);
 
   useEffect(() => {
-    saveProgress(progress);
-  }, [progress]);
+    saveProgress(profileId, progress);
+  }, [profileId, progress]);
 
   const checkAchievements = useCallback((p: UserProgress): UserProgress => {
     const newly: string[] = [];
@@ -152,7 +161,11 @@ export function useProgress() {
         ? { ...prev.completedExercises, [exerciseId]: true }
         : prev.completedExercises;
 
-      let next = { ...prev, exerciseAttempts, completedExercises };
+      const existingReview = prev.spacedReview[exerciseId];
+      const reviewItem = scheduleNextReview(exerciseId, moduleId, correct, existingReview);
+      const spacedReview = { ...prev.spacedReview, [exerciseId]: reviewItem };
+
+      let next = { ...prev, exerciseAttempts, completedExercises, spacedReview };
       next = recomputeModuleProgress(next, moduleId);
 
       if (correct && !alreadyCompleted) {
@@ -184,11 +197,38 @@ export function useProgress() {
     setProgress((prev) => ({ ...prev, notes: { ...prev.notes, [moduleId]: text } }));
   }, []);
 
+  const saveProjectNote = useCallback((moduleId: string, text: string, links: { label: string; url: string }[]) => {
+    setProgress((prev) => {
+      const note: ProjectNote = { moduleId, text, links, updatedAt: new Date().toISOString() };
+      return { ...prev, projectNotes: { ...prev.projectNotes, [moduleId]: note } };
+    });
+  }, []);
+
+  const addInterviewResult = useCallback((entry: Omit<InterviewHistoryEntry, 'id'>) => {
+    setProgress((prev) => {
+      const withId: InterviewHistoryEntry = { ...entry, id: `iv-${Date.now()}` };
+      const interviewHistory = [withId, ...prev.interviewHistory].slice(0, 50);
+      return { ...prev, interviewHistory };
+    });
+  }, []);
+
+  const markReviewDone = useCallback((exerciseId: string, moduleId: string, correct: boolean) => {
+    setProgress((prev) => {
+      const existing = prev.spacedReview[exerciseId];
+      const reviewItem = scheduleNextReview(exerciseId, moduleId, correct, existing);
+      return { ...prev, spacedReview: { ...prev.spacedReview, [exerciseId]: reviewItem } };
+    });
+  }, []);
+
+  const importProgress = useCallback((imported: UserProgress) => {
+    setProgress({ ...defaultProgress(), ...imported });
+  }, []);
+
   const resetProgress = useCallback(() => {
     const fresh = defaultProgress();
     setProgress(fresh);
-    saveProgress(fresh);
-  }, []);
+    saveProgress(profileId, fresh);
+  }, [profileId]);
 
   const overallPercent = useMemo(() => {
     const total = modules.length * 100;
@@ -204,6 +244,10 @@ export function useProgress() {
     recordGameScore,
     setCurrentModule,
     setNote,
+    saveProjectNote,
+    addInterviewResult,
+    markReviewDone,
+    importProgress,
     resetProgress,
     overallPercent,
     lastXpGain,

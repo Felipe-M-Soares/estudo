@@ -21,7 +21,8 @@ export const mes16: Module = {
       id: 'l2',
       heading: 'CAP Theorem: você não pode ter tudo',
       body:
-        'Em um sistema distribuído, durante uma falha de rede (Partição), você é forçado a escolher entre **Consistência** (todos veem o mesmo dado, mesmo que isso signifique recusar responder) e **Disponibilidade** (sempre responder, mesmo que o dado possa estar desatualizado). Não existe sistema distribuído que garanta as três propriedades (Consistência, Disponibilidade, Tolerância a Partição) simultaneamente o tempo todo — esse é o CAP Theorem.',
+        'Em um sistema distribuído, durante uma falha de rede (Partição), você é forçado a escolher entre **Consistência** (todos veem o mesmo dado, mesmo que isso signifique recusar responder) e **Disponibilidade** (sempre responder, mesmo que o dado possa estar desatualizado). Não existe sistema distribuído que garanta as três propriedades (Consistência, Disponibilidade, Tolerância a Partição) simultaneamente o tempo todo — esse é o CAP Theorem. Explore as três combinações possíveis abaixo.',
+      diagramId: 'cap-theorem',
     },
     {
       id: 'l3',
@@ -34,6 +35,18 @@ export const mes16: Module = {
       heading: 'Sharding e replicação',
       body:
         '**Sharding** divide um banco de dados muito grande em partições (shards) menores, cada uma em uma máquina diferente, distribuindo a carga. **Replicação** mantém cópias do mesmo dado em múltiplas máquinas — para tolerância a falhas (se uma cair, outra responde) e para distribuir carga de leitura.',
+    },
+    {
+      id: 'l5',
+      heading: 'Cache: a forma mais barata de parecer rápido',
+      body:
+        'Cache guarda uma cópia de um dado já calculado/buscado, para responder requisições futuras sem repetir o trabalho caro. Pode existir em várias camadas: no navegador, numa CDN, num cache em memória (Redis) entre a aplicação e o banco, ou até dentro do próprio banco.\n\nO problema central de qualquer cache é **invalidação**: como saber quando o dado em cache ficou desatualizado e precisa ser atualizado ou descartado? Estratégias comuns incluem TTL (expira automaticamente após um tempo), invalidação explícita (o código avisa o cache quando o dado original muda) e write-through (toda escrita já atualiza o cache imediatamente).',
+    },
+    {
+      id: 'l6',
+      heading: 'Load Balancing: distribuindo trabalho entre várias máquinas',
+      body:
+        'Um Load Balancer recebe todo o tráfego de entrada e decide para qual servidor (de um conjunto de réplicas idênticas) cada requisição vai. Algoritmos comuns: **round-robin** (distribui em sequência, um para cada), **least connections** (manda para quem está com menos carga agora), e **hash baseado em IP** (o mesmo cliente sempre cai no mesmo servidor, útil quando há estado de sessão).\n\nUm bom load balancer também faz health checks: remove automaticamente da rotação qualquer servidor que parou de responder, e o devolve quando ele volta a responder normalmente.',
     },
   ],
   resources: [
@@ -83,12 +96,69 @@ export const mes16: Module = {
       explanation:
         'Quando uma operação de negócio abrange vários serviços com bancos próprios, não há uma transação atômica única possível — Saga coordena isso com passos e compensações.',
     },
+    {
+      type: 'mcq',
+      id: 'm16-e4',
+      prompt: 'Qual é o problema central que toda estratégia de cache precisa resolver?',
+      options: [
+        'Onde guardar o dado fisicamente',
+        'Invalidação: saber quando o dado em cache está desatualizado',
+        'Cache não tem nenhum problema real',
+        'Quanto cobrar pelo uso do cache',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Um cache desatualizado é pior que não ter cache — ele entrega informação errada com confiança. Por isso invalidação correta é o desafio central de qualquer estratégia de cache.',
+    },
+    {
+      type: 'match',
+      id: 'm16-e5',
+      prompt: 'Associe cada algoritmo de load balancing à sua estratégia.',
+      pairs: [
+        { left: 'Round-robin', right: 'Distribui requisições em sequência, uma para cada servidor' },
+        { left: 'Least connections', right: 'Envia para o servidor com menos conexões ativas no momento' },
+        { left: 'Hash por IP', right: 'O mesmo cliente sempre cai no mesmo servidor' },
+      ],
+      explanation:
+        'Cada algoritmo otimiza para um cenário diferente — round-robin para simplicidade, least connections para carga desigual, hash por IP para sessões com estado.',
+    },
   ],
   games: [
     {
       gameId: 'system-design-whiteboard',
       label: 'Quadro Branco de System Design',
       description: 'Desenhe a arquitetura de um sistema dado um cenário (ex: encurtador de URLs, feed de rede social) com componentes arrastáveis.',
+    },
+    {
+      gameId: 'memory-concepts',
+      label: 'Memória de Conceitos',
+      description: 'Revise termos de infraestrutura e cloud antes de ir para o projeto final.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes16-cen1',
+      context: 'trabalho',
+      title: 'Promoção da Black Friday derruba o site',
+      emoji: '🛍️',
+      situation:
+        'Numa campanha de grande tráfego, o site de um cliente fica fora do ar nos primeiros 10 minutos — exatamente quando mais pessoas estavam acessando.',
+      whatHappens:
+        'O sistema foi desenhado para o tráfego do dia a dia, sem prever picos de 50x o normal. Sem cache na frente do banco, sem auto-scaling configurado, e sem load balancer distribuindo bem a carga, o primeiro gargalo (geralmente o banco de dados) trava tudo que depende dele.',
+      howToSolve:
+        'Para eventos de pico previsíveis, a prática é fazer teste de carga (simular o tráfego esperado) antes do evento, garantir auto-scaling com limites adequados, e colocar cache agressivo na frente de qualquer dado que não precisa ser 100% em tempo real (como contagem de estoque aproximada).',
+    },
+    {
+      id: 'mes16-cen2',
+      context: 'pessoal',
+      title: 'Pensando em como o WhatsApp aguenta bilhões de mensagens',
+      emoji: '🤔',
+      situation:
+        'Você se pergunta, curioso, como aplicativos como WhatsApp conseguem entregar mensagens instantaneamente para bilhões de pessoas sem travar.',
+      whatHappens:
+        'É uma pergunta de System Design de verdade — a resposta envolve várias das técnicas deste módulo trabalhando juntas: sharding (dados de usuários diferentes em servidores diferentes), replicação (cópias para tolerância a falha), e filas de mensagens para garantir entrega mesmo se o destinatário estiver offline.',
+      howToSolve:
+        'Exercite isso você mesmo: pegue um sistema que você usa todo dia (WhatsApp, Instagram, Uber) e tente desenhar, no papel, como ele provavelmente é estruturado por trás — esse tipo de prática mental é exatamente o que entrevistas de System Design avaliam.',
     },
   ],
 };
@@ -121,6 +191,18 @@ export const mes17: Module = {
       heading: 'Inglês técnico: vocabulário que aparece todo dia',
       body:
         'A maior parte da documentação técnica, das discussões em fóruns e das vagas internacionais é em inglês. Você não precisa de fluência de cinema — precisa de vocabulário técnico sólido (deploy, rollback, threshold, throughput, race condition) e confiança para escrever um PR description ou participar de uma daily em inglês sem travar.',
+    },
+    {
+      id: 'l4',
+      heading: 'Comunicação assíncrona: escrever para quem não está olhando agora',
+      body:
+        'Times distribuídos (e até times no mesmo escritório, hoje) dependem cada vez mais de comunicação assíncrona: mensagens, PRs, documentos — em vez de reuniões em tempo real. Escrever bem nesse formato significa dar contexto suficiente para que a pessoa não precise te perguntar de volta "mas o que você quer dizer?": qual o problema, o que você já tentou, o que precisa da outra pessoa, e até quando.\n\nUma mensagem assíncrona malfeita ("dá uma olhada nisso aí") gera dias de ida e volta perguntando contexto. Uma boa mensagem assíncrona já antecipa as perguntas óbvias e permite que a pessoa responda de forma útil na primeira tentativa.',
+    },
+    {
+      id: 'l5',
+      heading: 'Negociação técnica: discordar sem travar o time',
+      body:
+        'Discordar de uma decisão técnica é saudável; insistir indefinidamente depois que a decisão foi tomada, não é. O princípio "disagree and commit" (usado em vários times de tecnologia) é: exponha sua discordância com argumentos claros, mas se o time decidir seguir outro caminho, comprometa-se com ele de verdade — não saboteando passivamente nem revisitando o debate a cada oportunidade.\n\nIsso não significa concordar sempre — significa escolher bem as batalhas, trazer dados (não só opinião) quando discordar, e aceitar que nem toda decisão vai ser exatamente como você faria.',
     },
   ],
   resources: [
@@ -169,6 +251,28 @@ export const mes17: Module = {
       correctIndex: 0,
       explanation: 'Um ADR registra o contexto e raciocínio por trás de uma decisão arquitetural, preservando esse conhecimento ao longo do tempo.',
     },
+    {
+      type: 'mcq',
+      id: 'm17-e4',
+      prompt: 'O que torna uma mensagem assíncrona ("Dá uma olhada nisso") menos eficaz que uma mais elaborada?',
+      options: [
+        'Mensagens curtas são sempre piores',
+        'Ela não dá contexto suficiente, gerando idas e voltas para esclarecer o que realmente é necessário',
+        'Não há diferença real',
+        'Mensagens assíncronas nunca funcionam',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Sem contexto (qual o problema, o que já foi tentado, o que se espera da outra pessoa), quem recebe a mensagem precisa perguntar de volta, perdendo o principal benefício da comunicação assíncrona: resolver sem ida e volta.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm17-e5',
+      prompt: '"Disagree and commit" significa que você deve sempre concordar com a decisão do time, mesmo discordando.',
+      answer: false,
+      explanation:
+        'O princípio é expor a discordância com argumentos claros antes da decisão, mas se comprometer genuinamente com o que for decidido — não significa silenciar a opinião, e sim não sabotar depois que a decisão foi tomada.',
+    },
   ],
   games: [
     {
@@ -180,6 +284,32 @@ export const mes17: Module = {
       gameId: 'tech-english-flashcards',
       label: 'Flashcards de Inglês Técnico',
       description: 'Pratique vocabulário técnico em inglês usado em código, PRs e reuniões do dia a dia.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes17-cen1',
+      context: 'trabalho',
+      title: 'Um comentário de review gera atrito no time',
+      emoji: '😤',
+      situation:
+        'Um desenvolvedor júnior fica visivelmente desmotivado depois de receber vários comentários secos como "isso está errado" num Pull Request, sem nenhuma explicação do porquê.',
+      whatHappens:
+        'Feedback sem contexto nem sugestão de caminho não ensina nada — só comunica "errado", deixando quem recebeu sem saber como melhorar, e gerando desconfiança em pedir ajuda nas próximas vezes.',
+      howToSolve:
+        'Comentários de review eficazes explicam o porquê ("esse loop pode ficar lento com listas grandes") e sugerem uma direção ("que acha de usar um Map aqui?"), tratando o código como o assunto, nunca a pessoa.',
+    },
+    {
+      id: 'mes17-cen2',
+      context: 'pessoal',
+      title: 'Lendo documentação técnica em inglês sem travar',
+      emoji: '📖',
+      situation:
+        'Você quer aprender uma biblioteca nova, mas a documentação oficial só existe em inglês, e isso te deixa mais lento que gostaria.',
+      whatHappens:
+        'A maior parte da documentação técnica de qualidade é escrita primeiro (e às vezes exclusivamente) em inglês — não é sobre fluência de conversação, é sobre reconhecer um vocabulário técnico relativamente pequeno e repetitivo.',
+      howToSolve:
+        'Em vez de traduzir tudo, foque em memorizar os termos técnicos que aparecem o tempo todo (deploy, rollback, threshold, throughput, race condition) — uma vez que esse vocabulário fica automático, ler documentação técnica em inglês deixa de ser um obstáculo.',
     },
   ],
 };
@@ -212,6 +342,18 @@ export const mes18: Module = {
       heading: 'Documentação e apresentação: o que faz alguém contratar você',
       body:
         'Um README excelente explica: o que o projeto faz, como rodar localmente, decisões de arquitetura importantes, e o que você aprenderia/faria diferente com mais tempo. Um vídeo curto de demonstração (3-5 min) mostrando o sistema funcionando vale mais que qualquer descrição em texto — recrutadores raramente vão clonar e rodar seu projeto, mas quase sempre assistem um vídeo de 3 minutos.',
+    },
+    {
+      id: 'l4',
+      heading: 'Preparando-se para entrevistas técnicas sobre o seu próprio projeto',
+      body:
+        'Em entrevistas para vagas sêniores, é comum que o entrevistador peça para você apresentar e defender decisões de um projeto seu. As perguntas mais frequentes seguem um padrão: "por que você escolheu X em vez de Y?", "o que você faria diferente hoje?", "como isso escalaria com 100x mais usuários?".\n\nA resposta que impressiona não é "porque é a tecnologia mais usada" — é demonstrar que você considerou alternativas reais e escolheu com base em trade-offs específicos do seu contexto. Prepare, para cada decisão importante do projeto, uma frase curta que explique o porquê — isso é literalmente o conteúdo de um ADR que você already aprendeu a escrever.',
+    },
+    {
+      id: 'l5',
+      heading: 'Portfólio além do código: o que mais importa para quem contrata',
+      body:
+        'Um projeto técnico sólido é necessário, mas raramente suficiente por si só. Complementos que fazem diferença real: um LinkedIn atualizado contando a sua jornada (não só uma lista de tecnologias), contribuições visíveis em projetos open source (mesmo pequenas, como corrigir um erro de documentação), e um histórico de commits consistente no GitHub que mostra constância ao longo do tempo, não só um projeto isolado feito num fim de semana.\n\nO objetivo final desses 18 meses não é só "saber" todas essas tecnologias — é ter evidências verificáveis de que você sabe, que qualquer recrutador ou tech lead possa checar em poucos minutos.',
     },
   ],
   resources: [
@@ -261,12 +403,60 @@ export const mes18: Module = {
       explanation:
         'A escolha de tecnologia deveria seguir as características reais dos dados e do caso de uso, não modismo — esse raciocínio é exatamente o que se espera de um dev sênior.',
     },
+    {
+      type: 'mcq',
+      id: 'm18-e4',
+      prompt: 'Em uma entrevista, o entrevistador pergunta "por que você não usou Kubernetes nesse projeto?". Qual resposta demonstra mais maturidade técnica?',
+      options: [
+        '"Não tive tempo de aprender"',
+        '"Para o tamanho e o tráfego esperado desse projeto, a complexidade operacional do Kubernetes não se justificava — Docker Compose já resolvia bem"',
+        '"Kubernetes é difícil demais"',
+        '"Não sabia que existia essa opção"',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Justificar a escolha com base em trade-offs reais (escala, complexidade operacional, tempo) demonstra julgamento técnico — exatamente o que entrevistas para vagas sêniores avaliam, mais do que conhecer todas as tecnologias possíveis.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm18-e5',
+      prompt: 'Um histórico de commits consistente ao longo do tempo comunica algo diferente de um projeto único feito em um fim de semana, mesmo que o código final seja parecido.',
+      answer: true,
+      explanation:
+        'Constância visível no histórico de commits sugere capacidade de manter disciplina e progresso ao longo do tempo — um sinal que recrutadores frequentemente valorizam além da qualidade pontual do código.',
+    },
   ],
   games: [
     {
       gameId: 'architecture-review-board',
       label: 'Banca de Revisão de Arquitetura',
       description: 'Apresente decisões do seu projeto final a uma "banca" simulada e receba perguntas típicas de entrevista de arquitetura.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes18-cen1',
+      context: 'trabalho',
+      title: 'O projeto de portfólio que nunca termina',
+      emoji: '♾️',
+      situation:
+        'Um candidato a vaga sênior trabalha no mesmo projeto pessoal há 8 meses, sempre adicionando "só mais uma funcionalidade" antes de considerá-lo pronto para mostrar.',
+      whatHappens:
+        'Sem um escopo fechado definido desde o início, projetos pessoais tendem a crescer indefinidamente — cada funcionalidade nova parece necessária no momento, mas o projeto nunca chega a um estado "pronto para mostrar", e o tempo que poderia render uma entrevista é gasto em polimento infinito.',
+      howToSolve:
+        'Defina por escrito, antes de começar a codar, as 3-5 funcionalidades que tornam o projeto "completo" — e pare ali. Funcionalidades extras viram itens de "próximos passos" no README, demonstrando visão sem precisar implementá-las todas antes de mostrar o trabalho.',
+    },
+    {
+      id: 'mes18-cen2',
+      context: 'pessoal',
+      title: 'Decidindo o que realmente construir como projeto final',
+      emoji: '🎯',
+      situation:
+        'Depois de 18 meses estudando, surge a paralisia de escolha: construir um clone de rede social? Um sistema de e-commerce? Algo totalmente original?',
+      whatHappens:
+        'Projetos clichê (mais um clone de Twitter, mais um To-Do list) competem com milhares de outros parecidos no portfólio de quem está entrando no mercado — eles provam que você sabe codar, mas não destacam você de ninguém.',
+      howToSolve:
+        'O projeto mais forte geralmente resolve um problema real que você mesmo tem ou conhece bem — isso naturalmente traz decisões de produto mais interessantes para justificar em entrevista do que um clone genérico, mesmo usando exatamente a mesma stack técnica.',
     },
   ],
   projectBrief: {

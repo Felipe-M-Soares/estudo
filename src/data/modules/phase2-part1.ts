@@ -25,11 +25,12 @@ export const mes07: Module = {
       id: 'l2',
       heading: 'useState e useEffect: os dois hooks que você usa todo dia',
       body:
-        '`useState` dá a um componente "memória" entre renderizações — um valor que, quando muda via sua função `set`, faz o React re-renderizar o componente. `useEffect` executa código em resposta a algo mudar (ou só uma vez, ao montar o componente) — é onde você busca dados de uma API, por exemplo.\n\nO erro mais comum de quem está aprendendo é esquecer o **array de dependências** do `useEffect`, causando loops infinitos ou efeitos que nunca disparam.',
+        '`useState` dá a um componente "memória" entre renderizações — um valor que, quando muda via sua função `set`, faz o React re-renderizar o componente. `useEffect` executa código em resposta a algo mudar (ou só uma vez, ao montar o componente) — é onde você busca dados de uma API, por exemplo.\n\nO erro mais comum de quem está aprendendo é esquecer o **array de dependências** do `useEffect`, causando loops infinitos ou efeitos que nunca disparam. Clique no botão abaixo e observe a ordem real: primeiro o re-render, só depois o efeito.',
       codeExample: {
         lang: 'tsx',
         code: 'function Lista() {\n  const [itens, setItens] = useState<string[]>([]);\n\n  useEffect(() => {\n    fetch("/api/itens")\n      .then(r => r.json())\n      .then(setItens);\n  }, []); // [] = roda só na montagem\n\n  return <ul>{itens.map(i => <li key={i}>{i}</li>)}</ul>;\n}',
       },
+      diagramId: 'react-lifecycle',
     },
     {
       id: 'l3',
@@ -46,6 +47,26 @@ export const mes07: Module = {
       heading: 'Context API: compartilhando estado sem prop drilling',
       body:
         'Quando muitos componentes em níveis diferentes da árvore precisam do mesmo dado (tema, usuário logado), passar via props por cada nível ("prop drilling") fica insustentável. Context cria um "túnel" que qualquer componente filho pode acessar direto, sem precisar que cada nível intermediário repasse a prop manualmente.',
+    },
+    {
+      id: 'l5',
+      heading: 'useMemo e useCallback: evitando trabalho repetido sem virar reflexo',
+      body:
+        '`useMemo` memoriza o **resultado** de um cálculo caro, recalculando só quando suas dependências mudam — útil para filtrar/ordenar listas grandes a cada render. `useCallback` memoriza a **referência** de uma função, evitando que ela seja recriada (e, por consequência, force re-renders desnecessários em componentes filhos que a recebem como prop).\n\nO erro mais comum não é esquecer de usá-los, é usá-los em todo lugar "por precaução": ambos têm um custo próprio, e otimizar prematuramente código que não tem problema de performance real só adiciona complexidade sem benefício. Meça antes de otimizar.',
+      codeExample: {
+        lang: 'tsx',
+        code: 'const itensFiltrados = useMemo(\n  () => itens.filter(i => i.ativo),\n  [itens]\n);\n\nconst aoClicar = useCallback(() => {\n  enviar(itemId);\n}, [itemId]);',
+      },
+    },
+    {
+      id: 'l6',
+      heading: 'Custom hooks: extraindo lógica reutilizável',
+      body:
+        'Um custom hook é só uma função cujo nome começa com `use` e que pode chamar outros hooks dentro dela. Isso permite extrair lógica com estado (ex: "buscar dados de uma URL e controlar loading/erro") em uma função reutilizável, em vez de duplicar a mesma lógica de `useState` + `useEffect` em vários componentes.\n\nCustom hooks não compartilham estado entre si — cada componente que chama `useFetch(url)` tem sua própria cópia independente do estado interno do hook. O que é compartilhado é só a **lógica**, não os dados.',
+      codeExample: {
+        lang: 'tsx',
+        code: 'function useFetch<T>(url: string) {\n  const [dados, setDados] = useState<T | null>(null);\n  const [carregando, setCarregando] = useState(true);\n\n  useEffect(() => {\n    fetch(url).then(r => r.json()).then(setDados).finally(() => setCarregando(false));\n  }, [url]);\n\n  return { dados, carregando };\n}',
+      },
     },
   ],
   resources: [
@@ -113,6 +134,37 @@ export const mes07: Module = {
       ],
       explanation: 'Esse é o padrão clássico de "buscar dados ao montar" em React — entender essa sequência evita bugs de timing.',
     },
+    {
+      type: 'mcq',
+      id: 'm7-e6',
+      prompt: 'Qual a diferença fundamental entre useMemo e useCallback?',
+      options: [
+        'Não há diferença, são sinônimos',
+        'useMemo memoriza um valor calculado; useCallback memoriza a referência de uma função',
+        'useCallback só funciona em classes',
+        'useMemo é mais rápido em qualquer situação',
+      ],
+      correctIndex: 1,
+      explanation:
+        'useMemo guarda o resultado de uma computação; useCallback guarda a própria função (sua referência), o que é útil para evitar re-renders desnecessários em componentes filhos.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm7-e7',
+      prompt: 'Usar useMemo e useCallback em absolutamente todo lugar sempre melhora a performance do app.',
+      answer: false,
+      explanation:
+        'Ambos têm um custo de memória e comparação próprios. Usá-los sem necessidade real (em cálculos baratos ou componentes que não sofrem com re-render) pode até piorar levemente a performance, além de adicionar complexidade desnecessária.',
+    },
+    {
+      type: 'code-fill',
+      id: 'm7-e8',
+      prompt: 'Complete o nome do custom hook seguindo a convenção do React.',
+      codeTemplate: 'function ___Fetch(url: string) {\n  // lógica do hook\n}',
+      answer: 'use',
+      hint: 'Todo hook, customizado ou nativo, precisa começar com esse prefixo para o React reconhecê-lo como hook.',
+      explanation: 'A convenção `use` no início do nome não é apenas estilo — é o que permite ao React (e ao linter de hooks) identificar a função como um hook e aplicar suas regras.',
+    },
   ],
   games: [
     {
@@ -124,6 +176,49 @@ export const mes07: Module = {
       gameId: 'typescript-type-detective',
       label: 'Detetive de Tipos',
       description: 'Encontre o erro de tipo escondido no código TypeScript antes do compilador apontar.',
+    },
+    {
+      gameId: 'bug-hunter',
+      label: 'Caça-Bug',
+      description: 'Encontre a linha com erro em trechos reais de código, incluindo um clássico de mutação de estado em React.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes07-cen1',
+      context: 'trabalho',
+      title: 'Tela "pisca" e busca os dados de novo sem parar',
+      emoji: '🔁',
+      situation:
+        'Uma tela de listagem fica fazendo requisições à API infinitamente, e o time de backend reclama que essa tela sozinha está sobrecarregando o servidor.',
+      whatHappens:
+        'O `useEffect` que busca os dados tem uma dependência que muda a cada renderização (como um objeto ou array criado inline no render), fazendo o efeito disparar de novo a cada render, que causa novo fetch, que causa novo render — um loop infinito de chamadas.',
+      howToSolve:
+        'Dependências de `useEffect` devem ser valores estáveis entre renders — primitivos (strings, números) ou referências memorizadas com `useMemo`/`useCallback`. As DevTools do React e o eslint-plugin de hooks ajudam a flagrar esse padrão antes que chegue em produção.',
+    },
+    {
+      id: 'mes07-cen2',
+      context: 'pessoal',
+      title: 'Construindo uma calculadora de divisão de contas',
+      emoji: '🧮',
+      situation:
+        'Você quer um app simples pra dividir a conta de um jantar entre amigos, considerando quem pediu o quê, sem fazer conta de cabeça ou em papel.',
+      whatHappens:
+        'É um ótimo primeiro projeto React de verdade: estado para a lista de pessoas, estado para os itens de cada um, e um cálculo derivado (o total de cada pessoa) que não precisa de seu próprio `useState` — pode ser calculado direto a partir dos outros estados durante o render.',
+      howToSolve:
+        'Resista ao impulso de criar um `useState` para "o total" — isso é um valor derivado, calculável a partir dos itens de cada pessoa a cada render. Estado duplicado e sincronizado manualmente é uma fonte clássica de bugs sutis.',
+    },
+    {
+      id: 'mes07-cen3',
+      context: 'trabalho',
+      title: 'TypeScript "implora" para você usar `any` em tudo',
+      emoji: '🙈',
+      situation:
+        'Sob pressão de prazo, um colega sugere "só coloca `any` aqui que resolve" toda vez que o TypeScript reclama de um tipo.',
+      whatHappens:
+        '`any` desativa completamente a checagem de tipos para aquele valor — é como dizer ao TypeScript "confia em mim e não verifica nada". O código compila, mas qualquer erro de tipo que existiria só aparece em produção, na hora errada.',
+      howToSolve:
+        'Quando o tipo real é incerto, prefira `unknown` (que força uma verificação antes de usar) a `any`. Quando o tipo é conhecido mas complexo, vale o tempo de escrever a interface correta — o objetivo do TypeScript é justamente pegar esses erros antes do deploy, não depois.',
     },
   ],
 };
@@ -173,6 +268,26 @@ export const mes08: Module = {
       codeExample: {
         lang: 'java',
         code: '@Test\nvoid deveRetornarUsuarioPeloId() {\n  Usuario usuario = service.buscarPorId(1L);\n  assertEquals("Ana", usuario.getNome());\n}',
+      },
+    },
+    {
+      id: 'l5',
+      heading: 'Injeção de dependência: o motor invisível do Spring',
+      body:
+        'Em vez de uma classe criar manualmente suas próprias dependências (`new UsuarioRepository()`), o Spring as "injeta" automaticamente via `@Autowired` ou pelo construtor. A classe só declara "eu preciso de um UsuarioRepository" e o Spring se encarrega de fornecer a instância certa.\n\nO benefício prático: trocar a implementação real por uma falsa (mock) em testes fica trivial, porque a classe nunca decidiu sozinha qual implementação usar — isso é fundamental para testar código que depende de banco de dados ou serviços externos sem realmente acessá-los durante o teste.',
+      codeExample: {
+        lang: 'java',
+        code: '@Service\nclass UsuarioService {\n  private final UsuarioRepository repository;\n\n  // injeção via construtor — a forma recomendada\n  UsuarioService(UsuarioRepository repository) {\n    this.repository = repository;\n  }\n}',
+      },
+    },
+    {
+      id: 'l6',
+      heading: 'Spring Data JPA: relacionamentos sem escrever SQL repetitivo',
+      body:
+        'Spring Data JPA gera automaticamente as operações de banco mais comuns (buscar por id, salvar, deletar) só a partir da interface `JpaRepository`, sem você escrever uma linha de SQL. Para relacionamentos entre tabelas, anotações como `@OneToMany` e `@ManyToOne` descrevem a relação direto nas classes Java, e o JPA cuida de gerar as queries necessárias.\n\nCuidado com o "problema N+1": carregar uma lista de entidades e depois acessar uma relação de cada uma, um por um, pode gerar uma query adicional para cada item — péssimo para performance. `@EntityGraph` ou JOIN FETCH explícito resolvem isso carregando tudo de uma vez.',
+      codeExample: {
+        lang: 'java',
+        code: '@Entity\nclass Pedido {\n  @ManyToOne\n  private Cliente cliente;\n}\n\ninterface PedidoRepository extends JpaRepository<Pedido, Long> {\n  List<Pedido> findByClienteId(Long clienteId);\n}',
       },
     },
   ],
@@ -242,6 +357,37 @@ export const mes08: Module = {
       explanation:
         'Cada camada tem uma responsabilidade isolada: controller lida com HTTP, serviço com regra de negócio, repositório com persistência.',
     },
+    {
+      type: 'mcq',
+      id: 'm8-e6',
+      prompt: 'Qual a principal vantagem de usar injeção de dependência via construtor em vez de instanciar dependências manualmente com "new"?',
+      options: [
+        'O código fica mais curto, só isso',
+        'Permite substituir a implementação real por um mock em testes, sem mudar a classe',
+        'É a única forma que o Java permite',
+        'Torna o programa mais rápido automaticamente',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Como a classe recebe a dependência de fora, em testes você pode injetar uma versão falsa (mock) dessa dependência, isolando o teste do comportamento real do banco ou serviço externo.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm8-e7',
+      prompt: 'O "problema N+1" em JPA significa que uma query inicial dispara uma query adicional para cada item de uma lista relacionada.',
+      answer: true,
+      explanation:
+        'Esse é exatamente o problema: buscar N entidades e depois acessar uma relação lazy de cada uma dispara N queries adicionais, em vez de uma única query otimizada que já traga tudo junto.',
+    },
+    {
+      type: 'mcq',
+      id: 'm8-e8',
+      prompt: 'Qual anotação JPA descreve a relação "um pedido pertence a um único cliente"?',
+      options: ['@OneToMany', '@ManyToOne', '@ManyToMany', '@Entity'],
+      correctIndex: 1,
+      explanation:
+        '`@ManyToOne` no lado do Pedido expressa que muitos pedidos podem pertencer a um único cliente — a relação inversa seria `@OneToMany` no lado do Cliente.',
+    },
   ],
   games: [
     {
@@ -253,6 +399,44 @@ export const mes08: Module = {
       gameId: 'java-stream-builder',
       label: 'Montador de Streams',
       description: 'Encadeie filter, map e collect na ordem certa para transformar uma lista no resultado pedido.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes08-cen1',
+      context: 'trabalho',
+      title: 'A tela de pedidos demora cada vez mais para carregar',
+      emoji: '🐌',
+      situation:
+        'Conforme a base de clientes cresceu, a tela que lista pedidos com nome do cliente está cada vez mais lenta, mesmo paginando os resultados.',
+      whatHappens:
+        'Esse é o clássico "problema N+1": a query principal busca 20 pedidos, e para cada um, o JPA dispara automaticamente outra query para buscar o cliente relacionado — 1 query principal + 20 queries extras, em vez de uma única query bem feita.',
+      howToSolve:
+        'Usar `JOIN FETCH` na query (ou `@EntityGraph`) faz o JPA buscar pedidos e clientes relacionados numa única consulta otimizada, eliminando as 20 queries extras. Ferramentas como o Hibernate têm logs específicos para flagrar esse padrão durante o desenvolvimento.',
+    },
+    {
+      id: 'mes08-cen2',
+      context: 'pessoal',
+      title: 'Modelando o controle de uma coleção de jogos',
+      emoji: '🎮',
+      situation:
+        'Você quer um sisteminha (mesmo que só para você) que controla sua coleção de jogos: qual plataforma, se já zerou, nota pessoal.',
+      whatHappens:
+        'Isso é um exercício perfeito para praticar modelagem orientada a objetos de verdade — uma classe `Jogo` com campos bem definidos, talvez um enum para `Plataforma`, e métodos que fazem sentido no domínio (como `marcarComoZerado()`).',
+      howToSolve:
+        'Comece pelo modelo: o que é um "Jogo" no seu sistema, quais campos ele tem, o que pode mudar nele. Um `record` Java (se os dados não mudam) ou uma classe com Spring Data JPA (se for persistir num banco) aplicam exatamente o que você está aprendendo neste módulo.',
+    },
+    {
+      id: 'mes08-cen3',
+      context: 'trabalho',
+      title: 'Mudar uma regra de negócio quebra 5 lugares diferentes',
+      emoji: '🧱',
+      situation:
+        'O time de produto pede uma mudança simples na regra de desconto, mas o desenvolvedor encontra a mesma lógica de cálculo copiada e colada em 5 arquivos diferentes do sistema.',
+      whatHappens:
+        'Isso é uma violação do princípio de responsabilidade única e de não-repetição — quando a mesma regra de negócio vive em vários lugares, toda mudança futura exige lembrar (e não esquecer) de atualizar todos eles, um convite a bugs por inconsistência.',
+      howToSolve:
+        'Centralizar essa regra numa única classe de serviço (ex: `CalculadoraDesconto`), chamada por todos os lugares que precisam dela, faz com que uma mudança futura precise ser feita (e testada) em um único lugar — o ganho de manutenibilidade que SOLID busca proteger.',
     },
   ],
 };
@@ -272,11 +456,12 @@ export const mes09: Module = {
       id: 'l1',
       heading: 'Imagens e containers: o blueprint e a casa construída',
       body:
-        'Uma **imagem** é um blueprint imutável — uma receita de como montar o ambiente da sua aplicação, definida em um `Dockerfile`. Um **container** é uma instância em execução dessa imagem — você pode rodar vários containers da mesma imagem simultaneamente, cada um isolado.\n\n`docker build` cria a imagem a partir do Dockerfile; `docker run` cria e inicia um container a partir dela.',
+        'Uma **imagem** é um blueprint imutável — uma receita de como montar o ambiente da sua aplicação, definida em um `Dockerfile`. Um **container** é uma instância em execução dessa imagem — você pode rodar vários containers da mesma imagem simultaneamente, cada um isolado.\n\n`docker build` cria a imagem a partir do Dockerfile; `docker run` cria e inicia um container a partir dela. Experimente criar e remover containers abaixo.',
       codeExample: {
         lang: 'dockerfile',
         code: 'FROM node:20-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\nEXPOSE 3000\nCMD ["node", "server.js"]',
       },
+      diagramId: 'docker-image-container',
     },
     {
       id: 'l2',
@@ -293,6 +478,22 @@ export const mes09: Module = {
       heading: 'Volumes: persistindo dados além da vida do container',
       body:
         'Por padrão, qualquer dado escrito dentro de um container some quando ele é destruído — containers são descartáveis por design. **Volumes** criam um espaço de armazenamento que vive fora do ciclo de vida do container, garantindo que dados de banco, por exemplo, sobrevivam a reinicializações e recriações.',
+    },
+    {
+      id: 'l4',
+      heading: 'Multi-stage build: imagens menores e mais seguras',
+      body:
+        'Um Dockerfile comum inclui ferramentas de build (compiladores, dependências de desenvolvimento) que não são necessárias para **rodar** a aplicação em produção — só para construí-la. Multi-stage build usa múltiplos blocos `FROM` no mesmo Dockerfile: um estágio compila/builda o projeto, e o estágio final copia só os artefatos prontos, descartando tudo que foi usado apenas para build.\n\nO resultado prático: imagens finais drasticamente menores (menos tempo de deploy, menos superfície de ataque) sem perder nada da capacidade de build.',
+      codeExample: {
+        lang: 'dockerfile',
+        code: '# Estágio 1: build\nFROM node:20 AS build\nWORKDIR /app\nCOPY . .\nRUN npm install && npm run build\n\n# Estágio 2: produção\nFROM nginx:alpine\nCOPY --from=build /app/dist /usr/share/nginx/html',
+      },
+    },
+    {
+      id: 'l5',
+      heading: 'Redes Docker: como containers se encontram',
+      body:
+        'Containers no mesmo `docker-compose.yml` automaticamente compartilham uma rede privada, e podem se comunicar usando o **nome do serviço** como hostname — não `localhost`, e não o IP. Se seu backend precisa falar com o banco, ele usa `db:5432` (onde `db` é o nome do serviço no compose), não `localhost:5432`.\n\nEsse é um dos erros mais comuns de quem está aprendendo Docker: tentar usar `localhost` de dentro de um container para acessar outro container — isso só funcionaria se ambos estivessem na mesma máquina física fora de containers, mas dentro da rede Docker, cada container tem seu próprio `localhost` isolado.',
     },
   ],
   resources: [
@@ -346,12 +547,81 @@ export const mes09: Module = {
       explanation:
         'A imagem é imutável e reutilizável; você pode criar quantos containers quiser a partir da mesma imagem, cada um rodando isoladamente.',
     },
+    {
+      type: 'mcq',
+      id: 'm9-e5',
+      prompt: 'Qual o principal benefício de um multi-stage build no Dockerfile?',
+      options: [
+        'Permite usar duas linguagens de programação ao mesmo tempo',
+        'Gera uma imagem final menor, sem as ferramentas de build que só eram necessárias para compilar',
+        'Torna o build mais lento de propósito',
+        'É obrigatório para qualquer Dockerfile',
+      ],
+      correctIndex: 1,
+      explanation:
+        'O estágio final copia só os artefatos já prontos do estágio de build, descartando compiladores e dependências de desenvolvimento que inflariam a imagem final sem necessidade.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm9-e6',
+      prompt: 'Dentro de um docker-compose, um container de backend deve usar "localhost" para se conectar ao container do banco de dados.',
+      answer: false,
+      explanation:
+        'Containers no mesmo compose se comunicam usando o nome do serviço como hostname (ex: "db"), não "localhost" — cada container tem seu próprio localhost isolado.',
+    },
+    {
+      type: 'code-fill',
+      id: 'm9-e7',
+      prompt: 'Complete o hostname correto para o backend se conectar a um serviço de banco chamado "db" no compose.',
+      codeTemplate: 'DATABASE_URL=postgres://user:senha@___:5432/meubanco',
+      answer: 'db',
+      hint: 'No mesmo docker-compose, qual nome identifica o outro container na rede interna?',
+      explanation: 'O nome do serviço definido no docker-compose.yml funciona como hostname na rede interna compartilhada entre os containers daquele compose.',
+    },
   ],
   games: [
     {
       gameId: 'docker-compose-builder',
       label: 'Montador de Compose',
       description: 'Arraste serviços, portas e volumes para montar um docker-compose.yml válido para um cenário dado.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes09-cen1',
+      context: 'trabalho',
+      title: '"Funciona na minha máquina" — mas não na do colega',
+      emoji: '🤷',
+      situation:
+        'Um novo desenvolvedor entra no time, clona o repositório, e passa a manhã inteira tentando fazer o projeto rodar — versão errada do Node, biblioteca do sistema faltando, configuração diferente.',
+      whatHappens:
+        'Sem containerização, cada máquina de desenvolvimento tem seu próprio ambiente, com pequenas diferenças (versões, dependências do sistema operacional) que acumulam e eventualmente quebram algo que "sempre funcionou" para quem já tinha o ambiente configurado há meses.',
+      howToSolve:
+        'Um Dockerfile + docker-compose.yml bem feitos tornam o ambiente reproduzível: `docker-compose up` deveria ser o único passo necessário para qualquer pessoa do time rodar o projeto, independente do que já está instalado na máquina dela.',
+    },
+    {
+      id: 'mes09-cen2',
+      context: 'pessoal',
+      title: 'Testando uma ferramenta sem "sujar" o computador',
+      emoji: '🧪',
+      situation:
+        'Você quer experimentar um banco de dados novo (ou uma ferramenta qualquer) só para aprender, mas não quer instalar e configurar tudo manualmente, com medo de deixar resíduos no sistema.',
+      whatHappens:
+        'Containers existem exatamente para isso — rodar algo isolado do resto do seu sistema, e quando terminar, simplesmente remover o container sem deixar rastro nenhum na sua máquina.',
+      howToSolve:
+        '`docker run -it postgres` (ou qualquer imagem oficial) sobe a ferramenta isolada em segundos. Quando terminar de testar, `docker rm` remove tudo — seu sistema operacional nunca soube que aquilo existiu.',
+    },
+    {
+      id: 'mes09-cen3',
+      context: 'trabalho',
+      title: 'Container reinicia e perde todos os dados',
+      emoji: '💾',
+      situation:
+        'Depois de um deploy de rotina que recria os containers, o time percebe que todos os dados do banco de testes desapareceram.',
+      whatHappens:
+        'O banco estava rodando num container sem volume configurado — por design, tudo que é escrito dentro de um container é descartado quando ele é removido ou recriado. Sem volume, isso inclui o banco de dados inteiro.',
+      howToSolve:
+        'Bancos de dados (e qualquer dado que precise sobreviver a reinicializações) sempre precisam de um volume nomeado mapeado para o diretório de dados do container. Isso deveria ser checado em toda revisão de docker-compose.yml que envolva persistência.',
     },
   ],
 };

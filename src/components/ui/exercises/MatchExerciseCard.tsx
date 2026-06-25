@@ -45,7 +45,7 @@ export function MatchExerciseCard({ exercise, onResult }: MatchProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-base-700 bg-base-850 p-5">
+    <div className="rounded-2xl card-surface p-5">
       <p className="text-sm font-medium text-base-50">{exercise.prompt}</p>
       <p className="mt-1 text-xs text-base-400">Toque em um item da esquerda, depois no par certo da direita.</p>
 

@@ -17,6 +17,7 @@ export interface LessonBlock {
     lang: string;
     code: string;
   };
+  diagramId?: string; // referência a um diagrama interativo (ver components/diagrams/registry)
 }
 
 export interface ChecklistItem {
@@ -83,6 +84,16 @@ export interface GameRef {
   description: string;
 }
 
+export interface DayToDayScenario {
+  id: string;
+  context: 'trabalho' | 'pessoal'; // dia a dia profissional de dev vs uso pessoal de lógica
+  title: string;
+  situation: string; // o que está acontecendo
+  whatHappens: string; // o que acontece / por que isso é um problema
+  howToSolve: string; // como resolver, passo a passo ou princípio
+  emoji: string;
+}
+
 export interface Module {
   id: string; // ex: 'mes-01'
   month: number;
@@ -98,11 +109,27 @@ export interface Module {
   goalLabel: string;
   exercises: Exercise[];
   games: GameRef[];
+  scenarios?: DayToDayScenario[];
   projectBrief?: {
     title: string;
     description: string;
     requirements: string[];
   };
+}
+
+export interface SpacedReviewItem {
+  exerciseId: string;
+  moduleId: string;
+  intervalIdx: number; // índice no array de intervalos (0 = primeiro, cresce a cada acerto)
+  dueDate: string; // ISO date — quando esse item deve ser revisado de novo
+  lastResult: 'correct' | 'wrong' | null;
+}
+
+export interface ProjectNote {
+  moduleId: string;
+  text: string;
+  links: { label: string; url: string }[];
+  updatedAt: string;
 }
 
 export interface PhaseInfo {
@@ -128,7 +155,22 @@ export interface UserProgress {
   unlockedAchievements: string[];
   moduleProgress: Record<string, number>; // moduleId -> 0-100
   currentModuleId: string;
-  notes: Record<string, string>; // moduleId -> nota pessoal
+  notes: Record<string, string>; // moduleId -> nota pessoal (legado, mantido por compatibilidade)
+  projectNotes: Record<string, ProjectNote>; // moduleId -> nota de projeto com links
+  spacedReview: Record<string, SpacedReviewItem>; // exerciseId -> estado de revisão
+  interviewHistory: InterviewHistoryEntry[];
+}
+
+export interface InterviewHistoryEntry {
+  id: string;
+  trackLabel: string;
+  levelLabel: string;
+  overallScore: number;
+  theoryScore: number;
+  practicalScore: number;
+  behavioralAnswered: number;
+  behavioralTotal: number;
+  completedAt: string;
 }
 
 export interface Achievement {
