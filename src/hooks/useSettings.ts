@@ -3,19 +3,27 @@ import { useCallback, useEffect, useState } from 'react';
 const SETTINGS_KEY = 'devjourney:settings:v1';
 
 export interface AppSettings {
-  deepseekApiKey: string;
+  geminiApiKey: string;
   reducedMotion: boolean;
 }
 
 function defaultSettings(): AppSettings {
-  return { deepseekApiKey: '', reducedMotion: false };
+  return { geminiApiKey: '', reducedMotion: false };
 }
 
 function loadSettings(): AppSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return defaultSettings();
-    return { ...defaultSettings(), ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    // Migração: versões anteriores guardavam a chave da DeepSeek em
+    // "deepseekApiKey". Como o provedor mudou para Gemini, essa chave antiga
+    // não é mais válida para a nova API — não a reaproveitamos, só limpamos
+    // o campo legado para não deixar lixo no localStorage.
+    if ('deepseekApiKey' in parsed) {
+      delete parsed.deepseekApiKey;
+    }
+    return { ...defaultSettings(), ...parsed };
   } catch {
     return defaultSettings();
   }
@@ -33,11 +41,11 @@ export function useSettings() {
   }, [settings]);
 
   const setApiKey = useCallback((key: string) => {
-    setSettings((prev) => ({ ...prev, deepseekApiKey: key }));
+    setSettings((prev) => ({ ...prev, geminiApiKey: key }));
   }, []);
 
   const clearApiKey = useCallback(() => {
-    setSettings((prev) => ({ ...prev, deepseekApiKey: '' }));
+    setSettings((prev) => ({ ...prev, geminiApiKey: '' }));
   }, []);
 
   return { settings, setApiKey, clearApiKey };

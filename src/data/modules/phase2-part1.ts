@@ -85,6 +85,22 @@ export const mes07: Module = {
       body:
         'Sem tratamento, um erro de JavaScript em qualquer componente faz o React desmontar a árvore inteira — uma falha pequena numa parte isolada da tela (como um widget de clima) pode deixar a página toda em branco.\n\nUm Error Boundary é um componente especial que "captura" erros de seus componentes filhos durante a renderização, e exibe uma interface alternativa (como "algo deu errado, recarregue a página") em vez de quebrar tudo. Em projetos com Next.js ou React moderno, isso costuma ser implementado via arquivos especiais (`error.tsx`) ou bibliotecas como `react-error-boundary`, sem precisar escrever a lógica de classe do zero.',
     },
+    {
+      id: 'l9',
+      heading: '[Nível sênior] Reconciliação e Virtual DOM: o que realmente acontece a cada render',
+      body:
+        'Quando o estado muda, o React não joga fora o HTML e reconstrói do zero — ele constrói uma nova representação em memória da árvore de componentes (o Virtual DOM), compara com a versão anterior (um processo chamado **diffing**), e aplica no DOM real só as mudanças mínimas necessárias. Manipular o DOM real é caro; comparar duas estruturas em memória é muito mais rápido.\n\nO algoritmo de diffing assume duas heurísticas para ser rápido o suficiente: elementos de tipos diferentes (`<div>` vs `<span>`) geram árvores totalmente diferentes, e a `key` em listas identifica qual item é "o mesmo" entre renders. É exatamente por isso que usar o índice do array como key é arriscado: se a lista for reordenada, o React pode entender que itens mudaram de identidade quando na verdade só mudaram de posição, causando re-renders e até perda de estado de inputs não controlados.\n\nEm entrevistas sênior, "explique o que acontece internamente quando você chama setState" é uma pergunta clássica — a resposta esperada menciona Virtual DOM, diffing, e que o React agrupa (batch) múltiplas atualizações de estado numa única re-renderização por questão de performance.',
+    },
+    {
+      id: 'l10',
+      heading: '[Nível sênior] Suspense e carregamento de dados declarativo',
+      body:
+        'Antes do Suspense, cada componente que buscava dados precisava gerenciar manualmente seus próprios estados de `loading`/`error`/`data` — repetindo a mesma lógica em dezenas de componentes. Suspense inverte isso: um componente "suspende" sua renderização enquanto espera algo (dados, um componente lazy-loaded), e um componente `<Suspense fallback={...}>` mais acima na árvore decide o que mostrar nesse meio tempo, sem cada componente filho precisar saber como lidar com o próprio loading.\n\nIsso também permite **Suspense em cascata**: diferentes partes da tela podem aparecer em momentos diferentes, conforme seus dados ficam prontos, em vez de tudo esperar pela parte mais lenta antes de mostrar qualquer coisa — uma técnica que melhora bastante a percepção de velocidade em telas com múltiplas fontes de dados independentes.',
+      codeExample: {
+        lang: 'tsx',
+        code: '<Suspense fallback={<Spinner />}>\n  <PerfilUsuario />\n  <Suspense fallback={<SpinnerPequeno />}>\n    <HistoricoCompras /> {/* pode aparecer depois do perfil */}\n  </Suspense>\n</Suspense>',
+      },
+    },
   ],
   resources: [
     { label: 'React Docs', url: 'https://react.dev' },
@@ -196,6 +212,32 @@ export const mes07: Module = {
       prompt: 'Sem um Error Boundary, um erro de JavaScript em um componente pequeno pode fazer a aplicação inteira ficar em branco.',
       answer: true,
       explanation: 'Por padrão, o React desmonta toda a árvore de componentes quando um erro não tratado ocorre durante a renderização — um Error Boundary contém esse erro numa parte isolada da interface.',
+    },
+    {
+      type: 'mcq',
+      id: 'm7-e11',
+      prompt: '[Nível sênior] Por que usar o índice do array como "key" numa lista é arriscado quando a lista pode ser reordenada?',
+      options: [
+        'Não tem problema nenhum, índices são sempre seguros',
+        'O React usa a key para identificar "qual item é o mesmo" entre renders — se a ordem mudar, o índice não representa mais a identidade real do item, podendo causar re-renders incorretos ou perda de estado',
+        'Índices não são permitidos como key pelo React',
+        'Isso só importa em listas com mais de 1000 itens',
+      ],
+      correctIndex: 1,
+      explanation: 'A key deveria ser um identificador estável do item (como um id do banco), não sua posição — quando a lista reordena, o índice de cada item muda, confundindo o algoritmo de diffing sobre o que realmente mudou.',
+    },
+    {
+      type: 'mcq',
+      id: 'm7-e12',
+      prompt: '[Nível sênior] Qual o papel de um componente <Suspense> ao redor de um componente que busca dados?',
+      options: [
+        'Ele busca os dados automaticamente, sem precisar de código adicional',
+        'Ele decide o que renderizar (um fallback) enquanto o componente filho "suspende" esperando algo, sem o filho precisar gerenciar seu próprio estado de loading',
+        'Suspense só funciona para imagens',
+        'Suspense substitui completamente a necessidade de tratamento de erros',
+      ],
+      correctIndex: 1,
+      explanation: 'Suspense inverte o controle do loading: o componente que busca dados só "avisa" que está esperando, e quem decide a UI de loading é o Suspense mais acima na árvore — centralizando essa lógica em vez de duplicá-la.',
     },
   ],
   games: [

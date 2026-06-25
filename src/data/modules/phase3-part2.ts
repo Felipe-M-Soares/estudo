@@ -61,6 +61,18 @@ export const mes16: Module = {
       body:
         'Uma CDN tradicional só serve arquivos estáticos (imagens, CSS, JS) de pontos geograficamente distribuídos. **Edge computing** vai além: executa lógica de aplicação (não só arquivos estáticos) nesses pontos próximos do usuário — validar um token, redirecionar com base no país, até renderizar partes de uma página — sem precisar ir até o servidor de origem, que pode estar a milhares de quilômetros.\n\nIsso reduz drasticamente a latência para operações simples e frequentes, mas tem limites: lógica que precisa de acesso direto a um banco de dados centralizado ainda se beneficia mais de rodar próxima a esse banco do que na borda da rede.',
     },
+    {
+      id: 'l9',
+      heading: '[Nível sênior] Estimativa de capacidade: a primeira coisa que se faz numa entrevista de System Design',
+      body:
+        'Antes de desenhar qualquer arquitetura, entrevistas sênior de System Design esperam uma estimativa numérica rápida (chamada "back-of-the-envelope"): quantos usuários, quantas requisições por segundo, quanto armazenamento por ano. Isso não precisa ser preciso — precisa ser uma ordem de grandeza razoável que guie decisões reais.\n\nExemplo de raciocínio para um encurtador de URLs: 100 milhões de URLs criadas por mês ≈ 40 requisições de escrita por segundo em média (100M / 30 dias / 86400s). Se leituras são 100x mais frequentes que escritas (padrão comum), isso são ~4.000 leituras por segundo. Cada URL armazenada ocupa talvez 500 bytes — 100M por mês × 12 meses × 500 bytes ≈ 600GB em 1 ano, um volume que cabe tranquilamente num único banco relacional bem indexado, sem precisar de sharding prematuro.\n\nO objetivo desse exercício numérico não é a precisão, é demonstrar que suas decisões de arquitetura (precisa de cache? precisa de múltiplos bancos? precisa de fila?) são baseadas em números reais, não em "parece que vai ser grande".',
+    },
+    {
+      id: 'l10',
+      heading: '[Nível sênior] Consistent Hashing: como redistribuir dados sem reembaralhar tudo',
+      body:
+        'Quando você faz sharding com uma fórmula simples (`hash(chave) % número_de_shards`), adicionar ou remover um shard muda o resultado de quase **todas** as chaves — forçando uma redistribuição massiva de dados só porque você quis aumentar de 4 para 5 shards.\n\n**Consistent hashing** resolve isso organizando os shards (e as chaves) num "anel" circular de hash. Cada chave pertence ao primeiro shard que encontra andando no sentido horário do anel. Quando um shard é adicionado ou removido, só as chaves entre esse ponto e o shard vizinho anterior precisam se mover — todo o resto do anel permanece intacto. Esse é o algoritmo por trás de sistemas como Cassandra, DynamoDB e do cache distribuído de CDNs.\n\nEm entrevista, a pergunta típica é "como você escalaria de 4 para 5 servidores de cache sem invalidar todo o cache existente" — consistent hashing é exatamente a resposta esperada, e poucos candidatos pleno chegam a esse nível de detalhe sem ter estudado especificamente.',
+    },
   ],
   resources: [
     { label: 'Grokking System Design', url: 'https://www.educative.io/courses/grokking-the-system-design-interview' },
@@ -154,6 +166,32 @@ export const mes16: Module = {
       prompt: 'Edge computing é o mesmo que uma CDN tradicional, só com um nome diferente.',
       answer: false,
       explanation: 'CDN tradicional serve apenas arquivos estáticos. Edge computing vai além, executando lógica de aplicação nos pontos próximos do usuário, não só servindo arquivos.',
+    },
+    {
+      type: 'mcq',
+      id: 'm16-e8',
+      prompt: '[Nível sênior] Qual o propósito de fazer uma estimativa "back-of-the-envelope" (requisições por segundo, armazenamento por ano) no início de uma entrevista de System Design?',
+      options: [
+        'Impressionar o entrevistador com cálculos complexos',
+        'Basear decisões de arquitetura (precisa de cache? de sharding? de fila?) em ordens de grandeza reais, em vez de intuição vaga sobre "vai ser grande"',
+        'É só uma formalidade sem impacto real nas decisões',
+        'Calcular o salário esperado para a vaga',
+      ],
+      correctIndex: 1,
+      explanation: 'A precisão exata não importa — o que importa é ter uma ordem de grandeza que justifique (ou descarte) a necessidade de soluções mais complexas como sharding prematuro.',
+    },
+    {
+      type: 'mcq',
+      id: 'm16-e9',
+      prompt: '[Nível sênior] Qual problema o consistent hashing resolve, em comparação com hash(chave) % número_de_servidores?',
+      options: [
+        'Torna o hash mais rápido de calcular',
+        'Evita que adicionar ou remover um servidor force a redistribuição de quase todas as chaves — só uma fração precisa se mover',
+        'Elimina completamente a necessidade de sharding',
+        'Só funciona com números pares de servidores',
+      ],
+      correctIndex: 1,
+      explanation: 'Com hash % N simples, mudar N altera o resultado de quase todas as chaves. Consistent hashing organiza chaves e servidores num anel, limitando o impacto de uma mudança de topologia a uma fração pequena dos dados.',
     },
   ],
   games: [
@@ -250,6 +288,18 @@ export const mes17: Module = {
       body:
         'Pressão para "encurtar o prazo" é constante em qualquer time. A resposta produtiva não é simplesmente aceitar um prazo apertado demais (gerando trabalho malfeito ou esgotamento) nem recusar rigidamente (parecendo inflexível) — é tornar os trade-offs explícitos: "posso entregar isso até sexta cortando os testes automatizados, ou até terça-feira da semana seguinte com cobertura completa — qual prioridade faz mais sentido para vocês agora?".\n\nIsso transforma uma negociação de prazo numa decisão de produto compartilhada, em vez de uma imposição numa direção ou outra — e documenta, num e-mail ou ticket, qual escolha foi feita e por quê, protegendo todo mundo de mal-entendidos depois.',
     },
+    {
+      id: 'l8',
+      heading: '[Nível sênior] Dando feedback difícil sem destruir a relação',
+      body:
+        'Engenheiros sêniores frequentemente precisam dar feedback que a pessoa não quer ouvir — sobre qualidade de código, comportamento em reuniões, ou desempenho abaixo do esperado. A diferença entre fazer isso bem e mal raramente está no **conteúdo** do feedback, está na **estrutura**.\n\nUma estrutura eficaz: descreva o comportamento observável (não a personalidade), o impacto concreto que ele causou, e termine com uma pergunta ou convite à mudança, não uma ordem. "Notei que os últimos 3 PRs não tinham testes, e isso atrasou a revisão porque precisei pedir ajustes — o que está dificultando escrever os testes junto?" é muito mais produtivo que "você nunca escreve testes".\n\nIgualmente importante: feedback difícil deveria ser dado em particular, próximo do momento em que aconteceu (não acumulado para uma avaliação trimestral), e direcionado a algo que a pessoa pode realmente mudar.',
+    },
+    {
+      id: 'l9',
+      heading: '[Nível sênior] Influência sem autoridade: como mudar decisões quando você não é o chefe',
+      body:
+        'Engenheiros sêniores (e mesmo plenos avançados) frequentemente precisam convencer pessoas que não se reportam a eles — outro time, um PM, um arquiteto de outra área. Autoridade formal não resolve isso; influência sim.\n\nTrês táticas que funcionam na prática: (1) **trazer dados, não opinião** — "esse endpoint está com p95 de 3 segundos, baseado nos logs de produção" convence mais que "acho que está lento"; (2) **entender o incentivo da outra pessoa** — um PM resiste a refatoração não porque não entenda dívida técnica, mas porque o roadmap dele tem datas — conectar a proposta a um resultado que ele já valoriza (menos bugs, deploys mais rápidos) muda a conversa; (3) **escolher o momento e o formato certo** — uma proposta de mudança de arquitetura cabe melhor num documento detalhado com tempo para reação assíncrona do que numa reunião de 15 minutos, onde a reação imediata tende a ser defensiva.\n\nEm entrevistas para vagas sêniores, perguntas como "conte sobre uma vez que você precisou convencer alguém de outra área" avaliam exatamente essa habilidade — frequentemente mais determinante para o nível da vaga do que conhecimento técnico puro.',
+    },
   ],
   resources: [
     { label: 'Tandem (troca de idiomas)', url: 'https://www.tandem.net' },
@@ -344,6 +394,32 @@ export const mes17: Module = {
       ],
       correctIndex: 2,
       explanation: 'Explicitar os trade-offs transforma a negociação numa decisão de produto compartilhada, em vez de uma imposição — e protege todos de mal-entendidos futuros.',
+    },
+    {
+      type: 'mcq',
+      id: 'm17-e8',
+      prompt: '[Nível sênior] Qual estrutura de feedback é mais eficaz para apontar um problema recorrente sem gerar defensividade?',
+      options: [
+        '"Você nunca presta atenção no que está fazendo"',
+        'Descrever o comportamento observável, o impacto concreto que ele causou, e convidar à mudança com uma pergunta',
+        'Esperar a avaliação trimestral para juntar tudo de uma vez',
+        'Dar o feedback publicamente, para servir de exemplo aos outros',
+      ],
+      correctIndex: 1,
+      explanation: 'Feedback eficaz foca no comportamento específico e seu impacto (não na personalidade), é dado próximo do momento em que ocorreu, e termina convidando à mudança em vez de só criticar.',
+    },
+    {
+      type: 'mcq',
+      id: 'm17-e9',
+      prompt: '[Nível sênior] Qual tática tende a ser mais eficaz para convencer um time de outra área a priorizar uma mudança técnica, quando você não tem autoridade formal sobre eles?',
+      options: [
+        'Insistir repetidamente até eles cederem',
+        'Conectar a proposta a um resultado que eles já valorizam (menos bugs, deploys mais rápidos), apoiado em dados concretos',
+        'Pedir para o seu gestor obrigar o outro time',
+        'Implementar a mudança sem avisar ninguém',
+      ],
+      correctIndex: 1,
+      explanation: 'Influência sem autoridade funciona melhor conectando a proposta aos incentivos que a outra pessoa já tem, sustentada por dados — não por insistência ou imposição hierárquica.',
     },
   ],
   games: [

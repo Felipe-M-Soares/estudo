@@ -103,13 +103,13 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
               />
               <Route
                 path="/mentor"
-                element={<MentorPage apiKey={settings.deepseekApiKey} currentModuleId={progress.currentModuleId} progress={progress} />}
+                element={<MentorPage apiKey={settings.geminiApiKey} currentModuleId={progress.currentModuleId} progress={progress} />}
               />
               <Route
                 path="/configuracoes"
                 element={
                   <SettingsPage
-                    apiKey={settings.deepseekApiKey}
+                    apiKey={settings.geminiApiKey}
                     onSetApiKey={setApiKey}
                     onClearApiKey={clearApiKey}
                     onResetProgress={resetProgress}

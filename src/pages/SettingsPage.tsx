@@ -80,28 +80,32 @@ export function SettingsPage({
       </div>
 
       <section className="mb-6 rounded-2xl card-surface p-5">
-        <h2 className="font-display text-base font-bold text-base-50">🤖 Mentor IA — Chave da DeepSeek</h2>
+        <h2 className="font-display text-base font-bold text-base-50">🤖 Mentor IA — Chave do Google Gemini (gratuita)</h2>
         <p className="mt-1.5 text-sm text-base-300">
           Sua chave é guardada <strong className="text-base-100">somente no localStorage deste navegador</strong> — ela nunca é
-          enviada para nenhum servidor além da API oficial da DeepSeek, e nunca aparece no código do projeto que você sobe
-          para o GitHub.
+          enviada para nenhum servidor além da API oficial do Google, e nunca aparece no código do projeto que você sobe para
+          o GitHub.
         </p>
 
         <div className="mt-4 rounded-xl border border-mint-400/30 bg-mint-900/15 p-3.5 text-sm text-mint-100">
           <p className="mb-1.5 flex items-center gap-1.5 font-semibold text-mint-300">
-            <ShieldCheck size={14} /> Como pegar sua chave
+            <ShieldCheck size={14} /> Como pegar sua chave (gratuita, sem cartão de crédito)
           </p>
           <ol className="ml-4 list-decimal space-y-1 text-base-200">
             <li>
               Acesse{' '}
-              <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-mint-300 underline">
-                platform.deepseek.com/api_keys <ExternalLink size={11} />
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-mint-300 underline">
+                aistudio.google.com/app/apikey <ExternalLink size={11} />
               </a>
             </li>
-            <li>Faça login ou crie uma conta gratuita</li>
-            <li>Clique em "Create new API key" e copie a chave gerada</li>
+            <li>Faça login com uma conta Google (não pede cartão de crédito)</li>
+            <li>Clique em "Create API key" e copie a chave gerada</li>
             <li>Cole no campo abaixo e clique em Salvar</li>
           </ol>
+          <p className="mt-2 text-[11px] text-base-300">
+            O plano gratuito do Gemini tem um limite de mensagens por dia que reseta automaticamente — mais que suficiente
+            para conversar com o mentor ao longo dos estudos.
+          </p>
         </div>
 
         <div className="mt-4">
@@ -112,7 +116,7 @@ export function SettingsPage({
                 type={visible ? 'text' : 'password'}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="sk-..."
+                placeholder="AIza..."
                 className="w-full rounded-lg border border-base-600 bg-base-900 px-3 py-2.5 pr-10 font-mono text-sm text-base-100 outline-none focus:border-mint-400"
               />
               <button

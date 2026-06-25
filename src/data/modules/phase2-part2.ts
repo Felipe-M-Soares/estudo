@@ -476,9 +476,9 @@ export const mes12: Module = {
     },
     {
       id: 'l6',
-      heading: 'Auto Scaling: crescendo (e encolhendo) com a demanda',
+      heading: 'Auto Scaling e Load Balancing: crescendo com a demanda e distribuindo bem',
       body:
-        'Auto Scaling adiciona ou remove instâncias EC2 automaticamente baseado em métricas (geralmente uso de CPU ou número de requisições). Em um pico de tráfego, novas instâncias entram para absorver a carga; quando o tráfego cai, instâncias extras são removidas — você paga só pelo que realmente precisa em cada momento.\n\nIsso normalmente trabalha em conjunto com um **Load Balancer**, que distribui as requisições entrantes entre todas as instâncias disponíveis, garantindo que nenhuma fique sobrecarregada enquanto outras ficam ociosas. Experimente os dois algoritmos de balanceamento mais comuns abaixo.',
+        'Auto Scaling adiciona ou remove instâncias EC2 automaticamente baseado em métricas (geralmente uso de CPU ou número de requisições). Em um pico de tráfego, novas instâncias entram para absorver a carga; quando o tráfego cai, instâncias extras são removidas — você paga só pelo que realmente precisa em cada momento.\n\nIsso trabalha em conjunto com um **Load Balancer**, que distribui as requisições entrantes entre todas as instâncias disponíveis. Os dois algoritmos mais comuns: **round-robin** distribui em sequência, um servidor por vez, sem olhar a carga atual de cada um — simples, mas pode sobrecarregar um servidor que esteja processando requisições mais lentas. **Least connections** sempre manda a próxima requisição para o servidor com menos conexões ativas no momento, se ajustando melhor quando as requisições têm duração desigual. Experimente os dois abaixo.',
       diagramId: 'load-balancer',
     },
     {

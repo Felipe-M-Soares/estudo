@@ -7,16 +7,16 @@ Funciona como **web app** (qualquer navegador) e como **app instalável no celul
 ## ✨ O que tem aqui
 
 - **18 módulos** (um por mês), cobrindo Lógica → HTML/CSS → JavaScript → Git/SQL → Node.js → React/TS → Java/Spring → Docker → Next.js → APIs avançadas → AWS → Microsserviços → Kubernetes → CI/CD → System Design → Liderança/Inglês → Projeto Final
-- **135 lições escritas** com explicações, exemplos de código, e por quês — não só links
+- **144 lições escritas** com explicações, exemplos de código, e por quês — não só links, incluindo lições marcadas **[Nível sênior]** nos pontos onde entrevistas de vagas sêniores cobram mais profundidade (complexidade amortizada, isolamento de transações e deadlocks, Virtual DOM/Suspense, Outbox Pattern, estimativa de capacidade, consistent hashing, feedback difícil, influência sem autoridade)
 - **29 diagramas interativos e animados** nas lições mais conceituais, em todos os 18 módulos: pilha vs fila, recursão, Event Loop, closures, CSS Grid/Box Model, JOINs de SQL, pipeline de middlewares, árvore de componentes React, Java Streams, multi-stage Docker, SSR vs SSG vs ISR, GraphQL vs REST, Load Balancer, padrão Saga, Pods do Kubernetes, pipeline CI/CD, sharding, comunicação síncrona vs assíncrona, arquitetura em camadas, CAP Theorem, e mais
 - **Cenários do dia a dia** em todos os módulos — situações reais de trabalho de um dev (bugs em produção, code review, deploy) e de uso pessoal de lógica, sempre no formato "o que acontece → como resolver"
 - **Modo Entrevista**: simulação completa com perguntas teóricas atualizadas (cronometradas), desafios práticos de código, e perguntas comportamentais com dicas de estrutura de resposta — por trilha (Frontend/Backend/Full Stack) e nível (Júnior/Pleno/Sênior)
-- **158 exercícios interativos** em 5 formatos: múltipla escolha, completar código, ordenar passos, associar pares, verdadeiro/falso
+- **171 exercícios interativos** em 5 formatos: múltipla escolha, completar código, ordenar passos, associar pares, verdadeiro/falso
 - **30 mini-jogos** únicos, vários com níveis progressivos de dificuldade
 - **Sistema de gamificação completo**: XP, níveis, sequência de estudo (streak) com mapa de constância estilo GitHub, conquistas com confetti
 - **Visual neon cyberpunk**: paleta vibrante (menta, magenta, violeta, ciano elétrico) sobre fundo escuro arroxeado, com glow e scanlines sutis
 - **Múltiplos perfis no mesmo navegador**: cada pessoa cria seu perfil com nome (e PIN opcional), e o progresso fica separado por perfil
-- **Mentor IA opcional** via API da DeepSeek, com contexto de onde você está na jornada
+- **Mentor IA opcional** via API gratuita do Google Gemini, com contexto de onde você está na jornada
 - **100% dos seus dados ficam no seu navegador** (localStorage) — sem backend, sem conta na nuvem, sem rastreamento
 
 ## 🖥️ Como rodar localmente
@@ -85,15 +85,15 @@ Quer usar com mais de uma pessoa? Cada uma cria seu próprio perfil, e o progres
 
 ## 🤖 Configurando o Mentor IA (opcional)
 
-O Mentor IA usa a API da DeepSeek. Isso é **opcional** — o app funciona 100% sem ele.
+O Mentor IA usa a API gratuita do Google Gemini. Isso é **opcional** — o app funciona 100% sem ele.
 
-1. Acesse [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) e crie uma conta/chave gratuita
+1. Acesse [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) e crie sua chave gratuita (login com conta Google, sem cartão de crédito)
 2. No app, vá em **Configurações** e cole sua chave
 3. Pronto — sua chave fica só no seu navegador, nunca no código
 
 > ⚠️ **Nunca** cole sua chave de API em nenhum arquivo de código antes de subir para o GitHub. O app foi desenhado para isso nunca ser necessário: a chave é digitada por você, direto na interface, e fica salva localmente.
 
-> 💡 **Erro 402 (Insufficient Balance)?** Isso não é um bug — significa que sua conta DeepSeek está sem saldo. Acesse [platform.deepseek.com/usage](https://platform.deepseek.com/usage) e adicione um valor pequeno de crédito; sua chave continua válida, só falta saldo para a API processar as chamadas. O app mostra essa explicação automaticamente na tela do Mentor quando isso acontece.
+> 💡 **Erro de limite atingido?** O plano gratuito do Gemini tem uma cota diária de mensagens (reseta automaticamente todo dia) — isso não é um bug nem significa que sua chave parou de funcionar, só que é preciso esperar a cota renovar. O app mostra essa explicação automaticamente na tela do Mentor quando isso acontece.
 
 ## 🛠️ Stack técnica
 
@@ -115,7 +115,7 @@ src/
     ui/         componentes de exercício, XP bar, toasts
   hooks/        useProgress (gamificação), useSettings (chave de API)
   pages/        as telas do app
-  utils/        cliente da API DeepSeek
+  utils/        cliente da API Gemini
 ```
 
 ## 📝 Customizando seu conteúdo

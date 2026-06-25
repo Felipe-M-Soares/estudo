@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Bot, AlertTriangle, Loader2, ExternalLink, Wallet, Activity } from 'lucide-react';
+import { Send, Bot, AlertTriangle, Loader2, ExternalLink, Clock, Activity } from 'lucide-react';
 import {
   askMentor,
   MentorApiError,
@@ -8,7 +8,7 @@ import {
   buildPerformanceSummary,
   type MentorMessage,
   type MentorErrorCode,
-} from '../utils/deepseek';
+} from '../utils/gemini';
 import { modules, modulesById } from '../data';
 import type { UserProgress } from '../data/types';
 
@@ -119,7 +119,8 @@ export function MentorPage({ apiKey, currentModuleId, progress }: MentorPageProp
         </div>
         <h1 className="mt-4 font-display text-2xl font-bold text-base-50">Mentor IA</h1>
         <p className="mt-2 text-base-300">
-          Configure sua chave de API da DeepSeek para conversar com um mentor que conhece exatamente onde você está na jornada.
+          Configure sua chave de API do Google Gemini (gratuita) para conversar com um mentor que conhece exatamente onde você
+          está na jornada.
         </p>
         <Link
           to="/configuracoes"
@@ -181,33 +182,32 @@ export function MentorPage({ apiKey, currentModuleId, progress }: MentorPageProp
           </div>
         )}
 
-        {error?.code === 'no-balance' && (
+        {error?.code === 'rate-limit' && (
           <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-amber-300">
-              <Wallet size={15} /> Sua conta DeepSeek está sem saldo
+              <Clock size={15} /> Cota gratuita diária do Gemini esgotada
             </div>
             <p className="mt-2 text-sm text-base-200">
-              Esse erro (402) não é um problema com o app ou com sua chave — ela está correta. A DeepSeek exige saldo
-              pré-pago na conta para processar chamadas de API, separado do chat gratuito no site deles.
+              O plano gratuito do Google Gemini tem um limite de mensagens por dia (renovado automaticamente). Isso não é um
+              problema com sua chave — ela continua válida, só é preciso esperar a cota resetar.
             </p>
             <p className="mt-2 text-sm text-base-200">Para resolver:</p>
             <ol className="mt-1 ml-4 list-decimal space-y-1 text-sm text-base-200">
-              <li>Acesse o painel de billing da DeepSeek</li>
-              <li>Adicione um valor pequeno de crédito (a API é bem barata)</li>
-              <li>Volte aqui e tente de novo — não precisa gerar uma chave nova</li>
+              <li>Espere algumas horas — a cota gratuita reseta diariamente</li>
+              <li>Ou acompanhe seu uso atual no Google AI Studio</li>
             </ol>
             <a
-              href="https://platform.deepseek.com/usage"
+              href="https://aistudio.google.com/app/apikey"
               target="_blank"
               rel="noreferrer"
               className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3.5 py-2 text-sm font-semibold text-base-950 hover:opacity-90"
             >
-              Adicionar saldo na DeepSeek <ExternalLink size={13} />
+              Ver minha chave no AI Studio <ExternalLink size={13} />
             </a>
           </div>
         )}
 
-        {error && error.code !== 'no-balance' && (
+        {error && error.code !== 'rate-limit' && (
           <div className="flex items-center gap-2 rounded-xl border border-ember-400/30 bg-ember-500/10 px-4 py-2.5 text-sm text-ember-300">
             <AlertTriangle size={14} className="shrink-0" /> {error.message}
           </div>

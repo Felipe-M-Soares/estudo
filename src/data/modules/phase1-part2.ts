@@ -84,6 +84,16 @@ export const mes04: Module = {
       body:
         'Normalização é o processo de estruturar tabelas para reduzir redundância. Um exemplo comum de design ruim: guardar o nome do cliente repetido em toda linha de pedido. Se o cliente mudar de nome, você precisaria atualizar centenas de linhas — e esquecer uma cria inconsistência (duas grafias diferentes do "mesmo" cliente).\n\nA correção: uma tabela `clientes` guarda o nome uma única vez, e a tabela `pedidos` referencia apenas o `cliente_id`. Isso é chamado de "terceira forma normal" na teoria formal, mas na prática o princípio é simples: cada informação deve viver em um único lugar, referenciada por id de onde for usada.',
     },
+    {
+      id: 'l9',
+      heading: '[Nível sênior] Níveis de isolamento de transação e o problema dos deadlocks',
+      body:
+        'Transações simultâneas competindo pelos mesmos dados podem causar três problemas clássicos: **dirty read** (ler um dado que outra transação ainda não confirmou, e que pode ser desfeito), **non-repeatable read** (ler o mesmo registro duas vezes na mesma transação e receber valores diferentes, porque outra transação mudou no meio do caminho), e **phantom read** (uma consulta que retorna conjuntos diferentes de linhas em execuções sucessivas, porque outra transação inseriu/removeu registros).\n\nO SQL padrão define 4 níveis de isolamento que tradeiam consistência por performance: `READ UNCOMMITTED` (permite todos os problemas acima, raramente usado), `READ COMMITTED` (evita dirty read; padrão do PostgreSQL), `REPEATABLE READ` (evita dirty + non-repeatable read), `SERIALIZABLE` (evita todos os três, mas com mais bloqueios e menor throughput). Quanto mais isolamento, mais segurança, mas menos transações simultâneas conseguem progredir ao mesmo tempo.\n\n**Deadlock** acontece quando duas transações esperam uma pela outra indefinidamente: a transação A já bloqueou a linha 1 e espera a linha 2 (que B bloqueou); B já bloqueou a linha 2 e espera a linha 1. O banco detecta esse ciclo e cancela uma das transações automaticamente (geralmente a mais "barata" de refazer). Em entrevistas sênior, a pergunta comum é "como você evitaria deadlocks numa aplicação com alta concorrência" — a resposta envolve sempre acessar recursos na mesma ordem em transações diferentes, e manter transações o mais curtas possível.',
+      codeExample: {
+        lang: 'sql',
+        code: '-- Define o nível de isolamento explicitamente para essa transação\nBEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;\nSELECT saldo FROM contas WHERE id = 1;\n-- ... lógica de negócio ...\nUPDATE contas SET saldo = saldo - 100 WHERE id = 1;\nCOMMIT;',
+      },
+    },
   ],
   resources: [
     { label: 'Guia Git — Atlassian', url: 'https://www.atlassian.com/br/git/tutorials' },
@@ -209,6 +219,39 @@ export const mes04: Module = {
       answer: 'ROLLBACK',
       hint: 'O oposto de COMMIT — desfaz tudo que foi feito desde o BEGIN.',
       explanation: '`ROLLBACK` desfaz todas as operações realizadas desde o início da transação, devolvendo o banco ao estado anterior.',
+    },
+    {
+      type: 'mcq',
+      id: 'm4-e12',
+      prompt: '[Nível sênior] O que é um "dirty read" em transações concorrentes?',
+      options: [
+        'Ler um registro corrompido fisicamente no disco',
+        'Ler um dado que outra transação ainda não confirmou (commitou), e que pode ser desfeito (rollback) depois',
+        'Ler a mesma tabela duas vezes seguidas',
+        'Um erro de sintaxe no SELECT',
+      ],
+      correctIndex: 1,
+      explanation: 'Dirty read ocorre quando uma transação lê dados "sujos" de outra transação ainda em andamento — se essa outra transação for revertida, o dado lido nunca existiu de fato.',
+    },
+    {
+      type: 'mcq',
+      id: 'm4-e13',
+      prompt: '[Nível sênior] Qual a causa raiz de um deadlock entre duas transações?',
+      options: [
+        'Uma das transações tem um erro de sintaxe',
+        'Cada transação já bloqueou um recurso que a outra precisa, e ambas esperam indefinidamente pelo recurso bloqueado pela outra',
+        'O banco de dados está sobrecarregado de requisições',
+        'Deadlocks só ocorrem em bancos NoSQL',
+      ],
+      correctIndex: 1,
+      explanation: 'Deadlock é um ciclo de espera circular: A espera um recurso que B tem, e B espera um recurso que A tem — nenhuma das duas pode progredir sem que uma seja cancelada.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm4-e14',
+      prompt: '[Nível sênior] Quanto maior o nível de isolamento de uma transação, menor é o risco de inconsistência, mas geralmente menor também é o throughput de transações simultâneas.',
+      answer: true,
+      explanation: 'Níveis de isolamento mais altos (como SERIALIZABLE) previnem mais tipos de anomalia, mas exigem mais bloqueios — reduzindo quantas transações conseguem progredir ao mesmo tempo.',
     },
   ],
   games: [

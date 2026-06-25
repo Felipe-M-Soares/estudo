@@ -85,6 +85,16 @@ export const mes01: Module = {
       body:
         'Todo problema resolvível com recursão também é resolvível com um loop, e vice-versa — a escolha é sobre clareza e custo, não sobre capacidade.\n\nRecursão tende a ser mais legível quando o problema já é naturalmente recursivo (percorrer uma árvore, estruturas aninhadas) — o código fica mais próximo da definição matemática do problema. Iteração tende a ser mais eficiente em memória, porque não acumula uma pilha de chamadas: cada chamada recursiva consome memória até retornar, e problemas muito profundos podem esgotar a pilha (stack overflow) antes mesmo de serem matematicamente complexos.\n\nRegra prática: comece pela versão que for mais fácil de entender e provar correta — geralmente a recursiva, para problemas recursivos por natureza. Otimize para iteração depois, só se a profundidade da recursão for um risco real (milhares de chamadas).',
     },
+    {
+      id: 'l10',
+      heading: '[Nível sênior] Complexidade amortizada e o trade-off espaço-tempo',
+      body:
+        'Big O "simples" mede o pior caso de uma única operação, mas isso pode enganar. O exemplo clássico: adicionar um item a um array dinâmico (`push`) é O(1) na maioria das vezes, mas ocasionalmente o array precisa duplicar de tamanho e copiar todo o conteúdo — uma operação O(n). Mesmo assim, dizemos que `push` é O(1) **amortizado**: somando o custo de todas as operações e dividindo pelo número de operações, a média converge para O(1), porque os "n" itens só são copiados a cada potência de 2 inserções, nunca a cada inserção.\n\nEm entrevistas sênior, isso costuma aparecer como "explique por que push num array dinâmico é considerado O(1) mesmo que ocasionalmente seja O(n)" — quem só memorizou a tabela de Big O sem entender o "amortizado" trava nessa pergunta.\n\nO segundo conceito que separa pleno de sênior: **trade-off espaço-tempo**. Quase toda otimização de tempo custa memória, e vice-versa. Um cache evita recalcular algo (ganha tempo), mas ocupa memória para guardar o resultado. Um índice de banco acelera leitura (tempo), mas ocupa espaço em disco e torna escritas mais lentas. A pergunta certa nunca é "qual é mais rápido", é "qual recurso é mais escasso no meu sistema agora — tempo de CPU ou memória/disco disponível".',
+      codeExample: {
+        lang: 'javascript',
+        code: '// push é O(1) amortizado: a cópia O(n) só ocorre quando\n// a capacidade interna do array esgota (geralmente dobra de tamanho)\nconst lista = [];\nfor (let i = 0; i < 1000000; i++) {\n  lista.push(i); // rápido na maioria das vezes, raramente custoso\n}',
+      },
+    },
   ],
   resources: [
     { label: 'Lógica de Programação — FreeCodeCamp', url: 'https://www.freecodecamp.org/portuguese/' },
@@ -215,6 +225,26 @@ export const mes01: Module = {
       ],
       correctIndex: 1,
       explanation: 'Cada chamada recursiva ocupa espaço na pilha de execução até retornar — recursões muito profundas (milhares de níveis) podem esgotar essa memória, mesmo que o problema em si não seja complexo.',
+    },
+    {
+      type: 'mcq',
+      id: 'm1-e12',
+      prompt: '[Nível sênior] Por que o método push() de um array dinâmico é considerado O(1) "amortizado", mesmo que ocasionalmente precise copiar todo o array (O(n))?',
+      options: [
+        'Porque a cópia nunca acontece de fato na prática',
+        'Porque, somando o custo de todas as inserções e dividindo pelo número de operações, a média converge para O(1) — a cópia cara ocorre raramente, não em toda inserção',
+        'Porque arrays dinâmicos não existem de verdade',
+        'O(1) amortizado significa que a operação é sempre instantânea',
+      ],
+      correctIndex: 1,
+      explanation: 'Complexidade amortizada mede o custo médio ao longo de uma sequência de operações, não o pior caso de uma única operação isolada — a cópia O(n) é rara o suficiente para não afetar a média.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm1-e13',
+      prompt: '[Nível sênior] Otimizar um algoritmo para usar menos tempo de CPU nunca tem custo de memória, e vice-versa.',
+      answer: false,
+      explanation: 'O trade-off espaço-tempo é quase universal: caches, índices de banco e tabelas de memoização todos trocam mais uso de memória por menos tempo de processamento — a pergunta certa é qual recurso é mais escasso no seu contexto.',
     },
   ],
   games: [

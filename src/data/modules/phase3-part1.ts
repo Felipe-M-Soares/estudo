@@ -56,6 +56,16 @@ export const mes13: Module = {
         'Toda comunicação entre serviços é, no fundo, uma escolha entre dois modelos. **Síncrona** (chamada HTTP direta): o chamador espera a resposta antes de continuar — simples de entender e debugar, mas cria acoplamento de disponibilidade (se o destino cai, quem chama também é afetado). **Assíncrona** (mensageria/fila): o chamador publica e segue seu fluxo, sem esperar — mais resiliente a falhas parciais, mas mais complexa de rastrear e debugar.\n\nA regra prática: use síncrono quando você genuinamente precisa da resposta para continuar (buscar dados para mostrar na tela); use assíncrono quando a ação pode ser processada "depois" sem bloquear o usuário (enviar um email de confirmação, atualizar um índice de busca).',
       diagramId: 'async-communication',
     },
+    {
+      id: 'l7',
+      heading: '[Nível sênior] Outbox Pattern: o problema que toda mensageria assíncrona esconde',
+      body:
+        'Existe um problema sutil em "salvar no banco E publicar um evento na fila": e se o salvamento no banco funcionar, mas a publicação na fila falhar (ou vice-versa)? Sem cuidado especial, você acaba com um pedido salvo mas nenhuma notificação enviada, ou um evento publicado para um pedido que nunca foi salvo de fato — porque são duas operações distintas, em dois sistemas diferentes, sem uma transação que cubra ambas.\n\nO **Outbox Pattern** resolve isso elegantemente: em vez de publicar diretamente na fila, você salva o evento numa tabela `outbox` **na mesma transação** que salva o dado principal — como ambas são operações no mesmo banco, a atomicidade do banco já garante que as duas aconteçam juntas ou nenhuma aconteça. Um processo separado (um "relay") lê periodicamente a tabela outbox e publica os eventos pendentes na fila de mensagens de verdade, marcando como processado depois.\n\nEm entrevistas sênior, "como você garante que um evento sempre seja publicado quando (e só quando) o dado é salvo com sucesso" é uma pergunta que separa quem só usou mensageria de quem entende os problemas reais de sistemas distribuídos.',
+      codeExample: {
+        lang: 'sql',
+        code: 'BEGIN;\nINSERT INTO pedidos (id, status) VALUES (1, \'criado\');\nINSERT INTO outbox (evento, payload, processado) VALUES (\'pedido_criado\', \'{"id": 1}\', false);\nCOMMIT;\n-- Um processo separado lê a tabela outbox e publica de fato na fila',
+      },
+    },
   ],
   resources: [
     { label: 'Microservices.io', url: 'https://microservices.io' },
@@ -155,6 +165,26 @@ export const mes13: Module = {
       prompt: 'Comunicação síncrona cria acoplamento de disponibilidade: se o serviço chamado cair, quem chama também é afetado.',
       answer: true,
       explanation: 'Numa chamada síncrona direta, o chamador fica esperando a resposta — se o destino estiver fora do ar ou lento, isso se propaga diretamente para quem fez a chamada.',
+    },
+    {
+      type: 'mcq',
+      id: 'm13-e9',
+      prompt: '[Nível sênior] Qual problema específico o Outbox Pattern resolve?',
+      options: [
+        'Tornar a fila de mensagens mais rápida',
+        'Garantir que salvar um dado no banco e publicar o evento correspondente aconteçam atomicamente, evitando o caso de um acontecer sem o outro',
+        'Eliminar a necessidade de um banco de dados',
+        'Criptografar mensagens da fila',
+      ],
+      correctIndex: 1,
+      explanation: 'Sem Outbox Pattern, salvar no banco e publicar na fila são duas operações independentes que podem falhar de forma dessincronizada — o Outbox usa a atomicidade do próprio banco para garantir que ambas aconteçam juntas.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm13-e10',
+      prompt: '[Nível sênior] No Outbox Pattern, o evento é publicado diretamente na fila de mensagens dentro da mesma transação que salva o dado principal.',
+      answer: false,
+      explanation: 'O evento é salvo numa tabela outbox dentro da mesma transação (garantindo atomicidade com o banco), mas a publicação de fato na fila é feita depois, por um processo separado que lê essa tabela.',
     },
   ],
   games: [
