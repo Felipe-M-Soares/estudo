@@ -1,44 +1,50 @@
 @import "tailwindcss";
 
 @theme {
-  /* ===== Cores base — "terminal noturno" ===== */
-  --color-base-950: #06080b;
-  --color-base-900: #0a0d11;
-  --color-base-850: #0e1217;
-  --color-base-800: #13171e;
-  --color-base-700: #1a1f28;
-  --color-base-600: #242a35;
-  --color-base-500: #333b48;
-  --color-base-400: #4a5364;
-  --color-base-300: #6b7585;
-  --color-base-200: #99a2b0;
-  --color-base-100: #c5cad2;
-  --color-base-50:  #eef0f2;
+  /* ===== Cores base — "noite cyberpunk" (preto arroxeado, não preto puro) ===== */
+  --color-base-950: #07050d;
+  --color-base-900: #0b0815;
+  --color-base-850: #100c1d;
+  --color-base-800: #161025;
+  --color-base-700: #1f1733;
+  --color-base-600: #2c2147;
+  --color-base-500: #3e2f63;
+  --color-base-400: #5b4d82;
+  --color-base-300: #8174a8;
+  --color-base-200: #aaa1c7;
+  --color-base-100: #cdc7e0;
+  --color-base-50:  #f1eefa;
 
-  /* ===== Accent verde — progresso / sucesso / "compila" ===== */
-  --color-mint-900: #0a3a26;
-  --color-mint-700: #157a4d;
-  --color-mint-500: #25b876;
-  --color-mint-400: #3fe08a;
-  --color-mint-300: #6fedab;
-  --color-mint-200: #a6f5cc;
+  /* ===== Accent menta-neon — progresso / sucesso / "compila" ===== */
+  --color-mint-900: #053026;
+  --color-mint-700: #05754f;
+  --color-mint-500: #00d29a;
+  --color-mint-400: #00ffc2;
+  --color-mint-300: #6dffdc;
+  --color-mint-200: #aeffec;
 
-  /* ===== Accent âmbar — XP / destaque / fase 2 ===== */
-  --color-amber-700: #8a5c12;
-  --color-amber-500: #d99020;
-  --color-amber-400: #f2a93b;
-  --color-amber-300: #f7c570;
+  /* ===== Accent magenta-neon — XP / destaque / fase 2 ===== */
+  --color-amber-700: #7a1450;
+  --color-amber-500: #e01a78;
+  --color-amber-400: #ff2e9e;
+  --color-amber-300: #ff7cc4;
 
-  /* ===== Accent violeta — fase 3 / integração ===== */
-  --color-violet-700: #4c2d8a;
-  --color-violet-500: #7c4fd1;
-  --color-violet-400: #9b75e0;
-  --color-violet-300: #bfa3ec;
+  /* ===== Accent violeta-neon — fase 3 / integração ===== */
+  --color-violet-700: #4310a8;
+  --color-violet-500: #8b3bf0;
+  --color-violet-400: #b066ff;
+  --color-violet-300: #d4a6ff;
 
-  /* ===== Accent vermelho — erro / quiz errado ===== */
-  --color-ember-500: #d6334d;
-  --color-ember-400: #f2415b;
-  --color-ember-300: #f77b8e;
+  /* ===== Accent ciano-elétrico — Modo Entrevista / informação ===== */
+  --color-cyan-700: #056080;
+  --color-cyan-500: #00b8e6;
+  --color-cyan-400: #1ee6ff;
+  --color-cyan-300: #80f2ff;
+
+  /* ===== Accent vermelho-neon — erro / quiz errado ===== */
+  --color-ember-500: #e0123f;
+  --color-ember-400: #ff2d5f;
+  --color-ember-300: #ff7d9b;
 
   /* ===== Tipografia ===== */
   --font-display: "Space Grotesk", "Avenir Next", "Segoe UI Semibold", "Inter", system-ui, sans-serif;
@@ -48,10 +54,10 @@
   /* ===== Layout ===== */
   --breakpoint-xs: 420px;
 
-  /* ===== Sombras em camadas (profundidade real, não só borda) ===== */
-  --shadow-card: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -8px rgba(0,0,0,0.5);
-  --shadow-card-hover: 0 2px 4px rgba(0,0,0,0.45), 0 16px 40px -12px rgba(0,0,0,0.6);
-  --shadow-pop: 0 4px 12px rgba(0,0,0,0.35), 0 24px 60px -16px rgba(0,0,0,0.7);
+  /* ===== Sombras em camadas + glow neon ===== */
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px -8px rgba(0,0,0,0.6);
+  --shadow-card-hover: 0 2px 4px rgba(0,0,0,0.5), 0 16px 40px -12px rgba(0,0,0,0.7);
+  --shadow-pop: 0 4px 12px rgba(0,0,0,0.4), 0 24px 60px -16px rgba(0,0,0,0.8);
 }
 
 @layer base {
@@ -74,8 +80,8 @@
     position: relative;
   }
 
-  /* Atmosfera ambiente: gradientes radiais sutis fixos no fundo + grão fino.
-     Dá profundidade sem distrair do conteúdo. */
+  /* Atmosfera ambiente neon: gradientes radiais mais saturados que a versão anterior,
+     dando a sensação de luzes de néon refletindo no escuro, sem ofuscar o conteúdo. */
   body::before {
     content: '';
     position: fixed;
@@ -83,19 +89,27 @@
     z-index: 0;
     pointer-events: none;
     background:
-      radial-gradient(ellipse 900px 600px at 12% -8%, color-mix(in oklab, var(--color-mint-500) 10%, transparent), transparent 60%),
-      radial-gradient(ellipse 800px 500px at 100% 10%, color-mix(in oklab, var(--color-violet-500) 7%, transparent), transparent 55%),
-      radial-gradient(ellipse 700px 700px at 50% 110%, color-mix(in oklab, var(--color-amber-500) 5%, transparent), transparent 60%);
+      radial-gradient(ellipse 900px 600px at 10% -10%, color-mix(in oklab, var(--color-mint-500) 16%, transparent), transparent 60%),
+      radial-gradient(ellipse 800px 550px at 105% 8%, color-mix(in oklab, var(--color-amber-500) 14%, transparent), transparent 55%),
+      radial-gradient(ellipse 750px 750px at 50% 115%, color-mix(in oklab, var(--color-violet-500) 13%, transparent), transparent 60%);
   }
 
+  /* Scanlines sutis — assinatura cyberpunk, bem discreta para não cansar a leitura */
   body::after {
     content: '';
     position: fixed;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.025;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.035;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 1px,
+      rgba(0, 255, 194, 0.6) 1px,
+      transparent 2px
+    );
+    background-size: 100% 3px;
     mix-blend-mode: overlay;
   }
 
@@ -163,7 +177,19 @@
   }
 
   .glow-mint {
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-mint-400) 35%, transparent), 0 0 24px -8px var(--color-mint-400);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-mint-400) 45%, transparent), 0 0 28px -6px var(--color-mint-400);
+  }
+
+  .glow-pink {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-amber-400) 45%, transparent), 0 0 28px -6px var(--color-amber-400);
+  }
+
+  .glow-violet {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-violet-400) 45%, transparent), 0 0 28px -6px var(--color-violet-400);
+  }
+
+  .glow-cyan {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-cyan-400) 45%, transparent), 0 0 28px -6px var(--color-cyan-400);
   }
 
   .scrollbar-none::-webkit-scrollbar { display: none; }
@@ -181,7 +207,8 @@
   }
   .card-surface-hover:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-card-hover);
+    box-shadow: var(--shadow-card-hover), 0 0 24px -10px var(--color-mint-400);
+    border-color: color-mix(in oklab, var(--color-mint-400) 30%, var(--color-base-700));
   }
 
   .text-gradient-mint {
@@ -189,6 +216,20 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  .text-neon-mint {
+    color: var(--color-mint-400);
+    text-shadow: 0 0 12px color-mix(in oklab, var(--color-mint-400) 70%, transparent);
+  }
+
+  .text-neon-pink {
+    color: var(--color-amber-400);
+    text-shadow: 0 0 12px color-mix(in oklab, var(--color-amber-400) 70%, transparent);
+  }
+
+  .border-neon {
+    border-color: color-mix(in oklab, var(--color-mint-400) 50%, var(--color-base-700));
   }
 
   .noise-card {
@@ -203,6 +244,14 @@
 }
 .animate-pulse-soft {
   animation: pulse-soft 2.2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 12px -2px var(--color-mint-400); }
+  50% { box-shadow: 0 0 24px 2px var(--color-mint-400); }
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 @keyframes rise-in {

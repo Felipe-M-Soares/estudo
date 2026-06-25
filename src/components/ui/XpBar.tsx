@@ -31,7 +31,7 @@ export function XpBar({ xp, compact = false }: XpBarProps) {
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400/25 to-amber-500/10 font-display text-lg font-bold text-amber-300 ring-1 ring-amber-400/30 shadow-[0_0_24px_-8px_theme(colors.amber.400)]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400/25 to-amber-500/10 font-display text-lg font-bold text-amber-300 ring-1 ring-amber-400/40 shadow-[0_0_30px_-4px_theme(colors.amber.400)]">
             {level}
           </div>
           <div>

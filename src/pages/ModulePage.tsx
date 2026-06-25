@@ -6,6 +6,8 @@ import { MarkdownLite } from '../components/ui/MarkdownLite';
 import { ExerciseRouter } from '../components/ui/ExerciseRouter';
 import { gameRegistry } from '../components/games/registry';
 import { diagramRegistry } from '../components/diagrams/registry';
+import { ScenarioCard } from '../components/ui/ScenarioCard';
+import { ProjectNotesPanel } from '../components/ui/ProjectNotesPanel';
 import type { UserProgress } from '../data/types';
 
 interface ModulePageProps {
@@ -14,9 +16,10 @@ interface ModulePageProps {
   onExerciseResult: (moduleId: string, exerciseId: string, correct: boolean) => void;
   onGameComplete: (gameId: string, score: number) => void;
   onSetCurrentModule: (moduleId: string) => void;
+  onSaveProjectNote: (moduleId: string, text: string, links: { label: string; url: string }[]) => void;
 }
 
-type Tab = 'conteudo' | 'exercicios' | 'jogos' | 'checklist' | 'projeto';
+type Tab = 'conteudo' | 'diaadia' | 'exercicios' | 'jogos' | 'checklist' | 'projeto';
 
 const phaseAccent: Record<number, { bar: string; glow: string; chip: string }> = {
   1: { bar: 'bg-mint-400', glow: 'from-mint-500/15', chip: 'bg-mint-400 text-base-950' },
@@ -24,7 +27,7 @@ const phaseAccent: Record<number, { bar: string; glow: string; chip: string }> =
   3: { bar: 'bg-violet-400', glow: 'from-violet-500/15', chip: 'bg-violet-400 text-base-950' },
 };
 
-export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGameComplete, onSetCurrentModule }: ModulePageProps) {
+export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGameComplete, onSetCurrentModule, onSaveProjectNote }: ModulePageProps) {
   const { moduleId } = useParams<{ moduleId: string }>();
   const navigate = useNavigate();
   const mod = moduleId ? modulesById[moduleId] : undefined;
@@ -57,6 +60,7 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
 
   const tabs: { id: Tab; label: string; show: boolean }[] = [
     { id: 'conteudo', label: '📖 Conteúdo', show: true },
+    { id: 'diaadia', label: '🌍 Dia a Dia', show: !!mod.scenarios && mod.scenarios.length > 0 },
     { id: 'exercicios', label: '✍️ Exercícios', show: true },
     { id: 'jogos', label: '🎮 Jogos', show: mod.games.length > 0 },
     { id: 'checklist', label: '✅ Checklist', show: true },
@@ -140,6 +144,17 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
         </div>
       )}
 
+      {tab === 'diaadia' && mod.scenarios && (
+        <div className="space-y-4 animate-rise-in">
+          <p className="rounded-xl border border-cyan-400/20 bg-cyan-500/5 px-4 py-2.5 text-sm text-base-200">
+            🌍 Onde isso aparece de verdade — no trabalho de um dev e no dia a dia comum. Toque em cada card para expandir.
+          </p>
+          {mod.scenarios.map((scenario) => (
+            <ScenarioCard key={scenario.id} scenario={scenario} />
+          ))}
+        </div>
+      )}
+
       {tab === 'exercicios' && (
         <div className="space-y-5 animate-rise-in">
           <div className="flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-200">
@@ -214,23 +229,27 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
           <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-2.5 text-sm font-medium text-amber-200">
             🎯 {mod.goalLabel}
           </div>
+          <ProjectNotesPanel moduleId={mod.id} existingNote={progress.projectNotes[mod.id]} onSave={onSaveProjectNote} />
         </div>
       )}
 
       {tab === 'projeto' && mod.projectBrief && (
-        <div className="space-y-4 animate-rise-in rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/10 via-base-850 to-base-850 p-5">
-          <h3 className="font-display text-lg font-bold text-base-50">🎯 {mod.projectBrief.title}</h3>
-          <p className="text-base-200">{mod.projectBrief.description}</p>
-          <div>
-            <p className="mb-2 text-sm font-semibold text-violet-300">Requisitos:</p>
-            <ul className="space-y-1.5">
-              {mod.projectBrief.requirements.map((req, idx) => (
-                <li key={idx} className="flex gap-2 text-sm text-base-200">
-                  <span className="text-violet-400">›</span> {req}
-                </li>
-              ))}
-            </ul>
+        <div className="space-y-4 animate-rise-in">
+          <div className="rounded-2xl border border-violet-400/30 bg-gradient-to-br from-violet-500/10 via-base-850 to-base-850 p-5">
+            <h3 className="font-display text-lg font-bold text-base-50">🎯 {mod.projectBrief.title}</h3>
+            <p className="text-base-200">{mod.projectBrief.description}</p>
+            <div className="mt-3">
+              <p className="mb-2 text-sm font-semibold text-violet-300">Requisitos:</p>
+              <ul className="space-y-1.5">
+                {mod.projectBrief.requirements.map((req, idx) => (
+                  <li key={idx} className="flex gap-2 text-sm text-base-200">
+                    <span className="text-violet-400">›</span> {req}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
+          <ProjectNotesPanel moduleId={mod.id} existingNote={progress.projectNotes[mod.id]} onSave={onSaveProjectNote} />
         </div>
       )}
 

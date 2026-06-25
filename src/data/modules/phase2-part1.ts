@@ -183,6 +183,44 @@ export const mes07: Module = {
       description: 'Encontre a linha com erro em trechos reais de código, incluindo um clássico de mutação de estado em React.',
     },
   ],
+  scenarios: [
+    {
+      id: 'mes07-cen1',
+      context: 'trabalho',
+      title: 'Tela "pisca" e busca os dados de novo sem parar',
+      emoji: '🔁',
+      situation:
+        'Uma tela de listagem fica fazendo requisições à API infinitamente, e o time de backend reclama que essa tela sozinha está sobrecarregando o servidor.',
+      whatHappens:
+        'O `useEffect` que busca os dados tem uma dependência que muda a cada renderização (como um objeto ou array criado inline no render), fazendo o efeito disparar de novo a cada render, que causa novo fetch, que causa novo render — um loop infinito de chamadas.',
+      howToSolve:
+        'Dependências de `useEffect` devem ser valores estáveis entre renders — primitivos (strings, números) ou referências memorizadas com `useMemo`/`useCallback`. As DevTools do React e o eslint-plugin de hooks ajudam a flagrar esse padrão antes que chegue em produção.',
+    },
+    {
+      id: 'mes07-cen2',
+      context: 'pessoal',
+      title: 'Construindo uma calculadora de divisão de contas',
+      emoji: '🧮',
+      situation:
+        'Você quer um app simples pra dividir a conta de um jantar entre amigos, considerando quem pediu o quê, sem fazer conta de cabeça ou em papel.',
+      whatHappens:
+        'É um ótimo primeiro projeto React de verdade: estado para a lista de pessoas, estado para os itens de cada um, e um cálculo derivado (o total de cada pessoa) que não precisa de seu próprio `useState` — pode ser calculado direto a partir dos outros estados durante o render.',
+      howToSolve:
+        'Resista ao impulso de criar um `useState` para "o total" — isso é um valor derivado, calculável a partir dos itens de cada pessoa a cada render. Estado duplicado e sincronizado manualmente é uma fonte clássica de bugs sutis.',
+    },
+    {
+      id: 'mes07-cen3',
+      context: 'trabalho',
+      title: 'TypeScript "implora" para você usar `any` em tudo',
+      emoji: '🙈',
+      situation:
+        'Sob pressão de prazo, um colega sugere "só coloca `any` aqui que resolve" toda vez que o TypeScript reclama de um tipo.',
+      whatHappens:
+        '`any` desativa completamente a checagem de tipos para aquele valor — é como dizer ao TypeScript "confia em mim e não verifica nada". O código compila, mas qualquer erro de tipo que existiria só aparece em produção, na hora errada.',
+      howToSolve:
+        'Quando o tipo real é incerto, prefira `unknown` (que força uma verificação antes de usar) a `any`. Quando o tipo é conhecido mas complexo, vale o tempo de escrever a interface correta — o objetivo do TypeScript é justamente pegar esses erros antes do deploy, não depois.',
+    },
+  ],
 };
 
 export const mes08: Module = {
@@ -363,6 +401,44 @@ export const mes08: Module = {
       description: 'Encadeie filter, map e collect na ordem certa para transformar uma lista no resultado pedido.',
     },
   ],
+  scenarios: [
+    {
+      id: 'mes08-cen1',
+      context: 'trabalho',
+      title: 'A tela de pedidos demora cada vez mais para carregar',
+      emoji: '🐌',
+      situation:
+        'Conforme a base de clientes cresceu, a tela que lista pedidos com nome do cliente está cada vez mais lenta, mesmo paginando os resultados.',
+      whatHappens:
+        'Esse é o clássico "problema N+1": a query principal busca 20 pedidos, e para cada um, o JPA dispara automaticamente outra query para buscar o cliente relacionado — 1 query principal + 20 queries extras, em vez de uma única query bem feita.',
+      howToSolve:
+        'Usar `JOIN FETCH` na query (ou `@EntityGraph`) faz o JPA buscar pedidos e clientes relacionados numa única consulta otimizada, eliminando as 20 queries extras. Ferramentas como o Hibernate têm logs específicos para flagrar esse padrão durante o desenvolvimento.',
+    },
+    {
+      id: 'mes08-cen2',
+      context: 'pessoal',
+      title: 'Modelando o controle de uma coleção de jogos',
+      emoji: '🎮',
+      situation:
+        'Você quer um sisteminha (mesmo que só para você) que controla sua coleção de jogos: qual plataforma, se já zerou, nota pessoal.',
+      whatHappens:
+        'Isso é um exercício perfeito para praticar modelagem orientada a objetos de verdade — uma classe `Jogo` com campos bem definidos, talvez um enum para `Plataforma`, e métodos que fazem sentido no domínio (como `marcarComoZerado()`).',
+      howToSolve:
+        'Comece pelo modelo: o que é um "Jogo" no seu sistema, quais campos ele tem, o que pode mudar nele. Um `record` Java (se os dados não mudam) ou uma classe com Spring Data JPA (se for persistir num banco) aplicam exatamente o que você está aprendendo neste módulo.',
+    },
+    {
+      id: 'mes08-cen3',
+      context: 'trabalho',
+      title: 'Mudar uma regra de negócio quebra 5 lugares diferentes',
+      emoji: '🧱',
+      situation:
+        'O time de produto pede uma mudança simples na regra de desconto, mas o desenvolvedor encontra a mesma lógica de cálculo copiada e colada em 5 arquivos diferentes do sistema.',
+      whatHappens:
+        'Isso é uma violação do princípio de responsabilidade única e de não-repetição — quando a mesma regra de negócio vive em vários lugares, toda mudança futura exige lembrar (e não esquecer) de atualizar todos eles, um convite a bugs por inconsistência.',
+      howToSolve:
+        'Centralizar essa regra numa única classe de serviço (ex: `CalculadoraDesconto`), chamada por todos os lugares que precisam dela, faz com que uma mudança futura precise ser feita (e testada) em um único lugar — o ganho de manutenibilidade que SOLID busca proteger.',
+    },
+  ],
 };
 
 export const mes09: Module = {
@@ -508,6 +584,44 @@ export const mes09: Module = {
       gameId: 'docker-compose-builder',
       label: 'Montador de Compose',
       description: 'Arraste serviços, portas e volumes para montar um docker-compose.yml válido para um cenário dado.',
+    },
+  ],
+  scenarios: [
+    {
+      id: 'mes09-cen1',
+      context: 'trabalho',
+      title: '"Funciona na minha máquina" — mas não na do colega',
+      emoji: '🤷',
+      situation:
+        'Um novo desenvolvedor entra no time, clona o repositório, e passa a manhã inteira tentando fazer o projeto rodar — versão errada do Node, biblioteca do sistema faltando, configuração diferente.',
+      whatHappens:
+        'Sem containerização, cada máquina de desenvolvimento tem seu próprio ambiente, com pequenas diferenças (versões, dependências do sistema operacional) que acumulam e eventualmente quebram algo que "sempre funcionou" para quem já tinha o ambiente configurado há meses.',
+      howToSolve:
+        'Um Dockerfile + docker-compose.yml bem feitos tornam o ambiente reproduzível: `docker-compose up` deveria ser o único passo necessário para qualquer pessoa do time rodar o projeto, independente do que já está instalado na máquina dela.',
+    },
+    {
+      id: 'mes09-cen2',
+      context: 'pessoal',
+      title: 'Testando uma ferramenta sem "sujar" o computador',
+      emoji: '🧪',
+      situation:
+        'Você quer experimentar um banco de dados novo (ou uma ferramenta qualquer) só para aprender, mas não quer instalar e configurar tudo manualmente, com medo de deixar resíduos no sistema.',
+      whatHappens:
+        'Containers existem exatamente para isso — rodar algo isolado do resto do seu sistema, e quando terminar, simplesmente remover o container sem deixar rastro nenhum na sua máquina.',
+      howToSolve:
+        '`docker run -it postgres` (ou qualquer imagem oficial) sobe a ferramenta isolada em segundos. Quando terminar de testar, `docker rm` remove tudo — seu sistema operacional nunca soube que aquilo existiu.',
+    },
+    {
+      id: 'mes09-cen3',
+      context: 'trabalho',
+      title: 'Container reinicia e perde todos os dados',
+      emoji: '💾',
+      situation:
+        'Depois de um deploy de rotina que recria os containers, o time percebe que todos os dados do banco de testes desapareceram.',
+      whatHappens:
+        'O banco estava rodando num container sem volume configurado — por design, tudo que é escrito dentro de um container é descartado quando ele é removido ou recriado. Sem volume, isso inclui o banco de dados inteiro.',
+      howToSolve:
+        'Bancos de dados (e qualquer dado que precise sobreviver a reinicializações) sempre precisam de um volume nomeado mapeado para o diretório de dados do container. Isso deveria ser checado em toda revisão de docker-compose.yml que envolva persistência.',
     },
   ],
 };
