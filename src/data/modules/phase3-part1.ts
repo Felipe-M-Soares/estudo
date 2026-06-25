@@ -46,7 +46,15 @@ export const mes13: Module = {
       id: 'l5',
       heading: 'Saga: transações que atravessam múltiplos serviços',
       body:
-        'Quando uma operação de negócio (ex: "finalizar pedido") precisa coordenar mudanças em vários microsserviços diferentes (pagamento, estoque, envio), não existe uma transação de banco tradicional que cubra todos eles ao mesmo tempo. O padrão Saga resolve isso executando uma sequência de passos locais, cada um com uma **ação compensatória** definida caso algo falhe no meio do caminho.\n\nSe o pagamento for aprovado mas o estoque não tiver o item, a Saga executa a compensação: cancela o pagamento já feito. Isso troca a garantia "tudo ou nada instantâneo" por "eventualmente consistente, com reversão automática em caso de falha".',
+        'Quando uma operação de negócio (ex: "finalizar pedido") precisa coordenar mudanças em vários microsserviços diferentes (pagamento, estoque, envio), não existe uma transação de banco tradicional que cubra todos eles ao mesmo tempo. O padrão Saga resolve isso executando uma sequência de passos locais, cada um com uma **ação compensatória** definida caso algo falhe no meio do caminho.\n\nSe o pagamento for aprovado mas o estoque não tiver o item, a Saga executa a compensação: cancela o pagamento já feito. Isso troca a garantia "tudo ou nada instantâneo" por "eventualmente consistente, com reversão automática em caso de falha". Simule abaixo o caminho de sucesso e o de falha com compensação.',
+      diagramId: 'saga-pattern',
+    },
+    {
+      id: 'l6',
+      heading: 'Comunicação síncrona vs assíncrona: a decisão arquitetural mais comum',
+      body:
+        'Toda comunicação entre serviços é, no fundo, uma escolha entre dois modelos. **Síncrona** (chamada HTTP direta): o chamador espera a resposta antes de continuar — simples de entender e debugar, mas cria acoplamento de disponibilidade (se o destino cai, quem chama também é afetado). **Assíncrona** (mensageria/fila): o chamador publica e segue seu fluxo, sem esperar — mais resiliente a falhas parciais, mas mais complexa de rastrear e debugar.\n\nA regra prática: use síncrono quando você genuinamente precisa da resposta para continuar (buscar dados para mostrar na tela); use assíncrono quando a ação pode ser processada "depois" sem bloquear o usuário (enviar um email de confirmação, atualizar um índice de busca).',
+      diagramId: 'async-communication',
     },
   ],
   resources: [
@@ -128,6 +136,26 @@ export const mes13: Module = {
       hint: 'O termo que descreve operações que produzem o mesmo resultado final mesmo se executadas múltiplas vezes.',
       explanation: 'A chave de idempotência permite que o servidor identifique e ignore (ou retorne o mesmo resultado de) requisições duplicadas.',
     },
+    {
+      type: 'mcq',
+      id: 'm13-e7',
+      prompt: 'Você está implementando "enviar email de boas-vindas após cadastro". Por que isso é um bom candidato para comunicação assíncrona?',
+      options: [
+        'Porque emails são sempre urgentes',
+        'Porque o usuário não precisa esperar o email ser enviado para continuar usando o sistema — isso pode ser processado depois',
+        'Comunicação assíncrona é sempre obrigatória',
+        'Não há diferença entre as duas abordagens nesse caso',
+      ],
+      correctIndex: 1,
+      explanation: 'Ações que não bloqueiam a experiência imediata do usuário (como enviar um email) são ótimas candidatas a processamento assíncrono, sem fazer o usuário esperar.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm13-e8',
+      prompt: 'Comunicação síncrona cria acoplamento de disponibilidade: se o serviço chamado cair, quem chama também é afetado.',
+      answer: true,
+      explanation: 'Numa chamada síncrona direta, o chamador fica esperando a resposta — se o destino estiver fora do ar ou lento, isso se propaga diretamente para quem fez a chamada.',
+    },
   ],
   games: [
     {
@@ -184,11 +212,12 @@ export const mes14: Module = {
       id: 'l1',
       heading: 'Pods, Deployments e Services',
       body:
-        'Um **Pod** é a menor unidade do Kubernetes — geralmente um container (ou alguns acoplados) rodando junto. Um **Deployment** descreve o estado desejado: "quero 3 réplicas deste Pod rodando sempre" — se um cair, o Kubernetes cria outro automaticamente para manter esse número.\n\nUm **Service** dá um endereço de rede estável para um conjunto de Pods, mesmo que Pods individuais sejam recriados com IPs novos constantemente.',
+        'Um **Pod** é a menor unidade do Kubernetes — geralmente um container (ou alguns acoplados) rodando junto. Um **Deployment** descreve o estado desejado: "quero 3 réplicas deste Pod rodando sempre" — se um cair, o Kubernetes cria outro automaticamente para manter esse número.\n\nUm **Service** dá um endereço de rede estável para um conjunto de Pods, mesmo que Pods individuais sejam recriados com IPs novos constantemente. Experimente "matar" um Pod abaixo e veja o Kubernetes recriá-lo automaticamente.',
       codeExample: {
         lang: 'yaml',
         code: 'apiVersion: apps/v1\nkind: Deployment\nspec:\n  replicas: 3\n  template:\n    spec:\n      containers:\n        - name: api\n          image: minha-api:1.0',
       },
+      diagramId: 'k8s-pods',
     },
     {
       id: 'l2',
@@ -223,6 +252,16 @@ export const mes14: Module = {
       heading: 'Horizontal Pod Autoscaler: escalando automaticamente',
       body:
         'O HPA (Horizontal Pod Autoscaler) monitora métricas (geralmente uso de CPU) e ajusta automaticamente o número de réplicas de um Deployment dentro de um intervalo mínimo e máximo definido por você. Em um pico de tráfego, mais Pods são criados; quando a demanda cai, Pods extras são removidos.\n\nEsse é o equivalente, dentro do cluster Kubernetes, ao Auto Scaling de instâncias EC2 que você viu no módulo de AWS — o princípio é o mesmo: capacidade que acompanha a demanda real, em vez de superprovisionar para o pior cenário 24 horas por dia.',
+    },
+    {
+      id: 'l7',
+      heading: 'Namespaces: organizando múltiplos ambientes no mesmo cluster',
+      body:
+        'Um cluster Kubernetes pode hospedar vários ambientes ou times ao mesmo tempo (desenvolvimento, staging, produção, ou times diferentes) usando **Namespaces** — uma forma de dividir logicamente os recursos do cluster, evitando que um Deployment de "dev" colida em nome com um de "prod".\n\nCotas de recursos (`ResourceQuota`) podem ser aplicadas por namespace, limitando quanto CPU/memória um time específico pode consumir, evitando que um ambiente de testes mal configurado consuma recursos que deveriam estar disponíveis para produção.',
+      codeExample: {
+        lang: 'bash',
+        code: 'kubectl create namespace staging\nkubectl apply -f deployment.yaml --namespace=staging\nkubectl get pods --namespace=staging',
+      },
     },
   ],
   resources: [
@@ -298,6 +337,19 @@ export const mes14: Module = {
       explanation:
         'Ambos ajustam capacidade automaticamente baseado em demanda — HPA escala Pods dentro de um cluster Kubernetes, enquanto Auto Scaling de EC2 escala máquinas virtuais inteiras.',
     },
+    {
+      type: 'mcq',
+      id: 'm14-e7',
+      prompt: 'Qual o propósito principal de um Namespace no Kubernetes?',
+      options: [
+        'Acelerar a aplicação',
+        'Dividir logicamente os recursos do cluster entre ambientes ou times, evitando colisão de nomes e permitindo cotas de recursos',
+        'Substituir o Deployment',
+        'Criptografar a comunicação entre Pods',
+      ],
+      correctIndex: 1,
+      explanation: 'Namespaces permitem que múltiplos ambientes (dev, staging, produção) ou times coexistam no mesmo cluster físico, com isolamento lógico e controle de cotas.',
+    },
   ],
   games: [
     {
@@ -349,11 +401,12 @@ export const mes15: Module = {
       id: 'l1',
       heading: 'CI/CD: integração e entrega contínuas',
       body:
-        '**CI (Continuous Integration)**: toda vez que código é enviado, uma pipeline automaticamente roda testes, lint e build — pegando problemas antes que cheguem à branch principal. **CD (Continuous Delivery/Deployment)**: o código que passa por todas as validações é automaticamente entregue (ou até implantado em produção) sem intervenção manual.\n\nGitHub Actions define essas pipelines em arquivos YAML versionados junto do código.',
+        '**CI (Continuous Integration)**: toda vez que código é enviado, uma pipeline automaticamente roda testes, lint e build — pegando problemas antes que cheguem à branch principal. **CD (Continuous Delivery/Deployment)**: o código que passa por todas as validações é automaticamente entregue (ou até implantado em produção) sem intervenção manual.\n\nGitHub Actions define essas pipelines em arquivos YAML versionados junto do código. Simule abaixo uma pipeline passando, e outra falhando no meio do caminho.',
       codeExample: {
         lang: 'yaml',
         code: 'name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm install\n      - run: npm test',
       },
+      diagramId: 'cicd-pipeline-diagram',
     },
     {
       id: 'l2',
@@ -384,6 +437,16 @@ export const mes15: Module = {
       heading: 'SLO, SLI e SLA: definindo o que "funcionando" significa',
       body:
         '**SLI** (Service Level Indicator) é uma métrica concreta: "porcentagem de requisições respondidas em menos de 200ms". **SLO** (Service Level Objective) é a meta interna para essa métrica: "99% das requisições em menos de 200ms, medido por mês". **SLA** (Service Level Agreement) é o compromisso formal com o cliente, geralmente com penalidade contratual se não for cumprido.\n\nA distinção importa: SLOs costumam ser mais rígidos que os SLAs prometidos a clientes, dando margem de segurança ("orçamento de erro") antes de efetivamente violar um compromisso contratual.',
+    },
+    {
+      id: 'l7',
+      heading: 'Feature Flags: lançando funcionalidades sem precisar fazer deploy',
+      body:
+        'Uma feature flag é um interruptor remoto que liga ou desliga uma funcionalidade em produção, sem precisar de um novo deploy. Isso desacopla "colocar o código em produção" de "ativar a funcionalidade para os usuários" — você pode fazer deploy de um código novo desligado, e ativá-lo gradualmente depois (para 5% dos usuários, depois 50%, depois todos).\n\nIsso também viabiliza o "rollback instantâneo": se uma funcionalidade nova causar problemas, desligar a flag reverte o comportamento imediatamente, sem precisar reverter um deploy inteiro (que pode levar minutos e afetar outras mudanças que foram junto).',
+      codeExample: {
+        lang: 'javascript',
+        code: 'if (featureFlags.isEnabled("novo-checkout", usuario)) {\n  return <NovoCheckout />;\n}\nreturn <CheckoutAntigo />;',
+      },
     },
   ],
   resources: [
@@ -467,6 +530,19 @@ export const mes15: Module = {
       correctIndex: 1,
       explanation:
         'SLOs costumam ser mais rígidos que os SLAs prometidos externamente, funcionando como uma margem de segurança antes de efetivamente violar um compromisso com o cliente.',
+    },
+    {
+      type: 'mcq',
+      id: 'm15-e7',
+      prompt: 'Qual a principal vantagem de uma feature flag sobre um deploy tradicional para lançar uma funcionalidade nova?',
+      options: [
+        'Não há vantagem real',
+        'Permite ativar/desativar a funcionalidade remotamente e gradualmente, sem precisar de um novo deploy',
+        'Feature flags tornam o código mais rápido',
+        'Substituem completamente a necessidade de testes',
+      ],
+      correctIndex: 1,
+      explanation: 'Feature flags desacoplam "código em produção" de "funcionalidade ativa para usuários", permitindo rollout gradual e rollback instantâneo sem novo deploy.',
     },
   ],
   games: [

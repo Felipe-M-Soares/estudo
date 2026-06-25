@@ -61,11 +61,28 @@ export const mes04: Module = {
       id: 'l6',
       heading: 'Tipos de JOIN: nem toda combinação de tabelas é igual',
       body:
-        '`INNER JOIN` retorna só as linhas que têm correspondência em ambas as tabelas — se um cliente não tem pedido nenhum, ele não aparece. `LEFT JOIN` retorna todas as linhas da tabela da esquerda, mesmo sem correspondência na direita (preenchendo com `NULL` o que não existe) — essencial para perguntas como "quais clientes nunca fizeram um pedido?".\n\nEscolher o JOIN errado é uma das causas mais comuns de bugs sutis em relatórios: um `INNER JOIN` onde deveria haver um `LEFT JOIN` simplesmente faz registros desaparecerem do resultado, sem erro nenhum.',
+        '`INNER JOIN` retorna só as linhas que têm correspondência em ambas as tabelas — se um cliente não tem pedido nenhum, ele não aparece. `LEFT JOIN` retorna todas as linhas da tabela da esquerda, mesmo sem correspondência na direita (preenchendo com `NULL` o que não existe) — essencial para perguntas como "quais clientes nunca fizeram um pedido?".\n\nEscolher o JOIN errado é uma das causas mais comuns de bugs sutis em relatórios: um `INNER JOIN` onde deveria haver um `LEFT JOIN` simplesmente faz registros desaparecerem do resultado, sem erro nenhum. Explore visualmente os 4 tipos principais abaixo.',
       codeExample: {
         lang: 'sql',
         code: '-- Clientes que NUNCA fizeram pedido\nSELECT clientes.nome\nFROM clientes\nLEFT JOIN pedidos ON pedidos.cliente_id = clientes.id\nWHERE pedidos.id IS NULL;',
       },
+      diagramId: 'sql-join',
+    },
+    {
+      id: 'l7',
+      heading: 'Transações: garantindo que tudo aconteça, ou nada aconteça',
+      body:
+        'Uma transação agrupa várias operações de banco como uma unidade atômica: ou todas são aplicadas com sucesso, ou nenhuma é — nunca um estado intermediário inconsistente. O exemplo clássico é uma transferência bancária: debitar de uma conta e creditar em outra precisam acontecer juntas, porque se o sistema falhar entre as duas operações, o dinheiro "desaparece".\n\n`BEGIN` inicia a transação, `COMMIT` confirma todas as mudanças, `ROLLBACK` desfaz tudo se algo der errado no meio do caminho. Essa garantia é conhecida pelas iniciais ACID: Atomicidade, Consistência, Isolamento, Durabilidade.',
+      codeExample: {
+        lang: 'sql',
+        code: 'BEGIN;\nUPDATE contas SET saldo = saldo - 100 WHERE id = 1;\nUPDATE contas SET saldo = saldo + 100 WHERE id = 2;\nCOMMIT; -- só agora as mudanças são definitivas',
+      },
+    },
+    {
+      id: 'l8',
+      heading: 'Normalização: organizando tabelas para evitar dados duplicados e inconsistentes',
+      body:
+        'Normalização é o processo de estruturar tabelas para reduzir redundância. Um exemplo comum de design ruim: guardar o nome do cliente repetido em toda linha de pedido. Se o cliente mudar de nome, você precisaria atualizar centenas de linhas — e esquecer uma cria inconsistência (duas grafias diferentes do "mesmo" cliente).\n\nA correção: uma tabela `clientes` guarda o nome uma única vez, e a tabela `pedidos` referencia apenas o `cliente_id`. Isso é chamado de "terceira forma normal" na teoria formal, mas na prática o princípio é simples: cada informação deve viver em um único lugar, referenciada por id de onde for usada.',
     },
   ],
   resources: [
@@ -164,6 +181,35 @@ export const mes04: Module = {
       explanation:
         'Depois de escolher (ou combinar) o código correto, é preciso remover todos os marcadores de conflito e commitar o arquivo já resolvido.',
     },
+    {
+      type: 'mcq',
+      id: 'm4-e9',
+      prompt: 'Por que uma transferência bancária precisa ser feita dentro de uma transação?',
+      options: [
+        'Para deixar a operação mais rápida',
+        'Para garantir que o débito de uma conta e o crédito na outra aconteçam juntos — nunca um sem o outro',
+        'Transações são só sobre permissões de acesso',
+        'Não há necessidade real disso',
+      ],
+      correctIndex: 1,
+      explanation: 'Se o sistema falhar entre as duas operações sem uma transação, o dinheiro pode ser debitado sem nunca ser creditado — a transação garante que ambas aconteçam ou nenhuma aconteça.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm4-e10',
+      prompt: 'Guardar o nome do cliente repetido em cada linha de uma tabela de pedidos é um bom design de banco de dados.',
+      answer: false,
+      explanation: 'Isso cria redundância e risco de inconsistência — o correto é guardar o nome uma vez na tabela de clientes, e referenciar apenas o cliente_id nos pedidos.',
+    },
+    {
+      type: 'code-fill',
+      id: 'm4-e11',
+      prompt: 'Complete o comando que desfaz todas as mudanças de uma transação ainda não confirmada.',
+      codeTemplate: 'BEGIN;\nUPDATE contas SET saldo = saldo - 100 WHERE id = 1;\n-- algo deu errado\n___;',
+      answer: 'ROLLBACK',
+      hint: 'O oposto de COMMIT — desfaz tudo que foi feito desde o BEGIN.',
+      explanation: '`ROLLBACK` desfaz todas as operações realizadas desde o início da transação, devolvendo o banco ao estado anterior.',
+    },
   ],
   games: [
     {
@@ -243,11 +289,12 @@ export const mes05: Module = {
       id: 'l2',
       heading: 'Express: rotas e middlewares',
       body:
-        'Uma rota mapeia um verbo HTTP + caminho para uma função: `app.get("/usuarios", handler)`. Um **middleware** é uma função que roda antes da rota final — usado para autenticação, logging, validação, tratamento de CORS.\n\nMiddlewares são encadeados: cada um pode passar para o próximo (`next()`) ou interromper a cadeia (ex: retornando 401 se não autenticado). Esse padrão de pipeline é central no Express.',
+        'Uma rota mapeia um verbo HTTP + caminho para uma função: `app.get("/usuarios", handler)`. Um **middleware** é uma função que roda antes da rota final — usado para autenticação, logging, validação, tratamento de CORS.\n\nMiddlewares são encadeados: cada um pode passar para o próximo (`next()`) ou interromper a cadeia (ex: retornando 401 se não autenticado). Esse padrão de pipeline é central no Express. Simule abaixo uma requisição passando (ou sendo bloqueada) pela cadeia.',
       codeExample: {
         lang: 'javascript',
         code: 'app.use(express.json());\n\napp.get("/usuarios/:id", (req, res) => {\n  const { id } = req.params;\n  res.json({ id, nome: "Exemplo" });\n});',
       },
+      diagramId: 'middleware-pipeline-diagram',
     },
     {
       id: 'l3',
@@ -283,6 +330,26 @@ export const mes05: Module = {
       codeExample: {
         lang: 'javascript',
         code: 'const schema = z.object({\n  nome: z.string().min(2),\n  email: z.string().email(),\n});\n\nconst resultado = schema.safeParse(req.body);\nif (!resultado.success) {\n  return res.status(400).json({ erro: "Dados inválidos" });\n}',
+      },
+    },
+    {
+      id: 'l7',
+      heading: 'Paginação: nunca retorne 1 milhão de linhas de uma vez',
+      body:
+        'Retornar uma lista inteira de um recurso (todos os pedidos, todos os usuários) funciona bem com 50 registros, mas trava o servidor e o cliente quando a tabela cresce para milhões. Paginação resolve isso retornando só uma "página" de resultados por vez.\n\n**Offset pagination** (`?page=2&limit=20`) é simples de implementar mas fica lenta em páginas muito distantes, porque o banco ainda precisa "pular" todos os registros anteriores. **Cursor pagination** (`?cursor=abc123`) usa um ponteiro para a última posição lida, sendo mais eficiente para grandes volumes — é o que feeds infinitos (redes sociais) costumam usar.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'app.get("/pedidos", async (req, res) => {\n  const page = Number(req.query.page) || 1;\n  const limit = 20;\n  const pedidos = await db.pedido.findMany({\n    skip: (page - 1) * limit,\n    take: limit,\n  });\n  res.json(pedidos);\n});',
+      },
+    },
+    {
+      id: 'l8',
+      heading: 'Upload de arquivos: recebendo mais que só texto',
+      body:
+        'Requisições com arquivos (uma foto de perfil, um PDF) usam um formato diferente de JSON: `multipart/form-data`. No Node.js, bibliotecas como `multer` interceptam esse formato, processam o arquivo, e o tornam disponível em `req.file` (ou `req.files` para múltiplos), além de continuar processando os campos de texto normalmente em `req.body`.\n\nPontos de atenção: sempre validar o tipo e tamanho do arquivo antes de salvar (nunca confie na extensão informada pelo cliente), e decidir onde armazenar — salvar no disco do próprio servidor funciona para protótipos, mas em produção é comum usar um serviço de armazenamento de objetos (como S3) para não acoplar arquivos ao ciclo de vida do servidor.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'const upload = multer({ dest: "uploads/" });\n\napp.post("/perfil/foto", upload.single("foto"), (req, res) => {\n  res.json({ caminho: req.file.path });\n});',
       },
     },
   ],
@@ -380,6 +447,34 @@ export const mes05: Module = {
       hint: 'O objeto global do Node.js que expõe as variáveis de ambiente do processo.',
       explanation: '`process.env` é o objeto que contém todas as variáveis de ambiente disponíveis para o processo Node.js em execução.',
     },
+    {
+      type: 'mcq',
+      id: 'm5-e9',
+      prompt: 'Por que cursor pagination é mais eficiente que offset pagination em tabelas muito grandes?',
+      options: [
+        'Não há diferença real de performance',
+        'Cursor pagination não precisa "pular" registros anteriores no banco, enquanto offset precisa varrer até a posição pedida',
+        'Cursor pagination só funciona com bancos NoSQL',
+        'Offset pagination é sempre mais rápida',
+      ],
+      correctIndex: 1,
+      explanation: 'Com offset, o banco precisa contar/pular todos os registros antes da página pedida — em páginas muito distantes numa tabela enorme, isso fica progressivamente mais lento. Cursor pagination usa um ponteiro direto, evitando esse custo.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm5-e10',
+      prompt: 'É seguro confiar na extensão do arquivo informada pelo cliente (ex: "foto.jpg") para determinar o tipo real do conteúdo.',
+      answer: false,
+      explanation: 'O nome do arquivo (incluindo extensão) é só uma string fornecida pelo cliente — pode ser falsificada facilmente. A validação real deve inspecionar o conteúdo/tipo MIME do arquivo, não confiar no nome.',
+    },
+    {
+      type: 'mcq',
+      id: 'm5-e11',
+      prompt: 'Requisições com upload de arquivo usam qual formato, diferente do JSON comum?',
+      options: ['XML', 'multipart/form-data', 'text/plain', 'application/x-www-form-urlencoded apenas'],
+      correctIndex: 1,
+      explanation: '`multipart/form-data` permite combinar campos de texto normais com dados binários (arquivos) numa única requisição, algo que JSON puro não suporta nativamente.',
+    },
   ],
   games: [
     {
@@ -468,6 +563,22 @@ export const mes06: Module = {
       body:
         'Create, Read, Update, Delete — virtualmente toda aplicação de software é uma variação de CRUD sobre alguma entidade. Para o sistema de tarefas: criar tarefa, listar tarefas do usuário, marcar como concluída/editar, e excluir.\n\nO ponto de atenção é sempre verificar que o usuário só pode ler/editar/excluir **suas próprias** tarefas — isso é autorização, uma camada além da autenticação.',
     },
+    {
+      id: 'l4',
+      heading: 'Testes de integração: testando o sistema como um todo',
+      body:
+        'Testes unitários verificam uma função isolada; testes de integração verificam que várias partes funcionam corretamente **juntas** — por exemplo, fazer uma requisição HTTP real contra a API e verificar se ela consulta o banco e responde corretamente, do jeito que um usuário real experimentaria.\n\nPara isso, é comum usar um banco de dados de teste separado (para não misturar dados reais com dados de teste) e bibliotecas como `supertest` no Node.js, que simulam requisições HTTP sem precisar de um servidor rodando numa porta real. Testar o fluxo completo de login → criar tarefa → listar tarefas pega bugs de integração que testes unitários isolados não pegariam.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'test("cria e lista uma tarefa", async () => {\n  const login = await request(app).post("/login").send({ email, senha });\n  const token = login.body.token;\n\n  await request(app).post("/tarefas").set("Authorization", `Bearer ${token}`).send({ titulo: "Estudar" });\n  const lista = await request(app).get("/tarefas").set("Authorization", `Bearer ${token}`);\n\n  expect(lista.body).toHaveLength(1);\n});',
+      },
+    },
+    {
+      id: 'l5',
+      heading: 'Documentando sua API para quem vai consumi-la depois',
+      body:
+        'Mesmo um projeto pessoal se beneficia de documentação básica: quando você voltar nele em 3 meses (ou mostrar para um recrutador), um README claro economiza horas de "como é que isso funciona mesmo?".\n\nNo mínimo, documente: como instalar e rodar o projeto localmente, quais variáveis de ambiente são necessárias, e a lista de endpoints com método HTTP, parâmetros esperados e exemplo de resposta. Ferramentas como Swagger/OpenAPI (que você vai estudar com mais profundidade no módulo de APIs Avançadas) automatizam isso, mas mesmo uma tabela simples no README já é muito melhor que nenhuma documentação.',
+    },
   ],
   resources: [
     { label: 'Express — MDN', url: 'https://developer.mozilla.org/pt-BR/docs/Learn/Server-side/Express_Nodejs' },
@@ -530,6 +641,26 @@ export const mes06: Module = {
       correctIndex: 1,
       explanation:
         'Sem checar o dono da tarefa, qualquer usuário autenticado poderia ler ou editar tarefas de outras pessoas só sabendo o ID — uma falha clássica de autorização.',
+    },
+    {
+      type: 'mcq',
+      id: 'm6-e5',
+      prompt: 'Qual a diferença principal entre um teste unitário e um teste de integração?',
+      options: [
+        'Não há diferença real',
+        'Teste unitário verifica uma função isolada; teste de integração verifica várias partes funcionando juntas (ex: API + banco)',
+        'Testes de integração são sempre mais rápidos',
+        'Teste unitário só existe em Java',
+      ],
+      correctIndex: 1,
+      explanation: 'Testes de integração pegam bugs que aparecem só quando componentes interagem entre si — algo que testar cada função isoladamente não revela.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm6-e6',
+      prompt: 'É uma boa prática usar o mesmo banco de dados de produção para rodar testes automatizados.',
+      answer: false,
+      explanation: 'Usar um banco de testes separado evita que dados de teste se misturem com dados reais, e permite resetar o estado entre execuções sem risco de apagar informação real.',
     },
   ],
   games: [

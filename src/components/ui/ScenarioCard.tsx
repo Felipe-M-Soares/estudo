@@ -1,14 +1,24 @@
 import { useState } from 'react';
-import { Briefcase, Home, ChevronDown } from 'lucide-react';
+import { Briefcase, Home, ChevronDown, HelpCircle, Check, X } from 'lucide-react';
 import type { DayToDayScenario } from '../../data/types';
 
 interface ScenarioCardProps {
   scenario: DayToDayScenario;
+  onCheckResult?: (scenarioId: string, correct: boolean) => void;
+  alreadyChecked?: boolean;
 }
 
-export function ScenarioCard({ scenario }: ScenarioCardProps) {
+export function ScenarioCard({ scenario, onCheckResult, alreadyChecked }: ScenarioCardProps) {
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<number | null>(null);
   const isWork = scenario.context === 'trabalho';
+  const check = scenario.check;
+
+  function handleSelect(idx: number) {
+    if (selected !== null || !check) return;
+    setSelected(idx);
+    onCheckResult?.(scenario.id, idx === check.correctIndex);
+  }
 
   return (
     <div className="card-surface card-surface-hover overflow-hidden rounded-2xl">
@@ -25,6 +35,11 @@ export function ScenarioCard({ scenario }: ScenarioCardProps) {
           </span>
           <h4 className="font-display text-sm font-bold leading-snug text-base-50">{scenario.title}</h4>
         </div>
+        {check && alreadyChecked && (
+          <span className="shrink-0 rounded-full bg-mint-900/40 p-1 text-mint-400">
+            <Check size={12} />
+          </span>
+        )}
         <ChevronDown size={16} className={`shrink-0 text-base-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -42,6 +57,40 @@ export function ScenarioCard({ scenario }: ScenarioCardProps) {
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-mint-300">Como resolver</p>
             <p className="text-sm text-base-200">{scenario.howToSolve}</p>
           </div>
+
+          {check && (
+            <div className="rounded-xl border border-amber-400/20 bg-amber-500/5 p-3">
+              <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+                <HelpCircle size={12} /> Checagem rápida
+              </p>
+              <p className="mb-2.5 text-sm text-base-100">{check.question}</p>
+              <div className="space-y-1.5">
+                {check.options.map((opt, idx) => {
+                  const isCorrect = idx === check.correctIndex;
+                  const isSelected = idx === selected;
+                  let styles = 'border-base-600 hover:border-base-500 hover:bg-base-800';
+                  if (selected !== null) {
+                    if (isCorrect) styles = 'border-mint-400/60 bg-mint-900/30';
+                    else if (isSelected) styles = 'border-ember-400/60 bg-ember-500/10';
+                    else styles = 'border-base-700 opacity-50';
+                  }
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelect(idx)}
+                      disabled={selected !== null}
+                      className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm text-base-100 transition-colors ${styles}`}
+                    >
+                      {opt}
+                      {selected !== null && isCorrect && <Check size={14} className="shrink-0 text-mint-400" />}
+                      {selected !== null && isSelected && !isCorrect && <X size={14} className="shrink-0 text-ember-400" />}
+                    </button>
+                  );
+                })}
+              </div>
+              {selected !== null && <p className="mt-2.5 text-xs text-base-300">{check.explanation}</p>}
+            </div>
+          )}
         </div>
       )}
     </div>

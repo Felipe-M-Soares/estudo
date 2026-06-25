@@ -84,6 +84,13 @@ export interface GameRef {
   description: string;
 }
 
+export interface ScenarioCheck {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
 export interface DayToDayScenario {
   id: string;
   context: 'trabalho' | 'pessoal'; // dia a dia profissional de dev vs uso pessoal de lógica
@@ -92,6 +99,7 @@ export interface DayToDayScenario {
   whatHappens: string; // o que acontece / por que isso é um problema
   howToSolve: string; // como resolver, passo a passo ou princípio
   emoji: string;
+  check?: ScenarioCheck; // checagem rápida opcional de entendimento
 }
 
 export interface Module {

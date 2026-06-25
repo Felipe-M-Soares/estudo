@@ -55,11 +55,12 @@ export const mes01: Module = {
       id: 'l6',
       heading: 'Recursão: uma função que chama a si mesma',
       body:
-        'Recursão é quando uma função resolve um problema chamando uma versão menor de si mesma, até chegar a um caso tão simples que pode ser resolvido direto — o **caso base**. Sem caso base, a função chama a si mesma para sempre e o programa quebra (stack overflow).\n\nO exemplo clássico é o fatorial: `fatorial(5) = 5 × fatorial(4)`, e `fatorial(4) = 4 × fatorial(3)`, até chegar em `fatorial(1) = 1` (o caso base, que não chama mais nada).\n\nRecursão não é "mais avançada" que loops — é só outra forma de expressar repetição, mais natural para problemas que já são definidos em termos de si mesmos, como percorrer uma árvore de pastas ou o próprio merge sort que você acabou de ver.',
+        'Recursão é quando uma função resolve um problema chamando uma versão menor de si mesma, até chegar a um caso tão simples que pode ser resolvido direto — o **caso base**. Sem caso base, a função chama a si mesma para sempre e o programa quebra (stack overflow).\n\nO exemplo clássico é o fatorial: `fatorial(5) = 5 × fatorial(4)`, e `fatorial(4) = 4 × fatorial(3)`, até chegar em `fatorial(1) = 1` (o caso base, que não chama mais nada).\n\nRecursão não é "mais avançada" que loops — é só outra forma de expressar repetição, mais natural para problemas que já são definidos em termos de si mesmos, como percorrer uma árvore de pastas ou o próprio merge sort que você acabou de ver. Veja abaixo como a pilha de chamadas cresce até o caso base, e depois desempilha calculando o resultado.',
       codeExample: {
         lang: 'pseudocódigo',
         code: 'funcao fatorial(n)\n    se n <= 1\n        retornar 1        // caso base\n    senao\n        retornar n * fatorial(n - 1)',
       },
+      diagramId: 'recursion-stack',
     },
     {
       id: 'l7',
@@ -67,6 +68,22 @@ export const mes01: Module = {
       body:
         'Dois algoritmos podem dar a resposta certa, mas um pode ser inutilizável em escala. **Notação Big O** descreve como o tempo (ou memória) que um algoritmo gasta cresce conforme a entrada cresce — não o tempo exato em segundos, mas a **tendência**.\n\n- `O(1)`: tempo constante, não importa o tamanho da entrada (acessar um item de array pelo índice)\n- `O(log n)`: cresce bem devagar (busca binária)\n- `O(n)`: cresce proporcional ao tamanho (percorrer uma lista uma vez)\n- `O(n²)`: cresce muito rápido (bubble sort, loops aninhados sobre os mesmos dados)\n\nNa prática: um algoritmo O(n²) que roda em 1 segundo com 1.000 itens pode levar quase **3 horas** com 1.000.000 de itens. Entender isso é o que separa "funciona no meu teste" de "funciona em produção". Arraste o slider abaixo e veja a diferença crescer.',
       diagramId: 'big-o',
+    },
+    {
+      id: 'l8',
+      heading: 'Tabelas hash: a estrutura mais usada que você nunca viu',
+      body:
+        'Uma tabela hash (hash table, ou "mapa") guarda pares chave-valor e permite buscar, inserir e remover em tempo **O(1)** na média — independente de quantos itens existem. Isso parece quase mágico, mas o segredo é uma **função de hash**: ela transforma a chave (ex: uma string) num número, que indica diretamente em qual posição interna do array aquele valor está guardado.\n\nObjetos `{}` e `Map` em JavaScript, `dict` em Python, e `HashMap` em Java são todos implementações de tabela hash. É a estrutura por trás de quase todo "cache", "índice" ou "dicionário" que você vai usar na carreira.\n\nO trade-off: tabelas hash não mantêm ordem (a menos que a implementação garanta isso explicitamente, como `Map` do JS) e podem ter colisões — duas chaves diferentes gerando o mesmo hash, resolvidas internamente sem você precisar pensar nisso na maioria dos casos.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'const idades = new Map();\nidades.set("Ana", 28);\nidades.set("Bruno", 34);\n\nidades.get("Ana"); // 28 — busca O(1), não importa quantos itens existem',
+      },
+    },
+    {
+      id: 'l9',
+      heading: 'Recursão vs iteração: quando escolher cada uma',
+      body:
+        'Todo problema resolvível com recursão também é resolvível com um loop, e vice-versa — a escolha é sobre clareza e custo, não sobre capacidade.\n\nRecursão tende a ser mais legível quando o problema já é naturalmente recursivo (percorrer uma árvore, estruturas aninhadas) — o código fica mais próximo da definição matemática do problema. Iteração tende a ser mais eficiente em memória, porque não acumula uma pilha de chamadas: cada chamada recursiva consome memória até retornar, e problemas muito profundos podem esgotar a pilha (stack overflow) antes mesmo de serem matematicamente complexos.\n\nRegra prática: comece pela versão que for mais fácil de entender e provar correta — geralmente a recursiva, para problemas recursivos por natureza. Otimize para iteração depois, só se a profundidade da recursão for um risco real (milhares de chamadas).',
     },
   ],
   resources: [
@@ -165,6 +182,39 @@ export const mes01: Module = {
       answer: '<=',
       hint: 'Que comparação garante que a recursão para tanto para n=1 quanto para n=0?',
       explanation: 'Usar `<= 1` cobre tanto o caso n=1 quanto eventuais chamadas com n=0, evitando recursão infinita para entradas no limite.',
+    },
+    {
+      type: 'mcq',
+      id: 'm1-e9',
+      prompt: 'Por que uma tabela hash consegue buscar um valor em O(1), independente do tamanho da coleção?',
+      options: [
+        'Porque ela guarda os dados em ordem alfabética',
+        'Porque a função de hash calcula diretamente a posição onde o valor está, sem precisar percorrer os outros itens',
+        'Porque ela usa busca binária internamente',
+        'Na verdade, ela não é mais rápida que um array',
+      ],
+      correctIndex: 1,
+      explanation: 'A função de hash transforma a chave num índice direto — não há necessidade de comparar com os outros itens, diferente de uma busca sequencial.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm1-e10',
+      prompt: 'Um problema resolvido com recursão nunca poderia ser resolvido com um loop.',
+      answer: false,
+      explanation: 'Todo problema recursivo tem uma versão iterativa equivalente — a escolha entre os dois é sobre clareza de código e custo de memória, não sobre capacidade de resolver o problema.',
+    },
+    {
+      type: 'mcq',
+      id: 'm1-e11',
+      prompt: 'Qual é o principal risco de usar recursão em problemas com profundidade muito grande?',
+      options: [
+        'O código fica mais difícil de ler',
+        'Stack overflow — a pilha de chamadas pode esgotar a memória disponível antes de chegar ao caso base',
+        'Recursão sempre é mais lenta que loops',
+        'Não existe esse risco',
+      ],
+      correctIndex: 1,
+      explanation: 'Cada chamada recursiva ocupa espaço na pilha de execução até retornar — recursões muito profundas (milhares de níveis) podem esgotar essa memória, mesmo que o problema em si não seja complexo.',
     },
   ],
   games: [
@@ -280,11 +330,12 @@ export const mes02: Module = {
       id: 'l5',
       heading: 'CSS Grid: alinhar em duas direções',
       body:
-        'Grid resolve "como organizo isso em linhas E colunas ao mesmo tempo". Você define `grid-template-columns` para descrever quantas colunas existem e quanto espaço cada uma ocupa.\n\n`repeat(auto-fit, minmax(200px, 1fr))` é um padrão extremamente útil: cria quantas colunas de no mínimo 200px couberem, e distribui o espaço restante igualmente — isso sozinho resolve grande parte dos layouts responsivos sem media query.',
+        'Grid resolve "como organizo isso em linhas E colunas ao mesmo tempo". Você define `grid-template-columns` para descrever quantas colunas existem e quanto espaço cada uma ocupa.\n\n`repeat(auto-fit, minmax(200px, 1fr))` é um padrão extremamente útil: cria quantas colunas de no mínimo 200px couberem, e distribui o espaço restante igualmente — isso sozinho resolve grande parte dos layouts responsivos sem media query. Experimente os controles abaixo.',
       codeExample: {
         lang: 'css',
         code: '.grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 20px;\n}',
       },
+      diagramId: 'css-grid',
     },
     {
       id: 'l6',
@@ -310,6 +361,26 @@ export const mes02: Module = {
       codeExample: {
         lang: 'css',
         code: '.botao {\n  transition: transform 0.2s ease, background 0.2s ease;\n}\n.botao:hover {\n  transform: translateY(-2px);\n}',
+      },
+    },
+    {
+      id: 'l9',
+      heading: 'Pseudo-classes e pseudo-elementos: estilizar sem precisar de classes extras',
+      body:
+        'Pseudo-classes selecionam elementos baseado num **estado** (`:hover`, `:focus`, `:disabled`, `:first-child`, `:nth-child(2)`), sem precisar adicionar nenhuma classe via JavaScript. Pseudo-elementos (`::before`, `::after`) criam conteúdo visual extra ligado a um elemento existente, sem precisar de uma tag HTML adicional no DOM — muito usados para ícones decorativos, aspas estilizadas, ou tooltips simples.\n\nA diferença na sintaxe (`:` único vs `::` duplo) existe formalmente desde o CSS3, mas a maioria dos navegadores aceita `:before`/`:after` por compatibilidade — ainda assim, `::before`/`::after` é o padrão recomendado hoje.',
+      codeExample: {
+        lang: 'css',
+        code: '.card:nth-child(odd) {\n  background: #1a1a1a;\n}\n\n.tooltip::after {\n  content: "Clique para copiar";\n  position: absolute;\n}',
+      },
+    },
+    {
+      id: 'l10',
+      heading: 'ARIA: acessibilidade quando o HTML semântico não é suficiente',
+      body:
+        'Tags semânticas resolvem a maioria dos casos, mas componentes de interface mais complexos (um menu dropdown customizado, um carrossel, abas) precisam de atributos ARIA (Accessible Rich Internet Applications) para comunicar seu estado a leitores de tela.\n\n`aria-expanded="true/false"` informa se um menu está aberto. `aria-label` dá um nome acessível a um elemento sem texto visível (como um botão só com ícone). `role="alert"` avisa o leitor de tela imediatamente sobre uma mensagem importante, como um erro de formulário.\n\nRegra de ouro: ARIA complementa HTML semântico, nunca substitui — sempre prefira a tag HTML nativa correta (`<button>` em vez de `<div role="button">`) quando ela existir, porque tags nativas já vêm com comportamento de teclado e foco corretos de fábrica.',
+      codeExample: {
+        lang: 'html',
+        code: '<button aria-expanded="false" aria-controls="menu-id">\n  Menu ☰\n</button>\n<ul id="menu-id" hidden>...</ul>',
       },
     },
   ],
@@ -411,6 +482,34 @@ export const mes02: Module = {
       answer: true,
       explanation:
         'Variáveis CSS seguem a cascata normal: redefinir uma variável dentro de um seletor cria uma versão local que sobrescreve a global apenas para aquele escopo.',
+    },
+    {
+      type: 'mcq',
+      id: 'm2-e9',
+      prompt: 'Qual seletor aplica um estilo apenas ao segundo item de uma lista?',
+      options: [':first-child', ':nth-child(2)', ':last-child', ':only-child'],
+      correctIndex: 1,
+      explanation: '`:nth-child(2)` seleciona especificamente o segundo elemento entre os filhos do seu pai — `:first-child` seria o primeiro.',
+    },
+    {
+      type: 'mcq',
+      id: 'm2-e10',
+      prompt: 'Você tem um botão só com um ícone de lixeira, sem texto visível. Como torná-lo acessível para leitores de tela?',
+      options: [
+        'Não é possível tornar acessível',
+        'Adicionando aria-label="Excluir item" ao botão',
+        'Aumentando o tamanho do ícone',
+        'Trocando a cor do ícone',
+      ],
+      correctIndex: 1,
+      explanation: '`aria-label` fornece um nome acessível ao elemento, que o leitor de tela anuncia, mesmo sem texto visível na tela.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm2-e11',
+      prompt: 'ARIA deveria substituir tags semânticas nativas como <button>, usando <div role="button"> no lugar.',
+      answer: false,
+      explanation: 'A regra geral é o oposto: prefira sempre a tag nativa correta quando ela existir, porque já vem com comportamento de teclado e foco corretos — ARIA é para os casos que o HTML semântico não cobre.',
     },
   ],
   games: [
@@ -531,10 +630,31 @@ export const mes03: Module = {
       id: 'l6',
       heading: 'Closures: funções que "lembram" de onde nasceram',
       body:
-        'Uma closure acontece quando uma função interna continua tendo acesso às variáveis da função externa, mesmo depois que a função externa já terminou de executar. Isso parece abstrato, mas é a base de padrões extremamente comuns: contadores privados, debounce/throttle, e até como hooks do React guardam estado entre renderizações.\n\nNo exemplo abaixo, cada chamada de `criarContador()` cria uma variável `contagem` independente, e a função retornada "lembra" da sua própria cópia dessa variável para sempre.',
+        'Uma closure acontece quando uma função interna continua tendo acesso às variáveis da função externa, mesmo depois que a função externa já terminou de executar. Isso parece abstrato, mas é a base de padrões extremamente comuns: contadores privados, debounce/throttle, e até como hooks do React guardam estado entre renderizações.\n\nNo exemplo abaixo, cada chamada de `criarContador()` cria uma variável `contagem` independente, e a função retornada "lembra" da sua própria cópia dessa variável para sempre. Crie alguns contadores abaixo e veja que cada um tem sua própria memória, isolada dos outros.',
       codeExample: {
         lang: 'javascript',
         code: 'function criarContador() {\n  let contagem = 0;\n  return function () {\n    contagem++;\n    return contagem;\n  };\n}\n\nconst contador1 = criarContador();\ncontador1(); // 1\ncontador1(); // 2',
+      },
+      diagramId: 'closure',
+    },
+    {
+      id: 'l7',
+      heading: 'Módulos ES6: organizando código em arquivos separados',
+      body:
+        'Antes dos módulos nativos, dividir JavaScript em vários arquivos exigia gambiarras (variáveis globais, ordem de scripts cuidadosamente planejada). `import`/`export` resolvem isso de forma nativa: cada arquivo controla explicitamente o que expõe para fora (`export`) e o que usa de outros arquivos (`import`).\n\n`export default` marca o "principal" export de um módulo (geralmente um por arquivo); `export` nomeado permite exportar várias coisas do mesmo arquivo. Essa é a base de como qualquer projeto React, Node ou TypeScript moderno organiza dezenas (ou centenas) de arquivos sem virar um caos de dependências.',
+      codeExample: {
+        lang: 'javascript',
+        code: '// utils.js\nexport function formatarData(data) { /* ... */ }\nexport const TAMANHO_PAGINA = 20;\n\n// app.js\nimport { formatarData, TAMANHO_PAGINA } from "./utils.js";',
+      },
+    },
+    {
+      id: 'l8',
+      heading: 'Destructuring avançado: extraindo o que importa, ignorando o resto',
+      body:
+        'Destructuring vai além de extrair campos simples — você pode renomear variáveis durante a extração (`const { nome: nomeCompleto } = usuario`), extrair de objetos aninhados em um único passo, e usar o operador rest (`...resto`) para capturar "tudo que sobrou" num objeto ou array separado.\n\nEm parâmetros de função, destructuring é extremamente comum para simular "argumentos nomeados" — uma função que recebe um objeto de opções fica muito mais legível no ponto de chamada do que uma lista longa de parâmetros posicionais.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'function criarUsuario({ nome, idade, ativo = true }) {\n  return { nome, idade, ativo };\n}\n\nconst { primeiro, ...resto } = [10, 20, 30, 40];\n// primeiro = 10, resto = [20, 30, 40]',
       },
     },
   ],
@@ -630,6 +750,35 @@ export const mes03: Module = {
       answer: 'reduce',
       hint: 'O método de array que combina todos os elementos em um único valor acumulado.',
       explanation: '`reduce` percorre o array acumulando um resultado — aqui, somando cada número ao total acumulado, começando de 0.',
+    },
+    {
+      type: 'mcq',
+      id: 'm3-e9',
+      prompt: 'Qual a diferença entre `export default` e `export` nomeado num módulo ES6?',
+      options: [
+        'Não há diferença prática',
+        'export default marca um export principal (geralmente um por arquivo); export nomeado permite exportar várias coisas do mesmo arquivo',
+        'export default só funciona em Node.js',
+        'export nomeado é mais rápido em runtime',
+      ],
+      correctIndex: 1,
+      explanation: 'Um arquivo pode ter no máximo um `export default`, mas vários exports nomeados — a escolha depende de quantas coisas distintas aquele módulo precisa expor.',
+    },
+    {
+      type: 'code-fill',
+      id: 'm3-e10',
+      prompt: 'Complete o destructuring que captura o primeiro item e o resto do array numa variável separada.',
+      codeTemplate: 'const [primeiro, ___resto] = [10, 20, 30, 40];',
+      answer: '...',
+      hint: 'O operador que "espalha" ou "agrupa o restante" — o mesmo símbolo usado no spread, mas aqui em contexto de captura.',
+      explanation: 'O operador rest (`...resto`) captura todos os elementos restantes do array num novo array, depois que os elementos anteriores já foram extraídos individualmente.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm3-e11',
+      prompt: 'Em destructuring de parâmetros de função, é possível definir um valor padrão para uma propriedade que não foi fornecida.',
+      answer: true,
+      explanation: 'Sintaxe como `{ ativo = true }` no destructuring define um valor padrão usado automaticamente quando essa propriedade não está presente no objeto recebido.',
     },
   ],
   games: [

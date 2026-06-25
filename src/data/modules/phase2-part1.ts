@@ -15,11 +15,12 @@ export const mes07: Module = {
       id: 'l1',
       heading: 'Componentes: a unidade fundamental do React',
       body:
-        'Um componente é uma função que recebe dados (`props`) e retorna JSX — uma sintaxe que parece HTML mas é, na verdade, JavaScript. A grande virada de chave mental: você não diz "mude esse texto na tela", você diz "esse componente renderiza isso quando o estado é X" — e o React recalcula a UI sempre que o estado muda.',
+        'Um componente é uma função que recebe dados (`props`) e retorna JSX — uma sintaxe que parece HTML mas é, na verdade, JavaScript. A grande virada de chave mental: você não diz "mude esse texto na tela", você diz "esse componente renderiza isso quando o estado é X" — e o React recalcula a UI sempre que o estado muda. Props fluem de cima para baixo na árvore de componentes — veja isso na prática abaixo.',
       codeExample: {
         lang: 'tsx',
         code: 'function Saudacao({ nome }: { nome: string }) {\n  return <h1>Olá, {nome}!</h1>;\n}',
       },
+      diagramId: 'component-tree',
     },
     {
       id: 'l2',
@@ -67,6 +68,22 @@ export const mes07: Module = {
         lang: 'tsx',
         code: 'function useFetch<T>(url: string) {\n  const [dados, setDados] = useState<T | null>(null);\n  const [carregando, setCarregando] = useState(true);\n\n  useEffect(() => {\n    fetch(url).then(r => r.json()).then(setDados).finally(() => setCarregando(false));\n  }, [url]);\n\n  return { dados, carregando };\n}',
       },
+    },
+    {
+      id: 'l7',
+      heading: 'Formulários controlados: o React como única fonte de verdade',
+      body:
+        'Num formulário controlado, o valor de cada campo vive no estado do React (`useState`), não no DOM diretamente — o componente sempre sabe exatamente o que está digitado, em tempo real, porque cada tecla dispara um `onChange` que atualiza o estado.\n\nIsso parece um detalhe técnico, mas é o que permite validação em tempo real, formatação automática (como máscaras de telefone), e desabilitar um botão de envio até que todos os campos obrigatórios estejam preenchidos corretamente — tudo isso seria muito mais difícil de coordenar se o React não tivesse essa visibilidade total do estado do formulário a cada instante.',
+      codeExample: {
+        lang: 'tsx',
+        code: 'function Formulario() {\n  const [email, setEmail] = useState("");\n  return (\n    <input\n      value={email}\n      onChange={(e) => setEmail(e.target.value)}\n    />\n  );\n}',
+      },
+    },
+    {
+      id: 'l8',
+      heading: 'Error Boundaries: contendo um erro antes que ele derrube a tela inteira',
+      body:
+        'Sem tratamento, um erro de JavaScript em qualquer componente faz o React desmontar a árvore inteira — uma falha pequena numa parte isolada da tela (como um widget de clima) pode deixar a página toda em branco.\n\nUm Error Boundary é um componente especial que "captura" erros de seus componentes filhos durante a renderização, e exibe uma interface alternativa (como "algo deu errado, recarregue a página") em vez de quebrar tudo. Em projetos com Next.js ou React moderno, isso costuma ser implementado via arquivos especiais (`error.tsx`) ou bibliotecas como `react-error-boundary`, sem precisar escrever a lógica de classe do zero.',
     },
   ],
   resources: [
@@ -165,6 +182,21 @@ export const mes07: Module = {
       hint: 'Todo hook, customizado ou nativo, precisa começar com esse prefixo para o React reconhecê-lo como hook.',
       explanation: 'A convenção `use` no início do nome não é apenas estilo — é o que permite ao React (e ao linter de hooks) identificar a função como um hook e aplicar suas regras.',
     },
+    {
+      type: 'mcq',
+      id: 'm7-e9',
+      prompt: 'Em um formulário controlado, onde vive o valor atual de um campo de input?',
+      options: ['No DOM diretamente', 'No estado do React (useState)', 'Em uma variável global', 'No localStorage automaticamente'],
+      correctIndex: 1,
+      explanation: 'Num formulário controlado, o React é a fonte de verdade — o valor do input é definido pelo estado, e qualquer mudança passa por um onChange que atualiza esse estado.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm7-e10',
+      prompt: 'Sem um Error Boundary, um erro de JavaScript em um componente pequeno pode fazer a aplicação inteira ficar em branco.',
+      answer: true,
+      explanation: 'Por padrão, o React desmonta toda a árvore de componentes quando um erro não tratado ocorre durante a renderização — um Error Boundary contém esse erro numa parte isolada da interface.',
+    },
   ],
   games: [
     {
@@ -238,11 +270,12 @@ export const mes08: Module = {
       id: 'l1',
       heading: 'Java 17+: Streams, Optional e Records',
       body:
-        '**Streams** processam coleções de forma declarativa: em vez de loops manuais, você descreve a transformação (`filter`, `map`, `collect`). **Optional** representa explicitamente um valor que pode não existir, evitando `NullPointerException` — o erro mais clássico e mais doloroso de Java.\n\n**Records** (desde Java 14+) eliminam o boilerplate de classes que só guardam dados: um record gera automaticamente construtor, getters, `equals`, `hashCode` e `toString`.',
+        '**Streams** processam coleções de forma declarativa: em vez de loops manuais, você descreve a transformação (`filter`, `map`, `collect`). **Optional** representa explicitamente um valor que pode não existir, evitando `NullPointerException` — o erro mais clássico e mais doloroso de Java.\n\n**Records** (desde Java 14+) eliminam o boilerplate de classes que só guardam dados: um record gera automaticamente construtor, getters, `equals`, `hashCode` e `toString`. Veja abaixo cada etapa de uma stream transformando os dados passo a passo.',
       codeExample: {
         lang: 'java',
         code: 'record Usuario(String nome, String email) {}\n\nList<String> nomes = usuarios.stream()\n    .filter(u -> u.email().endsWith("@empresa.com"))\n    .map(Usuario::nome)\n    .toList();',
       },
+      diagramId: 'java-stream',
     },
     {
       id: 'l2',
@@ -288,6 +321,36 @@ export const mes08: Module = {
       codeExample: {
         lang: 'java',
         code: '@Entity\nclass Pedido {\n  @ManyToOne\n  private Cliente cliente;\n}\n\ninterface PedidoRepository extends JpaRepository<Pedido, Long> {\n  List<Pedido> findByClienteId(Long clienteId);\n}',
+      },
+    },
+    {
+      id: 'l7',
+      heading: 'Tratamento global de exceções: respostas de erro consistentes',
+      body:
+        'Sem um tratamento centralizado, cada endpoint pode acabar retornando erros em formatos diferentes — um time inconsistente que dificulta a vida de quem consome a API. `@ExceptionHandler` (junto com `@RestControllerAdvice`) permite capturar tipos específicos de exceção em um único lugar e transformá-las numa resposta HTTP padronizada, em vez de espalhar try/catch por todos os controllers.\n\nIsso também evita expor detalhes internos sensíveis (como stack traces completos) diretamente ao cliente — o handler global decide exatamente o que é seguro retornar.',
+      codeExample: {
+        lang: 'java',
+        code: '@RestControllerAdvice\nclass GlobalExceptionHandler {\n  @ExceptionHandler(UsuarioNaoEncontradoException.class)\n  public ResponseEntity<String> handle(UsuarioNaoEncontradoException ex) {\n    return ResponseEntity.status(404).body(ex.getMessage());\n  }\n}',
+      },
+    },
+    {
+      id: 'l8',
+      heading: 'Bean Validation: validando dados de entrada declarativamente',
+      body:
+        'Em vez de escrever manualmente `if (nome == null || nome.isEmpty())` para cada campo, Bean Validation permite anotar diretamente a classe que representa os dados recebidos: `@NotBlank`, `@Email`, `@Min`, `@Size`. O Spring valida automaticamente antes do método do controller ser executado, retornando 400 com os detalhes do que falhou, sem você escrever essa lógica repetidamente.\n\nIsso mantém a validação próxima da definição do dado (no DTO), em vez de espalhada em vários pontos do código — mais fácil de manter e de garantir que nenhuma rota "esqueceu" de validar um campo.',
+      codeExample: {
+        lang: 'java',
+        code: 'class CriarUsuarioDTO {\n  @NotBlank(message = "Nome é obrigatório")\n  String nome;\n\n  @Email(message = "Email inválido")\n  String email;\n}\n\n@PostMapping\npublic ResponseEntity<?> criar(@Valid @RequestBody CriarUsuarioDTO dto) { /* ... */ }',
+      },
+    },
+    {
+      id: 'l9',
+      heading: '@Transactional: a anotação que vira um método numa transação',
+      body:
+        'Anotar um método de serviço com `@Transactional` faz o Spring envolver toda a execução numa transação de banco automaticamente — se qualquer exceção não tratada ocorrer no meio do caminho, todas as alterações feitas até ali são revertidas (rollback), evitando estados inconsistentes.\n\nUm erro comum: anotar `@Transactional` no método errado (ex: um método que só lê dados, ou esquecer de anotar um método que faz múltiplas escritas relacionadas). A regra prática: qualquer método de serviço que faz mais de uma operação de escrita relacionada no banco (ex: salvar um pedido E atualizar o estoque) deveria ser transacional.',
+      codeExample: {
+        lang: 'java',
+        code: '@Transactional\npublic void finalizarPedido(Long pedidoId) {\n  pedidoRepository.atualizarStatus(pedidoId, "CONFIRMADO");\n  estoqueRepository.decrementar(pedidoId);\n  // se decrementar falhar, o status do pedido também é revertido\n}',
       },
     },
   ],
@@ -388,6 +451,39 @@ export const mes08: Module = {
       explanation:
         '`@ManyToOne` no lado do Pedido expressa que muitos pedidos podem pertencer a um único cliente — a relação inversa seria `@OneToMany` no lado do Cliente.',
     },
+    {
+      type: 'mcq',
+      id: 'm8-e9',
+      prompt: 'Qual o propósito de um @RestControllerAdvice com @ExceptionHandler?',
+      options: [
+        'Acelerar a aplicação',
+        'Centralizar o tratamento de exceções, garantindo respostas de erro consistentes em toda a API',
+        'Substituir a necessidade de testes',
+        'Gerenciar conexões com o banco de dados',
+      ],
+      correctIndex: 1,
+      explanation: 'Em vez de cada controller tratar erros de forma diferente, um handler global garante um formato padronizado de resposta de erro em toda a aplicação.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm8-e10',
+      prompt: 'Usar @Valid junto de anotações como @NotBlank e @Email faz o Spring validar automaticamente antes do método do controller executar.',
+      answer: true,
+      explanation: '`@Valid` dispara a validação das anotações Bean Validation presentes no DTO — se algo falhar, o Spring já retorna 400 antes do código do controller rodar.',
+    },
+    {
+      type: 'mcq',
+      id: 'm8-e11',
+      prompt: 'O que acontece se uma exceção não tratada ocorrer dentro de um método anotado com @Transactional, após uma das operações de escrita já ter sido executada?',
+      options: [
+        'A primeira operação permanece salva, mesmo com o erro',
+        'Todas as operações da transação são revertidas (rollback), mantendo o banco consistente',
+        'O Spring ignora a exceção silenciosamente',
+        '@Transactional não tem relação com tratamento de erros',
+      ],
+      correctIndex: 1,
+      explanation: 'Esse é justamente o propósito de @Transactional: garantir que, em caso de erro, nenhuma operação parcial fique salva — ou tudo é confirmado, ou tudo é desfeito.',
+    },
   ],
   games: [
     {
@@ -483,17 +579,38 @@ export const mes09: Module = {
       id: 'l4',
       heading: 'Multi-stage build: imagens menores e mais seguras',
       body:
-        'Um Dockerfile comum inclui ferramentas de build (compiladores, dependências de desenvolvimento) que não são necessárias para **rodar** a aplicação em produção — só para construí-la. Multi-stage build usa múltiplos blocos `FROM` no mesmo Dockerfile: um estágio compila/builda o projeto, e o estágio final copia só os artefatos prontos, descartando tudo que foi usado apenas para build.\n\nO resultado prático: imagens finais drasticamente menores (menos tempo de deploy, menos superfície de ataque) sem perder nada da capacidade de build.',
+        'Um Dockerfile comum inclui ferramentas de build (compiladores, dependências de desenvolvimento) que não são necessárias para **rodar** a aplicação em produção — só para construí-la. Multi-stage build usa múltiplos blocos `FROM` no mesmo Dockerfile: um estágio compila/builda o projeto, e o estágio final copia só os artefatos prontos, descartando tudo que foi usado apenas para build.\n\nO resultado prático: imagens finais drasticamente menores (menos tempo de deploy, menos superfície de ataque) sem perder nada da capacidade de build. Compare visualmente os dois tamanhos abaixo.',
       codeExample: {
         lang: 'dockerfile',
         code: '# Estágio 1: build\nFROM node:20 AS build\nWORKDIR /app\nCOPY . .\nRUN npm install && npm run build\n\n# Estágio 2: produção\nFROM nginx:alpine\nCOPY --from=build /app/dist /usr/share/nginx/html',
       },
+      diagramId: 'multi-stage-build',
     },
     {
       id: 'l5',
       heading: 'Redes Docker: como containers se encontram',
       body:
         'Containers no mesmo `docker-compose.yml` automaticamente compartilham uma rede privada, e podem se comunicar usando o **nome do serviço** como hostname — não `localhost`, e não o IP. Se seu backend precisa falar com o banco, ele usa `db:5432` (onde `db` é o nome do serviço no compose), não `localhost:5432`.\n\nEsse é um dos erros mais comuns de quem está aprendendo Docker: tentar usar `localhost` de dentro de um container para acessar outro container — isso só funcionaria se ambos estivessem na mesma máquina física fora de containers, mas dentro da rede Docker, cada container tem seu próprio `localhost` isolado.',
+    },
+    {
+      id: 'l6',
+      heading: 'Healthcheck: ensinando o Docker a saber se o container está realmente saudável',
+      body:
+        'Por padrão, o Docker considera um container "saudável" se o processo principal ainda está rodando — mas um processo pode estar rodando e, ainda assim, travado ou incapaz de responder (um banco que não aceita mais conexões, uma API presa num loop). `HEALTHCHECK` define um comando que o Docker executa periodicamente para verificar a saúde real da aplicação, não só se o processo existe.\n\nIsso é especialmente importante combinado com `depends_on` no Compose: sem healthcheck, "depends_on" só espera o container **iniciar**, não esperar ele estar **pronto** — um backend pode tentar se conectar ao banco antes dele realmente aceitar conexões.',
+      codeExample: {
+        lang: 'dockerfile',
+        code: 'HEALTHCHECK --interval=10s --timeout=3s \\\n  CMD curl -f http://localhost:3000/health || exit 1',
+      },
+    },
+    {
+      id: 'l7',
+      heading: 'Variáveis de ambiente no Docker: configuração sem rebuild',
+      body:
+        'Assim como em aplicações Node.js, containers Docker não devem ter segredos ou configurações específicas de ambiente "gravados" na imagem. `ENV` no Dockerfile define um valor padrão; `docker run -e VARIAVEL=valor` ou a seção `environment` no docker-compose.yml sobrescrevem esse valor sem precisar reconstruir a imagem.\n\nIsso permite usar exatamente a mesma imagem em desenvolvimento, staging e produção, mudando só as variáveis de ambiente injetadas em cada ambiente — um dos princípios centrais de aplicações "cloud native".',
+      codeExample: {
+        lang: 'yaml',
+        code: 'services:\n  api:\n    image: minha-api:1.0\n    environment:\n      - DATABASE_URL=postgres://db:5432/app\n      - NODE_ENV=production',
+      },
     },
   ],
   resources: [
@@ -577,6 +694,26 @@ export const mes09: Module = {
       answer: 'db',
       hint: 'No mesmo docker-compose, qual nome identifica o outro container na rede interna?',
       explanation: 'O nome do serviço definido no docker-compose.yml funciona como hostname na rede interna compartilhada entre os containers daquele compose.',
+    },
+    {
+      type: 'mcq',
+      id: 'm9-e8',
+      prompt: 'Por que "depends_on" sozinho, sem healthcheck, pode não ser suficiente para garantir que um serviço já pode receber conexões?',
+      options: [
+        'depends_on sempre espera o serviço estar 100% pronto',
+        'depends_on só espera o container iniciar, não que a aplicação dentro dele já esteja pronta para aceitar conexões',
+        'depends_on não existe no Docker Compose',
+        'Não há diferença entre os dois conceitos',
+      ],
+      correctIndex: 1,
+      explanation: 'Um container pode ter "iniciado" (o processo está rodando) mas a aplicação interna ainda estar inicializando — healthcheck verifica a saúde real, não só se o processo existe.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm9-e9',
+      prompt: 'A mesma imagem Docker pode ser usada em desenvolvimento, staging e produção, mudando apenas as variáveis de ambiente injetadas.',
+      answer: true,
+      explanation: 'Esse é um princípio central de aplicações cloud native: a imagem não muda entre ambientes, só a configuração externa via variáveis de ambiente.',
     },
   ],
   games: [

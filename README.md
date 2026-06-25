@@ -7,11 +7,11 @@ Funciona como **web app** (qualquer navegador) e como **app instalável no celul
 ## ✨ O que tem aqui
 
 - **18 módulos** (um por mês), cobrindo Lógica → HTML/CSS → JavaScript → Git/SQL → Node.js → React/TS → Java/Spring → Docker → Next.js → APIs avançadas → AWS → Microsserviços → Kubernetes → CI/CD → System Design → Liderança/Inglês → Projeto Final
-- **Conteúdo didático real** em cada módulo — explicações, exemplos de código, e por quês
-- **Diagramas interativos e animados** nas lições mais conceituais: pilha vs fila, Event Loop, busca binária, Box Model do CSS, fluxo de autenticação JWT, CAP Theorem, Docker, e mais
+- **135 lições escritas** com explicações, exemplos de código, e por quês — não só links
+- **29 diagramas interativos e animados** nas lições mais conceituais, em todos os 18 módulos: pilha vs fila, recursão, Event Loop, closures, CSS Grid/Box Model, JOINs de SQL, pipeline de middlewares, árvore de componentes React, Java Streams, multi-stage Docker, SSR vs SSG vs ISR, GraphQL vs REST, Load Balancer, padrão Saga, Pods do Kubernetes, pipeline CI/CD, sharding, comunicação síncrona vs assíncrona, arquitetura em camadas, CAP Theorem, e mais
 - **Cenários do dia a dia** em todos os módulos — situações reais de trabalho de um dev (bugs em produção, code review, deploy) e de uso pessoal de lógica, sempre no formato "o que acontece → como resolver"
 - **Modo Entrevista**: simulação completa com perguntas teóricas atualizadas (cronometradas), desafios práticos de código, e perguntas comportamentais com dicas de estrutura de resposta — por trilha (Frontend/Backend/Full Stack) e nível (Júnior/Pleno/Sênior)
-- **~118 exercícios interativos** em 5 formatos: múltipla escolha, completar código, ordenar passos, associar pares, verdadeiro/falso
+- **158 exercícios interativos** em 5 formatos: múltipla escolha, completar código, ordenar passos, associar pares, verdadeiro/falso
 - **30 mini-jogos** únicos, vários com níveis progressivos de dificuldade
 - **Sistema de gamificação completo**: XP, níveis, sequência de estudo (streak) com mapa de constância estilo GitHub, conquistas com confetti
 - **Visual neon cyberpunk**: paleta vibrante (menta, magenta, violeta, ciano elétrico) sobre fundo escuro arroxeado, com glow e scanlines sutis

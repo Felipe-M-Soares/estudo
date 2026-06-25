@@ -15,7 +15,8 @@ export const mes10: Module = {
       id: 'l1',
       heading: 'SSR, SSG e ISR: três formas de gerar a mesma página',
       body:
-        '**SSR (Server-Side Rendering)**: a página é gerada no servidor a cada requisição — ótimo para conteúdo que muda com frequência ou é personalizado por usuário.\n\n**SSG (Static Site Generation)**: a página é gerada uma vez, no momento do build, e servida como HTML estático puro — extremamente rápido, ideal para conteúdo que não muda a cada acesso (blog, landing page).\n\n**ISR (Incremental Static Regeneration)**: o melhor dos dois mundos — a página é estática, mas Next.js a regenera em segundo plano após um tempo definido, sem precisar de um novo build completo do site.',
+        '**SSR (Server-Side Rendering)**: a página é gerada no servidor a cada requisição — ótimo para conteúdo que muda com frequência ou é personalizado por usuário.\n\n**SSG (Static Site Generation)**: a página é gerada uma vez, no momento do build, e servida como HTML estático puro — extremamente rápido, ideal para conteúdo que não muda a cada acesso (blog, landing page).\n\n**ISR (Incremental Static Regeneration)**: o melhor dos dois mundos — a página é estática, mas Next.js a regenera em segundo plano após um tempo definido, sem precisar de um novo build completo do site. Compare as três estratégias abaixo.',
+      diagramId: 'rendering-strategy',
     },
     {
       id: 'l2',
@@ -48,6 +49,26 @@ export const mes10: Module = {
       heading: 'Otimização automática de imagens e fontes',
       body:
         'O componente `<Image>` do Next.js redimensiona, otimiza o formato (WebP/AVIF quando suportado) e carrega imagens de forma "lazy" (só quando estão próximas de aparecer na tela) automaticamente — algo que, feito manualmente, exigiria bastante configuração de build.\n\nO mesmo princípio se aplica a fontes via `next/font`: elas são baixadas em tempo de build e auto-hospedadas, eliminando uma requisição externa a serviços como Google Fonts e evitando o "flash" de texto sem estilo (FOUT) comum quando fontes externas demoram para carregar.',
+    },
+    {
+      id: 'l6',
+      heading: 'Middleware: interceptando requisições antes de chegarem na página',
+      body:
+        'Middleware no Next.js roda **antes** de uma requisição chegar à página ou API route, permitindo redirecionar, bloquear, ou modificar a requisição com base em condições — como verificar se o usuário está autenticado antes de liberar acesso a uma rota protegida, ou redirecionar usuários para uma versão localizada do site baseado no país de origem.\n\nDiferente de verificações dentro de cada página individualmente, middleware centraliza essa lógica num único lugar que se aplica a múltiplas rotas de uma vez, definidas por um padrão de caminho (`matcher`).',
+      codeExample: {
+        lang: 'typescript',
+        code: 'export function middleware(request: NextRequest) {\n  const token = request.cookies.get("token");\n  if (!token) {\n    return NextResponse.redirect(new URL("/login", request.url));\n  }\n}\n\nexport const config = { matcher: "/painel/:path*" };',
+      },
+    },
+    {
+      id: 'l7',
+      heading: 'Rotas dinâmicas: uma página, infinitos caminhos',
+      body:
+        'Em vez de criar um arquivo de página para cada produto de um catálogo, uma rota dinâmica (`[id]/page.tsx` no App Router) gera a mesma estrutura de página para qualquer valor de `id`, lendo o parâmetro da URL para buscar os dados certos.\n\nCombinado com `generateStaticParams`, você pode pré-gerar (no build) as páginas dos produtos mais acessados como SSG, enquanto produtos raramente visitados são gerados sob demanda — uma otimização que equilibra velocidade de build com cobertura de conteúdo, sem precisar gerar estaticamente milhões de páginas de antemão.',
+      codeExample: {
+        lang: 'typescript',
+        code: '// app/produtos/[id]/page.tsx\nexport default async function Produto({ params }: { params: { id: string } }) {\n  const produto = await buscarProduto(params.id);\n  return <h1>{produto.nome}</h1>;\n}',
+      },
     },
   ],
   resources: [
@@ -115,6 +136,32 @@ export const mes10: Module = {
       explanation:
         'Essa é a principal vantagem de Server Components: eles rodam só no servidor e enviam apenas o HTML resultante — o JavaScript daquele componente nunca é baixado pelo navegador.',
     },
+    {
+      type: 'mcq',
+      id: 'm10-e6',
+      prompt: 'Qual o principal uso de Middleware no Next.js?',
+      options: [
+        'Estilizar componentes',
+        'Interceptar requisições antes de chegarem à página, para redirecionar ou bloquear com base em condições',
+        'Substituir o banco de dados',
+        'Gerar imagens otimizadas',
+      ],
+      correctIndex: 1,
+      explanation: 'Middleware roda antes da página ser renderizada, sendo o lugar ideal para verificações como autenticação que se aplicam a várias rotas de uma vez.',
+    },
+    {
+      type: 'mcq',
+      id: 'm10-e7',
+      prompt: 'O que `generateStaticParams` permite fazer em uma rota dinâmica como [id]/page.tsx?',
+      options: [
+        'Bloquear o acesso à rota',
+        'Pré-gerar no build as páginas para valores de id conhecidos, combinando velocidade SSG com rotas dinâmicas',
+        'Validar formulários automaticamente',
+        'Não tem relação com rotas dinâmicas',
+      ],
+      correctIndex: 1,
+      explanation: 'Isso permite gerar estaticamente as páginas mais importantes (ex: produtos mais acessados) enquanto outras são geradas sob demanda, equilibrando performance e tempo de build.',
+    },
   ],
   games: [
     {
@@ -166,11 +213,12 @@ export const mes11: Module = {
       id: 'l1',
       heading: 'GraphQL: o cliente pede exatamente o que precisa',
       body:
-        'Em REST, um endpoint `/usuarios/1` retorna um formato fixo — se você só precisa do nome, recebe tudo de qualquer forma. Em GraphQL, o cliente envia uma query descrevendo exatamente os campos que quer, e o servidor retorna só isso.\n\nApollo Server (backend) e Apollo Client (frontend) são as ferramentas mais usadas para implementar GraphQL no ecossistema JavaScript.',
+        'Em REST, um endpoint `/usuarios/1` retorna um formato fixo — se você só precisa do nome, recebe tudo de qualquer forma. Em GraphQL, o cliente envia uma query descrevendo exatamente os campos que quer, e o servidor retorna só isso.\n\nApollo Server (backend) e Apollo Client (frontend) são as ferramentas mais usadas para implementar GraphQL no ecossistema JavaScript. Veja abaixo a diferença visual de "over-fetching" entre as duas abordagens.',
       codeExample: {
         lang: 'graphql',
         code: 'query {\n  usuario(id: "1") {\n    nome\n    mensagens {\n      texto\n    }\n  }\n}',
       },
+      diagramId: 'graphql-vs-rest',
     },
     {
       id: 'l2',
@@ -203,6 +251,26 @@ export const mes11: Module = {
       heading: 'Versionamento de API: evoluindo sem quebrar quem já usa',
       body:
         'Depois que uma API está em produção sendo consumida por outros sistemas, mudar um campo ou comportamento pode quebrar tudo que depende dela. Versionamento (ex: `/api/v1/usuarios` vs `/api/v2/usuarios`) permite evoluir a API mantendo a versão antiga funcionando até que todos os consumidores migrem.\n\nAlternativas incluem versionar via header (`Accept: application/vnd.empresa.v2+json`) em vez da URL — mais "correto" semanticamente, mas menos óbvio para quem está explorando a API pela primeira vez. Na prática, versionar via URL é mais comum por ser mais simples de entender e testar.',
+    },
+    {
+      id: 'l6',
+      heading: 'Webhooks: quando o servidor avisa você, em vez do contrário',
+      body:
+        'Numa API tradicional, o cliente sempre pergunta ("tem novidade?"). Um webhook inverte isso: você registra uma URL sua, e o serviço externo faz uma requisição **para você** automaticamente quando um evento específico acontece — um pagamento foi aprovado, um arquivo terminou de processar.\n\nIsso elimina a necessidade de polling (perguntar repetidamente "já terminou?") e é a forma como serviços como Stripe, GitHub e WhatsApp Business notificam sistemas externos sobre eventos em tempo real. Pontos de atenção: sempre validar a assinatura do webhook (geralmente um header com um hash) para confirmar que a requisição realmente vem do serviço esperado, não de alguém forjando a chamada.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'app.post("/webhooks/pagamento", (req, res) => {\n  const assinaturaValida = verificarAssinatura(req);\n  if (!assinaturaValida) return res.status(401).end();\n\n  if (req.body.evento === "pagamento.aprovado") {\n    liberarPedido(req.body.pedidoId);\n  }\n  res.status(200).end();\n});',
+      },
+    },
+    {
+      id: 'l7',
+      heading: 'Idempotência em APIs de pagamento e outras operações sensíveis',
+      body:
+        'Numa rede instável, um cliente pode enviar a mesma requisição de pagamento duas vezes sem querer — a internet caiu antes da resposta chegar, e o app tentou de novo. Sem cuidado, isso cobraria o cliente duas vezes.\n\nA solução prática: o cliente gera uma "chave de idempotência" única (geralmente um UUID) antes de enviar a requisição, e a envia num header. O servidor guarda quais chaves já processou — se a mesma chave chegar de novo, ele retorna o resultado já calculado da primeira vez, sem repetir o efeito (cobrar de novo). É um padrão obrigatório em qualquer API que lida com dinheiro.',
+      codeExample: {
+        lang: 'http',
+        code: 'POST /pagamentos\nIdempotency-Key: 8f14e45f-ceea-4b19-9c5e-1234567890ab\n\n{ "valor": 100, "cartao": "..." }',
+      },
     },
   ],
   resources: [
@@ -292,6 +360,39 @@ export const mes11: Module = {
       explanation:
         'Versionamento permite manter a versão antiga funcionando enquanto a nova coexiste, dando tempo para os consumidores migrarem sem quebra abrupta.',
     },
+    {
+      type: 'mcq',
+      id: 'm11-e8',
+      prompt: 'O que diferencia um webhook de uma API tradicional consumida via polling?',
+      options: [
+        'Não há diferença real',
+        'No webhook, o servidor externo avisa proativamente quando um evento acontece, em vez do cliente perguntar repetidamente',
+        'Webhooks só funcionam com GraphQL',
+        'Webhooks são sempre mais lentos',
+      ],
+      correctIndex: 1,
+      explanation: 'Webhooks eliminam a necessidade de polling: o serviço externo faz uma requisição para você automaticamente quando algo relevante acontece.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm11-e9',
+      prompt: 'Validar a assinatura de um webhook recebido é opcional, já que a URL costuma ser secreta.',
+      answer: false,
+      explanation: 'URLs podem ser descobertas ou vazadas — validar a assinatura (geralmente um hash enviado num header) é essencial para confirmar que a requisição realmente vem do serviço esperado.',
+    },
+    {
+      type: 'mcq',
+      id: 'm11-e10',
+      prompt: 'Qual o propósito de uma chave de idempotência em uma API de pagamentos?',
+      options: [
+        'Acelerar o processamento do pagamento',
+        'Evitar que a mesma operação seja processada (e cobrada) duas vezes, mesmo se a requisição for enviada repetidamente',
+        'Criptografar os dados do cartão',
+        'Não tem relação com pagamentos',
+      ],
+      correctIndex: 1,
+      explanation: 'Se a mesma chave de idempotência chegar de novo, o servidor retorna o resultado já calculado da primeira vez, sem repetir o efeito de cobrar novamente.',
+    },
   ],
   games: [
     {
@@ -377,7 +478,14 @@ export const mes12: Module = {
       id: 'l6',
       heading: 'Auto Scaling: crescendo (e encolhendo) com a demanda',
       body:
-        'Auto Scaling adiciona ou remove instâncias EC2 automaticamente baseado em métricas (geralmente uso de CPU ou número de requisições). Em um pico de tráfego, novas instâncias entram para absorver a carga; quando o tráfego cai, instâncias extras são removidas — você paga só pelo que realmente precisa em cada momento.\n\nIsso normalmente trabalha em conjunto com um **Load Balancer**, que distribui as requisições entrantes entre todas as instâncias disponíveis, garantindo que nenhuma fique sobrecarregada enquanto outras ficam ociosas.',
+        'Auto Scaling adiciona ou remove instâncias EC2 automaticamente baseado em métricas (geralmente uso de CPU ou número de requisições). Em um pico de tráfego, novas instâncias entram para absorver a carga; quando o tráfego cai, instâncias extras são removidas — você paga só pelo que realmente precisa em cada momento.\n\nIsso normalmente trabalha em conjunto com um **Load Balancer**, que distribui as requisições entrantes entre todas as instâncias disponíveis, garantindo que nenhuma fique sobrecarregada enquanto outras ficam ociosas. Experimente os dois algoritmos de balanceamento mais comuns abaixo.',
+      diagramId: 'load-balancer',
+    },
+    {
+      id: 'l7',
+      heading: 'VPC: isolando sua infraestrutura numa rede privada',
+      body:
+        'Uma VPC (Virtual Private Cloud) é uma rede isolada dentro da AWS, onde você controla quais recursos podem se comunicar entre si e com a internet. Subdividir a VPC em **subnets públicas** (acessíveis da internet, como um Load Balancer) e **subnets privadas** (sem acesso direto externo, como um banco de dados) é uma prática de segurança básica — o banco nunca deveria ser alcançável diretamente da internet, só através da camada de aplicação.\n\nIsso é o equivalente, na nuvem, a separar fisicamente "o que o público pode tocar" de "o que só o sistema interno pode acessar" — um princípio de segurança que vale tanto para uma VPC na AWS quanto para a arquitetura de qualquer sistema.',
     },
   ],
   resources: [
@@ -461,6 +569,21 @@ export const mes12: Module = {
       answer: false,
       explanation:
         'O propósito do Auto Scaling é justamente o contrário: ajustar dinamicamente o número de instâncias para mais ou para menos, conforme métricas de demanda real.',
+    },
+    {
+      type: 'mcq',
+      id: 'm12-e7',
+      prompt: 'Qual algoritmo de Load Balancer escolhe sempre o servidor com menos carga no momento?',
+      options: ['Round-robin', 'Least connections', 'Random', 'First-in-first-out'],
+      correctIndex: 1,
+      explanation: 'Least connections direciona a próxima requisição para o servidor que está com menos conexões ativas, sendo melhor que round-robin quando as requisições têm duração desigual.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm12-e8',
+      prompt: 'Um banco de dados deveria ficar numa subnet pública da VPC, para facilitar o acesso.',
+      answer: false,
+      explanation: 'O banco de dados deveria ficar numa subnet privada, sem acesso direto da internet — só acessível através da camada de aplicação, que fica na subnet pública.',
     },
   ],
   games: [

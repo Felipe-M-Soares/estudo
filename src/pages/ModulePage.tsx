@@ -58,12 +58,31 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
   const pct = progress.moduleProgress[mod.id] ?? 0;
   const accent = phaseAccent[mod.phase];
 
-  const tabs: { id: Tab; label: string; show: boolean }[] = [
+  const exercisesDone = mod.exercises.filter((e) => progress.completedExercises[e.id]).length;
+  const checklistDone = mod.checklist.filter((c) => progress.completedChecklist[c.id]).length;
+  const gamesPlayed = mod.games.filter((g) => progress.gamesScores[g.gameId] !== undefined).length;
+
+  const tabs: { id: Tab; label: string; show: boolean; badge?: string }[] = [
     { id: 'conteudo', label: '📖 Conteúdo', show: true },
     { id: 'diaadia', label: '🌍 Dia a Dia', show: !!mod.scenarios && mod.scenarios.length > 0 },
-    { id: 'exercicios', label: '✍️ Exercícios', show: true },
-    { id: 'jogos', label: '🎮 Jogos', show: mod.games.length > 0 },
-    { id: 'checklist', label: '✅ Checklist', show: true },
+    {
+      id: 'exercicios',
+      label: '✍️ Exercícios',
+      show: true,
+      badge: mod.exercises.length > 0 ? `${exercisesDone}/${mod.exercises.length}` : undefined,
+    },
+    {
+      id: 'jogos',
+      label: '🎮 Jogos',
+      show: mod.games.length > 0,
+      badge: mod.games.length > 0 ? `${gamesPlayed}/${mod.games.length}` : undefined,
+    },
+    {
+      id: 'checklist',
+      label: '✅ Checklist',
+      show: true,
+      badge: mod.checklist.length > 0 ? `${checklistDone}/${mod.checklist.length}` : undefined,
+    },
     { id: 'projeto', label: '🏗️ Projeto', show: !!mod.projectBrief },
   ];
 
@@ -96,11 +115,20 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all ${
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all ${
               tab === t.id ? `${accent.chip} shadow-[0_2px_10px_-3px_rgba(0,0,0,0.4)]` : 'bg-base-800 text-base-300 hover:bg-base-700'
             }`}
           >
             {t.label}
+            {t.badge && (
+              <span
+                className={`mono-num rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  tab === t.id ? 'bg-base-950/20' : 'bg-base-700 text-base-400'
+                }`}
+              >
+                {t.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -119,7 +147,7 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
                 </pre>
               )}
               {lesson.diagramId && diagramRegistry[lesson.diagramId] && (
-                <div className="mt-3">{diagramRegistry[lesson.diagramId]}</div>
+                <div className="mt-3">{diagramRegistry[lesson.diagramId]()}</div>
               )}
             </div>
           ))}

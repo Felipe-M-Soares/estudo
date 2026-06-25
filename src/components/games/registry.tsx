@@ -1,14 +1,22 @@
-import type { ReactNode } from 'react';
-import { LogicMazeGame } from './LogicMazeGame';
-import { SortVisualizerGame } from './SortVisualizerGame';
-import { FlexboxDojoGame } from './FlexboxDojoGame';
-import { SqlQueryBuilderGame } from './SqlQueryBuilderGame';
-import { ConsoleDetectiveGame } from './ConsoleDetectiveGame';
-import { BugHunterGame } from './BugHunterGame';
-import { MemoryGame } from './MemoryGame';
-import { TerminalSimulatorGame } from './TerminalSimulatorGame';
-import { ArchitectureBuilderGame } from './ArchitectureBuilderGame';
+import { lazy, Suspense, type ReactNode } from 'react';
+import { GameLoader } from '../ui/GameLoader';
+
+// Jogos com lógica própria (não são apenas SpeedChallenge) carregam sob demanda —
+// assim quem nunca abre "Labirinto Lógico" nunca baixa o código dele.
+const LogicMazeGame = lazy(() => import('./LogicMazeGame').then((m) => ({ default: m.LogicMazeGame })));
+const SortVisualizerGame = lazy(() => import('./SortVisualizerGame').then((m) => ({ default: m.SortVisualizerGame })));
+const FlexboxDojoGame = lazy(() => import('./FlexboxDojoGame').then((m) => ({ default: m.FlexboxDojoGame })));
+const SqlQueryBuilderGame = lazy(() => import('./SqlQueryBuilderGame').then((m) => ({ default: m.SqlQueryBuilderGame })));
+const ConsoleDetectiveGame = lazy(() => import('./ConsoleDetectiveGame').then((m) => ({ default: m.ConsoleDetectiveGame })));
+const BugHunterGame = lazy(() => import('./BugHunterGame').then((m) => ({ default: m.BugHunterGame })));
+const MemoryGame = lazy(() => import('./MemoryGame').then((m) => ({ default: m.MemoryGame })));
+const TerminalSimulatorGame = lazy(() => import('./TerminalSimulatorGame').then((m) => ({ default: m.TerminalSimulatorGame })));
+const ArchitectureBuilderGame = lazy(() => import('./ArchitectureBuilderGame').then((m) => ({ default: m.ArchitectureBuilderGame })));
 import { SpeedChallengeGame, type SpeedChallengeQuestion } from './SpeedChallengeGame';
+
+function withLoader(node: ReactNode): ReactNode {
+  return <Suspense fallback={<GameLoader />}>{node}</Suspense>;
+}
 
 interface GameDef {
   render: (onComplete: (score: number) => void) => ReactNode;
@@ -181,13 +189,13 @@ const englishFlashcards: SpeedChallengeQuestion[] = [
 ];
 
 export const gameRegistry: Record<string, GameDef> = {
-  'logic-maze': { render: (onComplete) => <LogicMazeGame onComplete={onComplete} /> },
-  'sort-visualizer': { render: (onComplete) => <SortVisualizerGame onComplete={onComplete} /> },
-  'flexbox-dojo': { render: (onComplete) => <FlexboxDojoGame onComplete={onComplete} /> },
-  'bug-hunter': { render: (onComplete) => <BugHunterGame onComplete={onComplete} /> },
-  'memory-concepts': { render: (onComplete) => <MemoryGame onComplete={onComplete} /> },
-  'terminal-simulator': { render: (onComplete) => <TerminalSimulatorGame onComplete={onComplete} /> },
-  'architecture-builder': { render: (onComplete) => <ArchitectureBuilderGame onComplete={onComplete} /> },
+  'logic-maze': { render: (onComplete) => withLoader(<LogicMazeGame onComplete={onComplete} />) },
+  'sort-visualizer': { render: (onComplete) => withLoader(<SortVisualizerGame onComplete={onComplete} />) },
+  'flexbox-dojo': { render: (onComplete) => withLoader(<FlexboxDojoGame onComplete={onComplete} />) },
+  'bug-hunter': { render: (onComplete) => withLoader(<BugHunterGame onComplete={onComplete} />) },
+  'memory-concepts': { render: (onComplete) => withLoader(<MemoryGame onComplete={onComplete} />) },
+  'terminal-simulator': { render: (onComplete) => withLoader(<TerminalSimulatorGame onComplete={onComplete} />) },
+  'architecture-builder': { render: (onComplete) => withLoader(<ArchitectureBuilderGame onComplete={onComplete} />) },
   'css-selector-hunt': {
     render: (onComplete) => (
       <SpeedChallengeGame
@@ -199,7 +207,7 @@ export const gameRegistry: Record<string, GameDef> = {
       />
     ),
   },
-  'js-console-detective': { render: (onComplete) => <ConsoleDetectiveGame onComplete={onComplete} /> },
+  'js-console-detective': { render: (onComplete) => withLoader(<ConsoleDetectiveGame onComplete={onComplete} />) },
   'tic-tac-toe-build': {
     render: (onComplete) => (
       <SpeedChallengeGame
@@ -232,7 +240,7 @@ export const gameRegistry: Record<string, GameDef> = {
       />
     ),
   },
-  'sql-query-builder': { render: (onComplete) => <SqlQueryBuilderGame onComplete={onComplete} /> },
+  'sql-query-builder': { render: (onComplete) => withLoader(<SqlQueryBuilderGame onComplete={onComplete} />) },
   'git-branch-simulator': {
     render: (onComplete) => (
       <SpeedChallengeGame

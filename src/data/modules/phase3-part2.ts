@@ -34,7 +34,8 @@ export const mes16: Module = {
       id: 'l4',
       heading: 'Sharding e replicação',
       body:
-        '**Sharding** divide um banco de dados muito grande em partições (shards) menores, cada uma em uma máquina diferente, distribuindo a carga. **Replicação** mantém cópias do mesmo dado em múltiplas máquinas — para tolerância a falhas (se uma cair, outra responde) e para distribuir carga de leitura.',
+        '**Sharding** divide um banco de dados muito grande em partições (shards) menores, cada uma em uma máquina diferente, distribuindo a carga. **Replicação** mantém cópias do mesmo dado em múltiplas máquinas — para tolerância a falhas (se uma cair, outra responde) e para distribuir carga de leitura. Ajuste o número de shards abaixo e veja como os dados se redistribuem.',
+      diagramId: 'sharding',
     },
     {
       id: 'l5',
@@ -47,6 +48,18 @@ export const mes16: Module = {
       heading: 'Load Balancing: distribuindo trabalho entre várias máquinas',
       body:
         'Um Load Balancer recebe todo o tráfego de entrada e decide para qual servidor (de um conjunto de réplicas idênticas) cada requisição vai. Algoritmos comuns: **round-robin** (distribui em sequência, um para cada), **least connections** (manda para quem está com menos carga agora), e **hash baseado em IP** (o mesmo cliente sempre cai no mesmo servidor, útil quando há estado de sessão).\n\nUm bom load balancer também faz health checks: remove automaticamente da rotação qualquer servidor que parou de responder, e o devolve quando ele volta a responder normalmente.',
+    },
+    {
+      id: 'l7',
+      heading: 'Rate limiting distribuído: limitando across múltiplos servidores',
+      body:
+        'Rate limiting parece simples até você ter múltiplos servidores atrás de um load balancer: se cada servidor guardar a contagem de requisições só na própria memória, um cliente pode "burlar" o limite distribuindo requisições entre servidores diferentes, cada um vendo só uma fração do total real.\n\nA solução é centralizar essa contagem num lugar compartilhado por todos os servidores — geralmente Redis, por ser extremamente rápido para esse tipo de operação (incrementar um contador, verificar se passou do limite, tudo em milissegundos). Esse é outro exemplo do papel do cache/armazenamento em memória além de "acelerar leituras": coordenar estado entre múltiplas instâncias de uma aplicação.',
+    },
+    {
+      id: 'l8',
+      heading: 'CDN e edge computing: processando mais próximo do usuário',
+      body:
+        'Uma CDN tradicional só serve arquivos estáticos (imagens, CSS, JS) de pontos geograficamente distribuídos. **Edge computing** vai além: executa lógica de aplicação (não só arquivos estáticos) nesses pontos próximos do usuário — validar um token, redirecionar com base no país, até renderizar partes de uma página — sem precisar ir até o servidor de origem, que pode estar a milhares de quilômetros.\n\nIsso reduz drasticamente a latência para operações simples e frequentes, mas tem limites: lógica que precisa de acesso direto a um banco de dados centralizado ainda se beneficia mais de rodar próxima a esse banco do que na borda da rede.',
     },
   ],
   resources: [
@@ -122,6 +135,26 @@ export const mes16: Module = {
       explanation:
         'Cada algoritmo otimiza para um cenário diferente — round-robin para simplicidade, least connections para carga desigual, hash por IP para sessões com estado.',
     },
+    {
+      type: 'mcq',
+      id: 'm16-e6',
+      prompt: 'Por que rate limiting com contagem só na memória local de cada servidor falha quando há múltiplos servidores?',
+      options: [
+        'Não falha, funciona perfeitamente',
+        'Um cliente pode distribuir requisições entre servidores diferentes, e cada um vê só uma fração do total, permitindo burlar o limite real',
+        'Memória local é sempre mais lenta que um banco',
+        'Rate limiting não funciona com múltiplos servidores de forma alguma',
+      ],
+      correctIndex: 1,
+      explanation: 'Sem um contador compartilhado (como Redis), cada servidor só sabe das requisições que ele mesmo recebeu, não do total real do cliente.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm16-e7',
+      prompt: 'Edge computing é o mesmo que uma CDN tradicional, só com um nome diferente.',
+      answer: false,
+      explanation: 'CDN tradicional serve apenas arquivos estáticos. Edge computing vai além, executando lógica de aplicação nos pontos próximos do usuário, não só servindo arquivos.',
+    },
   ],
   games: [
     {
@@ -196,13 +229,26 @@ export const mes17: Module = {
       id: 'l4',
       heading: 'Comunicação assíncrona: escrever para quem não está olhando agora',
       body:
-        'Times distribuídos (e até times no mesmo escritório, hoje) dependem cada vez mais de comunicação assíncrona: mensagens, PRs, documentos — em vez de reuniões em tempo real. Escrever bem nesse formato significa dar contexto suficiente para que a pessoa não precise te perguntar de volta "mas o que você quer dizer?": qual o problema, o que você já tentou, o que precisa da outra pessoa, e até quando.\n\nUma mensagem assíncrona malfeita ("dá uma olhada nisso aí") gera dias de ida e volta perguntando contexto. Uma boa mensagem assíncrona já antecipa as perguntas óbvias e permite que a pessoa responda de forma útil na primeira tentativa.',
+        'Times distribuídos (e até times no mesmo escritório, hoje) dependem cada vez mais de comunicação assíncrona: mensagens, PRs, documentos — em vez de reuniões em tempo real. Escrever bem nesse formato significa dar contexto suficiente para que a pessoa não precise te perguntar de volta "mas o que você quer dizer?": qual o problema, o que você já tentou, o que precisa da outra pessoa, e até quando.\n\nUma mensagem assíncrona malfeita ("dá uma olhada nisso aí") gera dias de ida e volta perguntando contexto. Uma boa mensagem assíncrona já antecipa as perguntas óbvias e permite que a pessoa responda de forma útil na primeira tentativa. Compare os dois exemplos abaixo.',
+      diagramId: 'async-message-quality',
     },
     {
       id: 'l5',
       heading: 'Negociação técnica: discordar sem travar o time',
       body:
         'Discordar de uma decisão técnica é saudável; insistir indefinidamente depois que a decisão foi tomada, não é. O princípio "disagree and commit" (usado em vários times de tecnologia) é: exponha sua discordância com argumentos claros, mas se o time decidir seguir outro caminho, comprometa-se com ele de verdade — não saboteando passivamente nem revisitando o debate a cada oportunidade.\n\nIsso não significa concordar sempre — significa escolher bem as batalhas, trazer dados (não só opinião) quando discordar, e aceitar que nem toda decisão vai ser exatamente como você faria.',
+    },
+    {
+      id: 'l6',
+      heading: 'Apresentações técnicas: comunicando decisões para públicos diferentes',
+      body:
+        'A mesma decisão técnica precisa de duas versões de explicação. Para outros desenvolvedores, detalhes de implementação importam: trade-offs específicos, bibliotecas escolhidas, complexidade de cada abordagem. Para stakeholders de negócio, o que importa é impacto: tempo, custo, risco, e o que muda para o usuário final — jargão técnico nessa conversa só cria distância, não credibilidade.\n\nUma boa prática para apresentações técnicas (em reuniões, ou até em entrevistas): comece pela conclusão/recomendação, depois explique o raciocínio — não construa um arco narrativo longo até "a resposta" no final, porque a atenção do público (especialmente não-técnico) decai rápido.',
+    },
+    {
+      id: 'l7',
+      heading: 'Negociando prazos: comunicando estimativas com honestidade',
+      body:
+        'Pressão para "encurtar o prazo" é constante em qualquer time. A resposta produtiva não é simplesmente aceitar um prazo apertado demais (gerando trabalho malfeito ou esgotamento) nem recusar rigidamente (parecendo inflexível) — é tornar os trade-offs explícitos: "posso entregar isso até sexta cortando os testes automatizados, ou até terça-feira da semana seguinte com cobertura completa — qual prioridade faz mais sentido para vocês agora?".\n\nIsso transforma uma negociação de prazo numa decisão de produto compartilhada, em vez de uma imposição numa direção ou outra — e documenta, num e-mail ou ticket, qual escolha foi feita e por quê, protegendo todo mundo de mal-entendidos depois.',
     },
   ],
   resources: [
@@ -273,6 +319,32 @@ export const mes17: Module = {
       explanation:
         'O princípio é expor a discordância com argumentos claros antes da decisão, mas se comprometer genuinamente com o que for decidido — não significa silenciar a opinião, e sim não sabotar depois que a decisão foi tomada.',
     },
+    {
+      type: 'mcq',
+      id: 'm17-e6',
+      prompt: 'Ao apresentar uma decisão técnica para stakeholders de negócio, o que deveria ser priorizado?',
+      options: [
+        'Detalhes de implementação e nomes de bibliotecas usadas',
+        'Impacto em tempo, custo, risco e experiência do usuário final',
+        'Jargão técnico para demonstrar conhecimento',
+        'A história completa do processo de decisão, do início ao fim',
+      ],
+      correctIndex: 1,
+      explanation: 'Para públicos não-técnicos, o que importa é o impacto prático da decisão — detalhes de implementação são mais relevantes para uma audiência de outros desenvolvedores.',
+    },
+    {
+      type: 'mcq',
+      id: 'm17-e7',
+      prompt: 'Ao receber pressão para encurtar um prazo, qual abordagem é mais produtiva?',
+      options: [
+        'Aceitar sempre, para não criar atrito',
+        'Recusar rigidamente, sem explicar o porquê',
+        'Tornar os trade-offs explícitos (o que seria cortado ou adiado) e deixar a decisão final ser compartilhada',
+        'Ignorar a pressão e fazer no seu próprio ritmo, sem comunicar nada',
+      ],
+      correctIndex: 2,
+      explanation: 'Explicitar os trade-offs transforma a negociação numa decisão de produto compartilhada, em vez de uma imposição — e protege todos de mal-entendidos futuros.',
+    },
   ],
   games: [
     {
@@ -335,7 +407,8 @@ export const mes18: Module = {
       id: 'l2',
       heading: 'Integrando a stack completa',
       body:
-        'Frontend em React + TypeScript com Next.js (aproveitando SSR onde fizer sentido para SEO ou performance). Backend em Java Spring Boot, expondo tanto REST quanto GraphQL conforme o caso de uso. PostgreSQL para dados relacionais (usuários, pedidos), MongoDB para dados mais flexíveis (logs, configurações dinâmicas). Kafka para eventos entre serviços, se a arquitetura usar múltiplos microsserviços.\n\nO objetivo não é usar **toda** tecnologia que você aprendeu só para mostrar que sabe — é usar a tecnologia certa onde ela realmente resolve um problema do seu sistema.',
+        'Frontend em React + TypeScript com Next.js (aproveitando SSR onde fizer sentido para SEO ou performance). Backend em Java Spring Boot, expondo tanto REST quanto GraphQL conforme o caso de uso. PostgreSQL para dados relacionais (usuários, pedidos), MongoDB para dados mais flexíveis (logs, configurações dinâmicas). Kafka para eventos entre serviços, se a arquitetura usar múltiplos microsserviços.\n\nO objetivo não é usar **toda** tecnologia que você aprendeu só para mostrar que sabe — é usar a tecnologia certa onde ela realmente resolve um problema do seu sistema. Explore abaixo a organização em camadas que deveria guiar onde cada peça do código vive.',
+      diagramId: 'layered-architecture',
     },
     {
       id: 'l3',
@@ -354,6 +427,12 @@ export const mes18: Module = {
       heading: 'Portfólio além do código: o que mais importa para quem contrata',
       body:
         'Um projeto técnico sólido é necessário, mas raramente suficiente por si só. Complementos que fazem diferença real: um LinkedIn atualizado contando a sua jornada (não só uma lista de tecnologias), contribuições visíveis em projetos open source (mesmo pequenas, como corrigir um erro de documentação), e um histórico de commits consistente no GitHub que mostra constância ao longo do tempo, não só um projeto isolado feito num fim de semana.\n\nO objetivo final desses 18 meses não é só "saber" todas essas tecnologias — é ter evidências verificáveis de que você sabe, que qualquer recrutador ou tech lead possa checar em poucos minutos.',
+    },
+    {
+      id: 'l6',
+      heading: 'Depois do lançamento: o trabalho que ninguém vê no portfólio',
+      body:
+        'Lançar a primeira versão do projeto final é uma conquista real, mas é também onde o trabalho mais sênior começa: observar como o sistema se comporta com uso de verdade, corrigir bugs que só aparecem fora do ambiente controlado de desenvolvimento, e decidir o que evoluir primeiro com base em sinais reais (não em achismo).\n\nSe possível, depois de lançar, monitore por algumas semanas: o que falha, o que é lento, o que ninguém usa. Documentar isso — mesmo informalmente, num arquivo `LIÇÕES.md` — é exatamente o tipo de reflexão que distingue alguém que só "termina projetos" de alguém que aprende a melhorá-los continuamente, e é ótimo material para contar numa entrevista sobre seu próprio crescimento ao longo do tempo.',
     },
   ],
   resources: [
@@ -424,6 +503,19 @@ export const mes18: Module = {
       answer: true,
       explanation:
         'Constância visível no histórico de commits sugere capacidade de manter disciplina e progresso ao longo do tempo — um sinal que recrutadores frequentemente valorizam além da qualidade pontual do código.',
+    },
+    {
+      type: 'mcq',
+      id: 'm18-e6',
+      prompt: 'Por que documentar bugs e melhorias observadas após o lançamento de um projeto é valioso, mesmo informalmente?',
+      options: [
+        'Não tem valor real, é trabalho desnecessário',
+        'Demonstra capacidade de aprender e melhorar continuamente com base em uso real, algo valorizado em entrevistas e no trabalho sênior',
+        'É exigido por lei em projetos de portfólio',
+        'Só importa se o projeto tiver muitos usuários',
+      ],
+      correctIndex: 1,
+      explanation: 'Refletir sobre o que aconteceu depois do lançamento (não só durante o desenvolvimento) demonstra maturidade e capacidade de evolução contínua — uma habilidade sênior real, independente do tamanho do projeto.',
     },
   ],
   games: [
