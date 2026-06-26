@@ -1,4 +1,4 @@
-export type InterviewTrack = 'frontend' | 'backend' | 'fullstack';
+export type InterviewTrack = 'frontend' | 'backend' | 'fullstack' | 'security';
 export type InterviewLevel = 'junior' | 'pleno' | 'senior';
 
 export interface TheoryQuestion {

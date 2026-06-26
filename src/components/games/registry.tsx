@@ -12,6 +12,10 @@ const BugHunterGame = lazy(() => import('./BugHunterGame').then((m) => ({ defaul
 const MemoryGame = lazy(() => import('./MemoryGame').then((m) => ({ default: m.MemoryGame })));
 const TerminalSimulatorGame = lazy(() => import('./TerminalSimulatorGame').then((m) => ({ default: m.TerminalSimulatorGame })));
 const ArchitectureBuilderGame = lazy(() => import('./ArchitectureBuilderGame').then((m) => ({ default: m.ArchitectureBuilderGame })));
+const VulnerabilityHunterGame = lazy(() => import('./VulnerabilityHunterGame').then((m) => ({ default: m.VulnerabilityHunterGame })));
+const PythonDetectiveGame = lazy(() => import('./PythonDetectiveGame').then((m) => ({ default: m.PythonDetectiveGame })));
+const GoConcurrencyGame = lazy(() => import('./GoConcurrencyGame').then((m) => ({ default: m.GoConcurrencyGame })));
+const NoSqlCommandGame = lazy(() => import('./NoSqlCommandGame').then((m) => ({ default: m.NoSqlCommandGame })));
 import { SpeedChallengeGame, type SpeedChallengeQuestion } from './SpeedChallengeGame';
 
 function withLoader(node: ReactNode): ReactNode {
@@ -196,6 +200,10 @@ export const gameRegistry: Record<string, GameDef> = {
   'memory-concepts': { render: (onComplete) => withLoader(<MemoryGame onComplete={onComplete} />) },
   'terminal-simulator': { render: (onComplete) => withLoader(<TerminalSimulatorGame onComplete={onComplete} />) },
   'architecture-builder': { render: (onComplete) => withLoader(<ArchitectureBuilderGame onComplete={onComplete} />) },
+  'vulnerability-hunter': { render: (onComplete) => withLoader(<VulnerabilityHunterGame onComplete={onComplete} />) },
+  'python-detective': { render: (onComplete) => withLoader(<PythonDetectiveGame onComplete={onComplete} />) },
+  'go-concurrency': { render: (onComplete) => withLoader(<GoConcurrencyGame onComplete={onComplete} />) },
+  'nosql-command': { render: (onComplete) => withLoader(<NoSqlCommandGame onComplete={onComplete} />) },
   'css-selector-hunt': {
     render: (onComplete) => (
       <SpeedChallengeGame

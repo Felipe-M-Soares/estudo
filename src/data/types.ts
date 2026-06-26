@@ -140,13 +140,8 @@ export interface ProjectNote {
   updatedAt: string;
 }
 
-export interface PhaseInfo {
-  phase: Phase;
-  title: string;
-  objective: string;
-  months: number[];
-  color: string;
-}
+// PhaseInfo foi movido para moduleMeta.ts (arquivo leve, sem conteúdo pesado de
+// lições/exercícios) — importe de '../data/moduleMeta' ou '../data' (reexportado).
 
 // ===== Progresso do usuário (persistido) =====
 

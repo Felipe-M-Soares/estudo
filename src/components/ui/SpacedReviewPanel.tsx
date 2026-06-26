@@ -1,10 +1,13 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState, Suspense, lazy } from 'react';
 import { Brain, ArrowRight } from 'lucide-react';
 import { getDueReviews } from '../../data/spacedReview';
-import { exercisesById, modulesById } from '../../data';
-import { ExerciseRouter } from './ExerciseRouter';
 import type { SpacedReviewItem } from '../../data/types';
+
+// O conteúdo completo de exercícios/módulos só é necessário quando a sessão de
+// revisão é de fato aberta — manter isso como lazy evita que o Dashboard (a
+// primeira tela do app) precise carregar todo o conteúdo dos 22 módulos só
+// para checar se há algo pendente.
+const ReviewSession = lazy(() => import('./ReviewSession').then((m) => ({ default: m.ReviewSession })));
 
 interface SpacedReviewPanelProps {
   spacedReview: Record<string, SpacedReviewItem>;
@@ -13,7 +16,6 @@ interface SpacedReviewPanelProps {
 
 export function SpacedReviewPanel({ spacedReview, onReviewResult }: SpacedReviewPanelProps) {
   const dueItems = useMemo(() => getDueReviews(spacedReview), [spacedReview]);
-  const [activeIdx, setActiveIdx] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
 
   if (dueItems.length === 0) {
@@ -62,38 +64,9 @@ export function SpacedReviewPanel({ spacedReview, onReviewResult }: SpacedReview
     );
   }
 
-  const current = dueItems[activeIdx];
-  const exercise = current ? exercisesById[current.exerciseId] : undefined;
-  const mod = current ? modulesById[current.moduleId] : undefined;
-
-  if (!current || !exercise || !mod) {
-    return (
-      <div className="card-surface rounded-2xl p-5 text-center">
-        <p className="text-sm font-semibold text-mint-300">🎉 Revisão concluída por hoje!</p>
-        <button onClick={() => setSessionStarted(false)} className="mt-2 text-xs text-base-400 hover:underline">
-          Voltar
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-base-400">
-          Revisão {activeIdx + 1}/{dueItems.length} · {mod.emoji} {mod.title}
-        </span>
-        <Link to={`/modulo/${mod.id}`} className="text-xs text-violet-300 hover:underline">
-          Ver módulo completo
-        </Link>
-      </div>
-      <ExerciseRouter
-        exercise={exercise}
-        onResult={(correct) => {
-          onReviewResult(current.moduleId, current.exerciseId, correct);
-          setTimeout(() => setActiveIdx((i) => i + 1), 1400);
-        }}
-      />
-    </div>
+    <Suspense fallback={<div className="card-surface rounded-2xl p-5 text-sm text-base-400">Carregando revisão...</div>}>
+      <ReviewSession dueItems={dueItems} onReviewResult={onReviewResult} onBack={() => setSessionStarted(false)} />
+    </Suspense>
   );
 }

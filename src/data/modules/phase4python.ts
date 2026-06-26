@@ -169,5 +169,11 @@ export const mes20: Module = {
       explanation: 'Decorators interceptam a chamada de uma função para adicionar comportamento extra (logging, medição de tempo, autenticação) de forma reutilizável e separada da lógica principal.',
     },
   ],
-  games: [],
+  games: [
+    {
+      gameId: 'python-detective',
+      label: 'Detetive Python',
+      description: 'Preveja a saída exata de trechos de Python — treine as pegadinhas mais comuns da linguagem.',
+    },
+  ],
 };

@@ -59,10 +59,20 @@ export const achievements: Achievement[] = [
   {
     id: 'fase-3-completa',
     title: 'Full Stack Sênior',
-    description: 'Complete 100% da Fase 3. Você terminou a jornada completa!',
+    description: 'Complete 100% da Fase 3 — fundamentos, especialização e arquitetura dominados.',
     emoji: '🏆',
     check: (p) =>
       ['mes-13', 'mes-14', 'mes-15', 'mes-16', 'mes-17', 'mes-18'].every(
+        (id) => (p.moduleProgress[id] ?? 0) >= 100
+      ),
+  },
+  {
+    id: 'fase-4-completa',
+    title: 'Mercado Completo',
+    description: 'Complete 100% da Fase 4 — Segurança, Python, Go, MongoDB e Redis. Você terminou a jornada completa!',
+    emoji: '🌐',
+    check: (p) =>
+      ['mes-19', 'mes-20', 'mes-21', 'mes-22'].every(
         (id) => (p.moduleProgress[id] ?? 0) >= 100
       ),
   },
@@ -94,6 +104,20 @@ export const achievements: Achievement[] = [
     emoji: '🎯',
     check: (p) => Object.values(p.completedExercises).filter(Boolean).length >= 20,
   },
+  {
+    id: 'cacador-de-falhas',
+    title: 'Caçador de Falhas',
+    description: 'Complete o módulo de Segurança e Hacking Ético.',
+    emoji: '🕵️‍♂️',
+    check: (p) => (p.moduleProgress['mes-19'] ?? 0) >= 100,
+  },
+  {
+    id: 'poliglota',
+    title: 'Poliglota',
+    description: 'Complete os módulos de Python e Go.',
+    emoji: '🗣️',
+    check: (p) => (p.moduleProgress['mes-20'] ?? 0) >= 100 && (p.moduleProgress['mes-21'] ?? 0) >= 100,
+  },
 ];
 
 export const XP_PER_EXERCISE = 15;
@@ -110,6 +134,7 @@ export function xpIntoCurrentLevel(xp: number): number {
 }
 
 export function levelTitle(level: number): string {
+  if (level >= 22) return 'Full Stack Polivalente';
   if (level >= 18) return 'Full Stack Sênior';
   if (level >= 13) return 'Arquiteto de Sistemas';
   if (level >= 9) return 'Especialista Full Stack';

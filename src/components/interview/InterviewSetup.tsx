@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Code2, Server, Layers, Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Code2, Server, Layers, Sparkles, TrendingUp, TrendingDown, Minus, ShieldAlert } from 'lucide-react';
 import type { InterviewLevel, InterviewTrack } from '../../data/interviewTypes';
 import type { InterviewHistoryEntry } from '../../data/types';
 
@@ -12,6 +12,7 @@ const tracks: { id: InterviewTrack; label: string; icon: typeof Code2; desc: str
   { id: 'frontend', label: 'Frontend', icon: Code2, desc: 'HTML, CSS, JS, React' },
   { id: 'backend', label: 'Backend', icon: Server, desc: 'APIs, banco, arquitetura' },
   { id: 'fullstack', label: 'Full Stack', icon: Layers, desc: 'Os dois mundos' },
+  { id: 'security', label: 'Segurança', icon: ShieldAlert, desc: 'Vulnerabilidades e defesa' },
 ];
 
 const levels: { id: InterviewLevel; label: string; desc: string }[] = [
@@ -43,7 +44,7 @@ export function InterviewSetup({ onStart, interviewHistory }: InterviewSetupProp
 
       <div className="card-surface rounded-2xl p-5">
         <p className="mb-3 text-sm font-semibold text-base-200">Qual trilha você quer simular?</p>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {tracks.map((t) => {
             const Icon = t.icon;
             const active = track === t.id;

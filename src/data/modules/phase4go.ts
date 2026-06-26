@@ -158,5 +158,11 @@ export const mes21: Module = {
       explanation: 'Go compila para um binário único e independente — ele não precisa de nenhum runtime ou dependência externa instalada na máquina de destino.',
     },
   ],
-  games: [],
+  games: [
+    {
+      gameId: 'go-concurrency',
+      label: 'Detetive da Concorrência',
+      description: 'Preveja o comportamento real de goroutines, channels e tratamento de erros em Go.',
+    },
+  ],
 };

@@ -174,5 +174,11 @@ export const mes22: Module = {
       explanation: 'Se a sessão fosse guardada na memória de uma instância específica, requisições que caíssem em outra instância não teriam acesso a ela — Redis resolve isso sendo compartilhado.',
     },
   ],
-  games: [],
+  games: [
+    {
+      gameId: 'nosql-command',
+      label: 'Comando Certo',
+      description: 'Escolha o comando correto de MongoDB ou Redis para cada cenário real.',
+    },
+  ],
 };

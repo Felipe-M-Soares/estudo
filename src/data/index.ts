@@ -1,4 +1,4 @@
-import type { Module, PhaseInfo } from './types';
+import type { Module } from './types';
 import { mes01, mes02, mes03 } from './modules/phase1-part1';
 import { mes04, mes05, mes06 } from './modules/phase1-part2';
 import { mes07, mes08, mes09 } from './modules/phase2-part1';
@@ -9,6 +9,9 @@ import { mes19 } from './modules/phase4';
 import { mes20 } from './modules/phase4python';
 import { mes21 } from './modules/phase4go';
 import { mes22 } from './modules/phase4mongoredis';
+
+export { phases, moduleMetas } from './moduleMeta';
+export type { PhaseInfo, ModuleMeta } from './moduleMeta';
 
 export const modules: Module[] = [
   mes01, mes02, mes03, mes04, mes05, mes06,
@@ -69,37 +72,6 @@ export function searchContent(query: string): SearchResult[] {
 
   return results.slice(0, 30);
 }
-
-export const phases: PhaseInfo[] = [
-  {
-    phase: 1,
-    title: 'Fundamentos',
-    objective: 'Construir a base sólida',
-    months: [1, 2, 3, 4, 5, 6],
-    color: 'mint',
-  },
-  {
-    phase: 2,
-    title: 'Especialização',
-    objective: 'Aprofundar em tecnologias modernas',
-    months: [7, 8, 9, 10, 11, 12],
-    color: 'amber',
-  },
-  {
-    phase: 3,
-    title: 'Integração Full Stack',
-    objective: 'Arquitetura e escalabilidade',
-    months: [13, 14, 15, 16, 17, 18],
-    color: 'violet',
-  },
-  {
-    phase: 4,
-    title: 'Extras de Mercado',
-    objective: 'Outras linguagens, bancos e segurança',
-    months: [19, 20, 21, 22],
-    color: 'cyan',
-  },
-];
 
 export function getModuleByMonth(month: number): Module | undefined {
   return modules.find((m) => m.month === month);

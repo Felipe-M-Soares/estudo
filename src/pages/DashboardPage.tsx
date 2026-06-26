@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { ArrowRight, Flame, Trophy, Target, BookOpenCheck, Gamepad2 } from 'lucide-react';
-import { modules, phases } from '../data';
+import { moduleMetas, phases } from '../data/moduleMeta';
 import { XpBar } from '../components/ui/XpBar';
 import { StreakMap } from '../components/ui/StreakMap';
 import { SpacedReviewPanel } from '../components/ui/SpacedReviewPanel';
@@ -22,7 +22,7 @@ const phaseStyles: Record<number, { ring: string; text: string; bar: string }> =
 };
 
 export function DashboardPage({ progress, overallPercent, onReviewResult }: DashboardPageProps) {
-  const currentModule = modules.find((m) => m.id === progress.currentModuleId) ?? modules[0];
+  const currentModule = moduleMetas.find((m) => m.id === progress.currentModuleId) ?? moduleMetas[0];
   const unlockedCount = progress.unlockedAchievements.length;
   const completedExerciseCount = Object.values(progress.completedExercises).filter(Boolean).length;
 
@@ -94,7 +94,7 @@ export function DashboardPage({ progress, overallPercent, onReviewResult }: Dash
       <div className="space-y-5">
         {phases.map((phase) => {
           const style = phaseStyles[phase.phase];
-          const phaseModules = modules.filter((m) => m.phase === phase.phase);
+          const phaseModules = moduleMetas.filter((m) => m.phase === phase.phase);
           const donePct = Math.round(
             (phaseModules.reduce((acc, m) => acc + (progress.moduleProgress[m.id] ?? 0), 0) / (phaseModules.length * 100)) * 100
           );

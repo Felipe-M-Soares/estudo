@@ -226,5 +226,11 @@ export const mes19: Module = {
       explanation: 'Pentest é um trabalho contratado e delimitado; bug bounty é um programa contínuo e aberto a qualquer pesquisador de segurança que siga as regras estabelecidas pela empresa.',
     },
   ],
-  games: [],
+  games: [
+    {
+      gameId: 'vulnerability-hunter',
+      label: 'Caça-Vulnerabilidade',
+      description: 'Encontre a linha com a falha de segurança em trechos reais de código — SQL Injection, XSS, CSRF e mais.',
+    },
+  ],
 };

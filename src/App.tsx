@@ -18,6 +18,7 @@ const GamesPage = lazy(() => import('./pages/GamesPage').then((m) => ({ default:
 const MentorPage = lazy(() => import('./pages/MentorPage').then((m) => ({ default: m.MentorPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const InterviewModePage = lazy(() => import('./pages/InterviewModePage').then((m) => ({ default: m.InterviewModePage })));
+const LabPage = lazy(() => import('./pages/LabPage').then((m) => ({ default: m.LabPage })));
 
 export default function App() {
   const { profiles, activeProfile, createProfile, switchToProfile, logout, deleteProfile, avatarOptions } = useProfiles();
@@ -101,6 +102,7 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
                 path="/entrevista"
                 element={<InterviewModePage interviewHistory={progress.interviewHistory} onSaveResult={addInterviewResult} />}
               />
+              <Route path="/laboratorio" element={<LabPage />} />
               <Route
                 path="/mentor"
                 element={<MentorPage apiKey={settings.geminiApiKey} currentModuleId={progress.currentModuleId} progress={progress} />}

@@ -95,4 +95,32 @@ export const practicalChallenges: PracticalChallenge[] = [
     hint: 'O método nativo `.flat(Infinity)` resolve isso para qualquer nível de aninhamento em uma única chamada.',
     idealApproach: 'function achatar(lista) {\n  return lista.flat(Infinity);\n}',
   },
+  {
+    id: 'pr-08',
+    track: ['security', 'backend', 'fullstack'],
+    level: ['junior', 'pleno'],
+    title: 'Corrigindo uma query vulnerável a SQL Injection',
+    prompt:
+      'A função abaixo está vulnerável a SQL Injection porque concatena o email direto na query. Reescreva-a usando query parametrizada.',
+    starterCode:
+      'function buscarUsuario(email) {\n  const query = `SELECT * FROM usuarios WHERE email = \'${email}\'`;\n  // reescreva usando parâmetro seguro\n\n}',
+    solutionContains: ['$1', 'db.query'],
+    hint: 'Use um placeholder ($1) na string da query, e passe o valor real num array separado como segundo argumento de db.query.',
+    idealApproach:
+      'function buscarUsuario(email) {\n  const query = "SELECT * FROM usuarios WHERE email = $1";\n  return db.query(query, [email]);\n}',
+  },
+  {
+    id: 'pr-09',
+    track: ['security', 'backend', 'fullstack'],
+    level: ['pleno', 'senior'],
+    title: 'Hash de senha com bcrypt',
+    prompt:
+      'Complete a função de cadastro para guardar a senha como hash (usando bcrypt), nunca em texto puro.',
+    starterCode:
+      'async function cadastrar(email, senha) {\n  // gere o hash da senha antes de salvar\n\n  await db.usuarios.create({ data: { email, senha: hash } });\n}',
+    solutionContains: ['bcrypt.hash', 'await'],
+    hint: 'bcrypt.hash(senha, custo) retorna uma Promise com o hash já incluindo o salt — geralmente custo 10 é um valor razoável.',
+    idealApproach:
+      'async function cadastrar(email, senha) {\n  const hash = await bcrypt.hash(senha, 10);\n  await db.usuarios.create({ data: { email, senha: hash } });\n}',
+  },
 ];

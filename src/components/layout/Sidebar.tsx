@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { Home, Trophy, Gamepad2, Bot, Settings, X, Compass, LogOut, Briefcase } from 'lucide-react';
-import { modules, phases } from '../../data';
+import { Home, Trophy, Gamepad2, Bot, Settings, X, Compass, LogOut, Briefcase, FlaskConical } from 'lucide-react';
+import { moduleMetas, phases } from '../../data/moduleMeta';
 import type { UserProgress } from '../../data/types';
 
 interface SidebarProps {
@@ -55,6 +55,7 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
           <SidebarLink to="/conquistas" icon={<Trophy size={16} />} label="Conquistas" onClick={onClose} />
           <SidebarLink to="/jogos" icon={<Gamepad2 size={16} />} label="Mini-jogos" onClick={onClose} />
           <SidebarLink to="/entrevista" icon={<Briefcase size={16} />} label="Modo Entrevista" onClick={onClose} highlight />
+          <SidebarLink to="/laboratorio" icon={<FlaskConical size={16} />} label="Laboratório Prático" onClick={onClose} highlight />
           <SidebarLink to="/mentor" icon={<Bot size={16} />} label="Mentor IA" onClick={onClose} />
           <SidebarLink to="/configuracoes" icon={<Settings size={16} />} label="Configurações" onClick={onClose} />
         </nav>
@@ -78,7 +79,7 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
                   className={`absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b ${phaseColorClasses[phase.phase].line} to-transparent opacity-50`}
                   aria-hidden="true"
                 />
-                {modules
+                {moduleMetas
                   .filter((m) => m.phase === phase.phase)
                   .map((m) => {
                     const pct = progress.moduleProgress[m.id] ?? 0;
@@ -105,7 +106,7 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
                         <span className="w-5 shrink-0 font-mono text-[10px] text-base-500">
                           {String(m.month).padStart(2, '0')}
                         </span>
-                        <span className="flex-1 truncate">{m.emoji} {m.title}</span>
+                        <span className="flex-1 truncate" title={m.title}>{m.emoji} {m.title}</span>
                         {isDone ? (
                           <span className="text-xs text-mint-400">✓</span>
                         ) : pct > 0 ? (
@@ -121,7 +122,7 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
 
         <div className="flex items-center gap-2.5 border-t border-base-700 px-4 py-3">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-base-700 text-base">{profileEmoji}</span>
-          <span className="flex-1 truncate text-sm font-medium text-base-200">{profileName}</span>
+          <span className="flex-1 truncate text-sm font-medium text-base-200" title={profileName}>{profileName}</span>
           <button
             onClick={onLogout}
             className="shrink-0 rounded-lg p-1.5 text-base-400 hover:bg-base-800 hover:text-base-100"

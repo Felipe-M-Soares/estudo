@@ -76,6 +76,15 @@ Acesse pelo menu lateral (destacado em ciano). Escolha sua trilha (Frontend, Bac
 
 No final, você recebe uma pontuação por etapa e uma nota geral. Suas últimas 5 tentativas ficam visíveis na tela inicial do Modo Entrevista, com indicação se você melhorou ou piorou desde a última vez. É uma ferramenta de prática, não uma nota oficial — o valor está em repetir.
 
+## 🧪 Laboratório Prático
+
+Acesse pelo menu lateral. São 4 sandboxes isolados para testar de verdade o que você estudou, sem nenhum deles se conectar a sistemas reais ou salvar nada entre sessões:
+
+- **Layout & CSS** — edite CSS num textarea e veja o resultado mudar ao vivo num preview ao lado, com presets rápidos de flexbox/grid para começar.
+- **Git na prática** — um terminal simulado onde você cria arquivos, e roda comandos Git reais (`git add`, `git commit -m "..."`, `git branch`, `git checkout`) contra um repositório fake guardado só na memória do navegador.
+- **Segurança** — um login propositalmente vulnerável a SQL Injection, ao lado da versão corrigida com query parametrizada. Tudo simulado: não existe banco de dados real nem servidor, é só uma demonstração visual de como o ataque (e a defesa) funcionam.
+- **Dados** — uma "tabela" editável onde você adiciona/remove linhas e roda filtros para ver como uma query muda o resultado.
+
 ## 👤 Perfis (múltiplas pessoas, mesmo navegador)
 
 Na primeira vez que abrir o app, você cria um perfil com um nome (e, se quiser, um PIN de 4+ dígitos). Esse PIN **não é uma senha de verdade** — é só uma trava simples para impedir que outra pessoa usando o mesmo navegador abra seu perfil por engano. Tudo fica salvo localmente, sem servidor.

@@ -14,11 +14,12 @@ const phaseFilters = [
   { id: 1, label: 'Fase 1', dot: 'bg-mint-400' },
   { id: 2, label: 'Fase 2', dot: 'bg-amber-400' },
   { id: 3, label: 'Fase 3', dot: 'bg-violet-400' },
+  { id: 4, label: 'Fase 4', dot: 'bg-cyan-400' },
 ] as const;
 
 export function GamesPage({ progress, onGameComplete }: GamesPageProps) {
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 1 | 2 | 3>('all');
+  const [filter, setFilter] = useState<'all' | 1 | 2 | 3 | 4>('all');
 
   const allGames = modules.flatMap((m) =>
     m.games.map((g) => ({ ...g, moduleTitle: m.title, moduleEmoji: m.emoji, phase: m.phase }))

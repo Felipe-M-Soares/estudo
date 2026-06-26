@@ -19,6 +19,7 @@ const TRACK_LABELS: Record<InterviewTrack, string> = {
   frontend: 'Frontend',
   backend: 'Backend',
   fullstack: 'Full Stack',
+  security: 'Segurança',
 };
 
 const LEVEL_LABELS: Record<InterviewLevel, string> = {

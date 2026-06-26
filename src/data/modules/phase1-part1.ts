@@ -73,7 +73,7 @@ export const mes01: Module = {
       id: 'l8',
       heading: 'Tabelas hash: a estrutura mais usada que você nunca viu',
       body:
-        'Uma tabela hash (hash table, ou "mapa") guarda pares chave-valor e permite buscar, inserir e remover em tempo **O(1)** na média — independente de quantos itens existem. Isso parece quase mágico, mas o segredo é uma **função de hash**: ela transforma a chave (ex: uma string) num número, que indica diretamente em qual posição interna do array aquele valor está guardado.\n\nObjetos `{}` e `Map` em JavaScript, `dict` em Python, e `HashMap` em Java são todos implementações de tabela hash. É a estrutura por trás de quase todo "cache", "índice" ou "dicionário" que você vai usar na carreira.\n\nO trade-off: tabelas hash não mantêm ordem (a menos que a implementação garanta isso explicitamente, como `Map` do JS) e podem ter colisões — duas chaves diferentes gerando o mesmo hash, resolvidas internamente sem você precisar pensar nisso na maioria dos casos.',
+        'Uma tabela hash (hash table, ou "mapa") guarda pares chave-valor e permite buscar, inserir e remover em tempo **O(1)** na média — independente de quantos itens existem. Isso parece quase mágico, mas o segredo é uma **função de hash**: ela transforma a chave (ex: uma string) num número, que indica diretamente em qual posição interna do array aquele valor está guardado.\n\nObjetos `{}` e `Map` em JavaScript, `dict` em Python, e `HashMap` em Java são todos implementações de tabela hash. É a estrutura por trás de quase todo {{cache}}, índice ou dicionário que você vai usar na carreira.\n\nO trade-off: tabelas hash não mantêm ordem (a menos que a implementação garanta isso explicitamente, como `Map` do JS) e podem ter colisões — duas chaves diferentes gerando o mesmo hash, resolvidas internamente sem você precisar pensar nisso na maioria dos casos.',
       codeExample: {
         lang: 'javascript',
         code: 'const idades = new Map();\nidades.set("Ana", 28);\nidades.set("Bruno", 34);\n\nidades.get("Ana"); // 28 — busca O(1), não importa quantos itens existem',
@@ -285,7 +285,7 @@ export const mes01: Module = {
       situation:
         'Você quer decidir em que ordem fazer 5 tarefas de casa, algumas dependendo de outras terem sido feitas antes (ex: "lavar roupa" antes de "passar roupa").',
       whatHappens:
-        'Isso é exatamente o problema que listas e filas resolvem na programação: você tem itens com uma ordem de dependência, e precisa decidir uma sequência válida — o mesmo princípio usado para ordenar etapas de deploy ou tarefas de um pipeline.',
+        'Isso é exatamente o problema que listas e filas resolvem na programação: você tem itens com uma ordem de dependência, e precisa decidir uma sequência válida — o mesmo princípio usado para ordenar etapas de {{deploy}} ou tarefas de um {{pipeline}}.',
       howToSolve:
         'Liste as dependências de cada tarefa (o que precisa estar pronto antes). Tarefas sem dependência pendente entram primeiro na fila. Conforme cada uma é concluída, libera as que dependiam dela — isso, formalizado em código, se chama ordenação topológica.',
     },
@@ -629,7 +629,7 @@ export const mes03: Module = {
       id: 'l3',
       heading: 'Promises e async/await: lidando com o tempo',
       body:
-        'Buscar dados de um servidor leva tempo — o JavaScript não pode simplesmente "esperar parado", porque isso travaria a página inteira. Uma **Promise** representa "um valor que vai existir no futuro": ela pode estar pendente, cumprida ou rejeitada.\n\n`async/await` é açúcar sintático sobre Promises que faz o código assíncrono **parecer** síncrono, sem o encadeamento confuso de `.then().then().then()`. Hoje é o padrão da indústria. A simulação abaixo mostra a ordem real de execução — repare que Promises sempre rodam antes de setTimeout, mesmo com delay 0.',
+        'Buscar dados de um servidor leva tempo — o JavaScript não pode simplesmente "esperar parado", porque isso travaria a página inteira. Uma **Promise** representa "um valor que vai existir no futuro": ela pode estar pendente, cumprida ou rejeitada.\n\n`async/await` é açúcar sintático sobre Promises que faz o código {{assincrono}} **parecer** síncrono, sem o encadeamento confuso de `.then().then().then()`. Hoje é o padrão da indústria. A simulação abaixo mostra a ordem real de execução — repare que Promises sempre rodam antes de setTimeout, mesmo com delay 0.',
       codeExample: {
         lang: 'javascript',
         code: 'async function buscarUsuario(id) {\n  try {\n    const resposta = await fetch(`/api/usuarios/${id}`);\n    const dados = await resposta.json();\n    return dados;\n  } catch (erro) {\n    console.error("Falhou:", erro);\n  }\n}',
@@ -640,7 +640,7 @@ export const mes03: Module = {
       id: 'l4',
       heading: 'Manipulação do DOM e eventos',
       body:
-        'O DOM (Document Object Model) é a representação da página em forma de árvore de objetos que o JavaScript pode ler e modificar. `document.querySelector` busca um elemento; `.addEventListener` reage a interações do usuário (clique, digitação, envio de formulário).\n\nO erro mais comum de quem está começando é manipular o DOM diretamente em excesso — frameworks como React existem justamente para abstrair isso, mas entender o DOM puro primeiro é o que faz você realmente entender o que o framework está fazendo por debaixo.',
+        'O DOM (Document Object Model) é a representação da página em forma de árvore de objetos que o JavaScript pode ler e modificar. `document.querySelector` busca um elemento; `.addEventListener` reage a interações do usuário (clique, digitação, envio de formulário).\n\nO erro mais comum de quem está começando é manipular o DOM diretamente em excesso — {{framework}}s como React existem justamente para abstrair isso, mas entender o DOM puro primeiro é o que faz você realmente entender o que o framework está fazendo por debaixo.',
       codeExample: {
         lang: 'javascript',
         code: 'const botao = document.querySelector("#enviar");\n\nbotao.addEventListener("click", () => {\n  console.log("Clicado!");\n});',
