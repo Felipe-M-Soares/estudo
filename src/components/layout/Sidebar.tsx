@@ -17,6 +17,7 @@ const phaseColorClasses: Record<number, { dot: string; text: string; bar: string
   1: { dot: 'bg-mint-400', text: 'text-mint-400', bar: 'bg-mint-400', line: 'from-mint-400/60' },
   2: { dot: 'bg-amber-400', text: 'text-amber-400', bar: 'bg-amber-400', line: 'from-amber-400/60' },
   3: { dot: 'bg-violet-400', text: 'text-violet-400', bar: 'bg-violet-400', line: 'from-violet-400/60' },
+  4: { dot: 'bg-cyan-400', text: 'text-cyan-400', bar: 'bg-cyan-400', line: 'from-cyan-400/60' },
 };
 
 export function Sidebar({ progress, open, onClose, profileName, profileEmoji, onLogout }: SidebarProps) {
@@ -41,7 +42,7 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
             </div>
             <div>
               <div className="font-display text-sm font-bold leading-tight text-base-50">DevJourney</div>
-              <div className="text-[11px] leading-tight text-base-400">Full Stack · 18 meses</div>
+              <div className="text-[11px] leading-tight text-base-400">Full Stack · 22 meses</div>
             </div>
           </div>
           <button onClick={onClose} className="rounded-lg p-1.5 text-base-300 hover:bg-base-800 lg:hidden" aria-label="Fechar menu">

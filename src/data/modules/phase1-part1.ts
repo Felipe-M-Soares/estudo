@@ -15,7 +15,7 @@ export const mes01: Module = {
       id: 'l1',
       heading: 'O que é um algoritmo, de verdade',
       body:
-        'Um algoritmo é uma sequência finita de passos que resolve um problema. Receita de bolo é um algoritmo. Manual de montagem de móvel é um algoritmo. A diferença do código é que o computador não tolera ambiguidade: "misture bem" não compila, mas "repita 20 vezes: gire a colher" sim.\n\nTrês blocos constroem qualquer algoritmo:\n- **Sequência**: um passo depois do outro\n- **Decisão**: "se isso, faça aquilo, senão faça outra coisa"\n- **Repetição**: "enquanto isso for verdade, repita"\n\nQualquer programa complexo — de um app de banco a um jogo — é só uma composição enorme desses três blocos.',
+        'Algoritmo é só uma sequência de passos pra resolver um problema. Parece chique, mas receita de bolo é um algoritmo. Manual de montar móvel também é. A diferença pro código é que o computador não aceita meio-termo: "misture bem" não funciona, mas "repita 20 vezes: gire a colher" funciona.\n\nTudo que você vai programar daqui pra frente é feito de só três peças:\n- **Sequência**: um passo depois do outro, simples assim\n- **Decisão**: "se isso, faz aquilo, senão faz outra coisa"\n- **Repetição**: "enquanto isso for verdade, repete"\n\nQualquer programa, do mais simples app até um jogo gigante, é só uma combinação enorme desses três blocos. Sem segredo nenhum por trás.',
     },
     {
       id: 'l2',

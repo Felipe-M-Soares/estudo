@@ -6,12 +6,13 @@ Funciona como **web app** (qualquer navegador) e como **app instalável no celul
 
 ## ✨ O que tem aqui
 
-- **18 módulos** (um por mês), cobrindo Lógica → HTML/CSS → JavaScript → Git/SQL → Node.js → React/TS → Java/Spring → Docker → Next.js → APIs avançadas → AWS → Microsserviços → Kubernetes → CI/CD → System Design → Liderança/Inglês → Projeto Final
-- **166 lições escritas** com explicações, exemplos de código, e por quês — não só links, incluindo lições marcadas **[Nível sênior]** nos pontos onde entrevistas de vagas sêniores cobram mais profundidade (complexidade amortizada, isolamento de transações e deadlocks, Virtual DOM/Suspense, Outbox Pattern, estimativa de capacidade, consistent hashing, feedback difícil, influência sem autoridade)
-- **37 diagramas interativos e animados** nas lições mais conceituais, em todos os 18 módulos: pilha vs fila, recursão, Event Loop, closures, CSS Grid/Box Model, JOINs de SQL, pipeline de middlewares, árvore de componentes React, Java Streams, multi-stage Docker, SSR vs SSG vs ISR, GraphQL vs REST, Load Balancer, padrão Saga, Pods e Probes do Kubernetes, pipeline CI/CD, sharding, comunicação síncrona vs assíncrona, arquitetura em camadas, CAP Theorem, validação de dados, princípios SOLID, otimização de imagens, WebSocket vs Polling, permissões IAM, tracing distribuído, estrutura de ADR, e mais
+- **22 módulos** em 4 fases: Fundamentos → Especialização → Integração Full Stack → **Extras de Mercado** (Segurança/Hacking Ético, Python, Go, MongoDB e Redis) — cobrindo Lógica → HTML/CSS → JavaScript → Git/SQL → Node.js → React/TS → Java/Spring → Docker → Next.js → APIs avançadas → AWS → Microsserviços → Kubernetes → CI/CD → System Design → Liderança/Inglês → Projeto Final → Segurança → Python → Go → MongoDB/Redis
+- **196 lições escritas** com explicações, exemplos de código, e por quês — não só links, incluindo lições marcadas **[Nível sênior]** nos pontos onde entrevistas de vagas sêniores cobram mais profundidade (complexidade amortizada, isolamento de transações e deadlocks, Virtual DOM/Suspense, Outbox Pattern, estimativa de capacidade, consistent hashing, feedback difícil, influência sem autoridade)
+- **42 diagramas interativos e animados** nas lições mais conceituais, em todos os 22 módulos: pilha vs fila, recursão, Event Loop, closures, CSS Grid/Box Model, JOINs de SQL, pipeline de middlewares, árvore de componentes React, Java Streams, multi-stage Docker, SSR vs SSG vs ISR, GraphQL vs REST, Load Balancer, padrão Saga, Pods e Probes do Kubernetes, pipeline CI/CD, sharding, comunicação síncrona vs assíncrona, arquitetura em camadas, CAP Theorem, validação de dados, princípios SOLID, otimização de imagens, WebSocket vs Polling, permissões IAM, tracing distribuído, estrutura de ADR, SQL Injection, hash/salt de senha, list comprehension em Python, goroutines/channels em Go, cache hit/miss com Redis, e mais
 - **Cenários do dia a dia** em todos os módulos — situações reais de trabalho de um dev (bugs em produção, code review, deploy) e de uso pessoal de lógica, sempre no formato "o que acontece → como resolver"
 - **Modo Entrevista**: simulação completa com perguntas teóricas atualizadas (cronometradas), desafios práticos de código, e perguntas comportamentais com dicas de estrutura de resposta — por trilha (Frontend/Backend/Full Stack) e nível (Júnior/Pleno/Sênior)
-- **194 exercícios interativos** em 5 formatos: múltipla escolha, completar código, ordenar passos, associar pares, verdadeiro/falso
+- **224 exercícios interativos** em 5 formatos: múltipla escolha, completar código, ordenar passos, associar pares, verdadeiro/falso
+- **Glossário clicável**: termos técnicos destacados no texto (tipo {{api}}) abrem um popup com explicação direto na lição, sem precisar sair da tela
 - **30 mini-jogos** únicos, vários com níveis progressivos de dificuldade
 - **Sistema de gamificação completo**: XP, níveis, sequência de estudo (streak) com mapa de constância estilo GitHub, conquistas com confetti
 - **Visual neon cyberpunk**: paleta vibrante (menta, magenta, violeta, ciano elétrico) sobre fundo escuro arroxeado, com glow e scanlines sutis
@@ -108,7 +109,7 @@ O Mentor IA usa a API gratuita do Google Gemini. Isso é **opcional** — o app 
 
 ```
 src/
-  data/         conteúdo dos 18 módulos, tipos, conquistas
+  data/         conteúdo dos 22 módulos, tipos, conquistas, glossário
   components/
     games/      os mini-jogos
     layout/     sidebar, topbar

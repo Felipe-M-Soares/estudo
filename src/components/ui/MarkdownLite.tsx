@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { GlossaryTerm } from './GlossaryTerm';
 
 interface MarkdownLiteProps {
   text: string;
@@ -6,10 +7,10 @@ interface MarkdownLiteProps {
 }
 
 // Parser minimalista, propositalmente sem dependências externas.
-// Suporta: **negrito**, `código inline`, blocos ```lang\n...\n```, listas com "- ".
+// Suporta: **negrito**, `código inline`, blocos ```lang\n...\n```, listas com "- ", e {{termo}} (glossário clicável).
 function renderInline(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
-  const regex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  const regex = /(\*\*[^*]+\*\*|`[^`]+`|\{\{[^}]+\}\})/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let key = 0;
@@ -31,6 +32,8 @@ function renderInline(text: string): ReactNode[] {
           {token.slice(1, -1)}
         </code>
       );
+    } else if (token.startsWith('{{')) {
+      parts.push(<GlossaryTerm key={key++} word={token.slice(2, -2)} />);
     }
     lastIndex = match.index + token.length;
   }

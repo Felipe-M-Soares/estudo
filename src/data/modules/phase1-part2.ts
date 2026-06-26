@@ -343,7 +343,7 @@ export const mes05: Module = {
       id: 'l3',
       heading: 'Verbos HTTP e status codes: o vocabulário das APIs REST',
       body:
-        'Cada verbo HTTP tem uma intenção: `GET` busca, `POST` cria, `PUT`/`PATCH` atualiza, `DELETE` remove. Seguir essa convenção (REST) torna sua API previsível para quem a consome.\n\nStatus codes comunicam o resultado sem precisar ler o corpo da resposta: `200` sucesso, `201` criado, `400` requisição inválida, `401` não autenticado, `404` não encontrado, `500` erro no servidor. Retornar sempre `200` mesmo em erro é um anti-padrão comum que dificulta a vida de quem consome sua API.',
+        'Cada verbo HTTP tem uma intenção: `GET` busca, `POST` cria, `PUT`/`PATCH` atualiza, `DELETE` remove. Seguir essa convenção (REST) torna sua {{api}} previsível para quem a consome.\n\nStatus codes comunicam o resultado sem precisar ler o corpo da resposta: `200` sucesso, `201` criado, `400` requisição inválida, `401` não autenticado, `404` não encontrado, `500` erro no servidor. Retornar sempre `200` mesmo em erro é um anti-padrão comum que dificulta a vida de quem consome sua API.',
     },
     {
       id: 'l4',

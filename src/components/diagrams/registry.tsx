@@ -56,6 +56,15 @@ const IamPermissionsDiagram = lazy(() => import('./IamPermissionsDiagram').then(
 const ProbesDiagram = lazy(() => import('./ProbesDiagram').then((m) => ({ default: m.ProbesDiagram })));
 const TracingDiagram = lazy(() => import('./TracingDiagram').then((m) => ({ default: m.TracingDiagram })));
 const AdrStructureDiagram = lazy(() => import('./AdrStructureDiagram').then((m) => ({ default: m.AdrStructureDiagram })));
+const SqlInjectionDiagram = lazy(() => import('./SqlInjectionDiagram').then((m) => ({ default: m.SqlInjectionDiagram })));
+const HashSaltDiagram = lazy(() => import('./HashSaltDiagram').then((m) => ({ default: m.HashSaltDiagram })));
+const ListComprehensionDiagram = lazy(() =>
+  import('./ListComprehensionDiagram').then((m) => ({ default: m.ListComprehensionDiagram }))
+);
+const GoroutineChannelDiagram = lazy(() =>
+  import('./GoroutineChannelDiagram').then((m) => ({ default: m.GoroutineChannelDiagram }))
+);
+const CacheHitMissDiagram = lazy(() => import('./CacheHitMissDiagram').then((m) => ({ default: m.CacheHitMissDiagram })));
 
 function withLoader(node: ReactNode): ReactNode {
   return <Suspense fallback={<GameLoader />}>{node}</Suspense>;
@@ -101,4 +110,9 @@ export const diagramRegistry: Record<string, () => ReactNode> = {
   probes: () => withLoader(<ProbesDiagram />),
   tracing: () => withLoader(<TracingDiagram />),
   'adr-structure': () => withLoader(<AdrStructureDiagram />),
+  'sql-injection': () => withLoader(<SqlInjectionDiagram />),
+  'hash-salt': () => withLoader(<HashSaltDiagram />),
+  'list-comprehension': () => withLoader(<ListComprehensionDiagram />),
+  'goroutine-channel': () => withLoader(<GoroutineChannelDiagram />),
+  'cache-hit-miss': () => withLoader(<CacheHitMissDiagram />),
 };

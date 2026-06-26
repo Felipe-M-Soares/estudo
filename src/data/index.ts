@@ -5,11 +5,16 @@ import { mes07, mes08, mes09 } from './modules/phase2-part1';
 import { mes10, mes11, mes12 } from './modules/phase2-part2';
 import { mes13, mes14, mes15 } from './modules/phase3-part1';
 import { mes16, mes17, mes18 } from './modules/phase3-part2';
+import { mes19 } from './modules/phase4';
+import { mes20 } from './modules/phase4python';
+import { mes21 } from './modules/phase4go';
+import { mes22 } from './modules/phase4mongoredis';
 
 export const modules: Module[] = [
   mes01, mes02, mes03, mes04, mes05, mes06,
   mes07, mes08, mes09, mes10, mes11, mes12,
   mes13, mes14, mes15, mes16, mes17, mes18,
+  mes19, mes20, mes21, mes22,
 ];
 
 export const modulesById: Record<string, Module> = Object.fromEntries(
@@ -86,6 +91,13 @@ export const phases: PhaseInfo[] = [
     objective: 'Arquitetura e escalabilidade',
     months: [13, 14, 15, 16, 17, 18],
     color: 'violet',
+  },
+  {
+    phase: 4,
+    title: 'Extras de Mercado',
+    objective: 'Outras linguagens, bancos e segurança',
+    months: [19, 20, 21, 22],
+    color: 'cyan',
   },
 ];
 

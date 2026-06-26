@@ -25,6 +25,7 @@ const phaseAccent: Record<number, { bar: string; glow: string; chip: string }> =
   1: { bar: 'bg-mint-400', glow: 'from-mint-500/15', chip: 'bg-mint-400 text-base-950' },
   2: { bar: 'bg-amber-400', glow: 'from-amber-500/15', chip: 'bg-amber-400 text-base-950' },
   3: { bar: 'bg-violet-400', glow: 'from-violet-500/15', chip: 'bg-violet-400 text-base-950' },
+  4: { bar: 'bg-cyan-400', glow: 'from-cyan-500/15', chip: 'bg-cyan-400 text-base-950' },
 };
 
 export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGameComplete, onSetCurrentModule, onSaveProjectNote }: ModulePageProps) {

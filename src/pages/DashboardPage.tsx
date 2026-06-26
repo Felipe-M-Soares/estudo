@@ -18,6 +18,7 @@ const phaseStyles: Record<number, { ring: string; text: string; bar: string }> =
   1: { ring: 'ring-mint-400/20', text: 'text-mint-400', bar: 'bg-mint-400' },
   2: { ring: 'ring-amber-400/20', text: 'text-amber-400', bar: 'bg-amber-400' },
   3: { ring: 'ring-violet-400/20', text: 'text-violet-400', bar: 'bg-violet-400' },
+  4: { ring: 'ring-cyan-400/20', text: 'text-cyan-400', bar: 'bg-cyan-400' },
 };
 
 export function DashboardPage({ progress, overallPercent, onReviewResult }: DashboardPageProps) {
@@ -35,7 +36,7 @@ export function DashboardPage({ progress, overallPercent, onReviewResult }: Dash
           Sua jornada <span className="text-gradient-mint">Full Stack</span>
         </h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-base-300">
-          18 meses, 3 fases, do zero ao sênior. Continue de onde parou — cada exercício e checklist te aproxima da meta.
+          22 meses, 4 fases, do zero ao sênior — incluindo extras de mercado (Python, Go, MongoDB, Redis, segurança). Continue de onde parou — cada exercício e checklist te aproxima da meta.
         </p>
       </div>
 

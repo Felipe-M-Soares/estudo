@@ -1,6 +1,6 @@
 // ===== Tipos centrais do conteúdo da jornada =====
 
-export type Phase = 1 | 2 | 3;
+export type Phase = 1 | 2 | 3 | 4;
 
 export type Track = 'frontend' | 'backend' | 'devops' | 'fullstack' | 'soft';
 
