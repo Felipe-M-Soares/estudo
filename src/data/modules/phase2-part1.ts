@@ -333,7 +333,8 @@ export const mes08: Module = {
       id: 'l3',
       heading: 'Clean Architecture e SOLID: organizando código que sobrevive ao tempo',
       body:
-        'SOLID é um conjunto de 5 princípios para código manutenível. O mais citado é o **S** — Single Responsibility: cada classe deve ter um, e só um, motivo para mudar. Uma classe que valida dados, salva no banco e envia e-mail está fazendo três trabalhos diferentes — e qualquer mudança em um deles arrisca quebrar os outros.\n\nClean Architecture organiza o código em camadas (domínio, aplicação, infraestrutura) onde as regras de negócio não dependem de detalhes técnicos como qual banco de dados você usa. Isso permite trocar Postgres por MongoDB sem reescrever a lógica de negócio.',
+        'SOLID é um conjunto de 5 princípios para código manutenível. O mais citado é o **S** — Single Responsibility: cada classe deve ter um, e só um, motivo para mudar. Uma classe que valida dados, salva no banco e envia e-mail está fazendo três trabalhos diferentes — e qualquer mudança em um deles arrisca quebrar os outros.\n\nClean Architecture organiza o código em camadas (domínio, aplicação, infraestrutura) onde as regras de negócio não dependem de detalhes técnicos como qual banco de dados você usa. Isso permite trocar Postgres por MongoDB sem reescrever a lógica de negócio. Explore os 5 princípios SOLID abaixo, um por um.',
+      diagramId: 'solid-principles',
     },
     {
       id: 'l4',
@@ -393,6 +394,26 @@ export const mes08: Module = {
       codeExample: {
         lang: 'java',
         code: '@Transactional\npublic void finalizarPedido(Long pedidoId) {\n  pedidoRepository.atualizarStatus(pedidoId, "CONFIRMADO");\n  estoqueRepository.decrementar(pedidoId);\n  // se decrementar falhar, o status do pedido também é revertido\n}',
+      },
+    },
+    {
+      id: 'l10',
+      heading: 'DTOs: por que nunca expor sua entidade de banco direto na API',
+      body:
+        'É tentador retornar a entidade JPA diretamente como resposta da API — afinal, os dados já estão ali. O problema: a entidade representa a estrutura do **banco**, não necessariamente o que o **cliente** deveria ver. Ela pode ter campos sensíveis (senha com hash, dados internos de auditoria), relacionamentos que causam loops infinitos de serialização, ou simplesmente mais informação do que a tela precisa.\n\nDTO (Data Transfer Object) é uma classe separada, específica para entrada ou saída da API, que define exatamente o formato exposto. Isso desacopla seu modelo de banco do seu contrato de API — você pode mudar a estrutura interna da entidade sem quebrar quem consome a API, e vice-versa.',
+      codeExample: {
+        lang: 'java',
+        code: '// Entidade (banco) tem campos internos\n@Entity\nclass Usuario { String senhaHash; LocalDateTime criadoEm; String nome; String email; }\n\n// DTO (API) expõe só o necessário\nrecord UsuarioDTO(String nome, String email) {}',
+      },
+    },
+    {
+      id: 'l11',
+      heading: 'Lombok: reduzindo boilerplate sem perder clareza',
+      body:
+        'Antes de Records (Java 14+), criar uma classe simples exigia escrever manualmente getters, setters, construtor, `equals`, `hashCode` e `toString` — facilmente 50+ linhas para uma classe com 3 campos. Lombok resolve isso com anotações que geram esse código automaticamente em tempo de compilação: `@Data` gera getters/setters/equals/toString, `@Builder` gera um padrão builder para construção fluente, `@RequiredArgsConstructor` gera um construtor só com os campos `final`.\n\nO trade-off: o código gerado fica "invisível" no arquivo fonte, o que pode confundir quem está aprendendo Java sem entender o que Lombok está fazendo por trás. Records continuam sendo a opção mais simples para classes imutáveis de dados puros; Lombok ainda é útil para entidades JPA (que não podem ser records, por exigirem um construtor vazio e mutabilidade).',
+      codeExample: {
+        lang: 'java',
+        code: '@Data\n@RequiredArgsConstructor\nclass Produto {\n  private final String nome;\n  private final BigDecimal preco;\n  // getters, setters, equals, hashCode, toString gerados automaticamente\n}',
       },
     },
   ],
@@ -526,6 +547,26 @@ export const mes08: Module = {
       correctIndex: 1,
       explanation: 'Esse é justamente o propósito de @Transactional: garantir que, em caso de erro, nenhuma operação parcial fique salva — ou tudo é confirmado, ou tudo é desfeito.',
     },
+    {
+      type: 'mcq',
+      id: 'm8-e12',
+      prompt: 'Por que expor a entidade JPA diretamente como resposta da API é uma má prática?',
+      options: [
+        'Entidades JPA não podem ser convertidas para JSON',
+        'A entidade representa a estrutura do banco, podendo expor campos sensíveis ou causar loops de serialização em relacionamentos — DTOs desacoplam o contrato de API do modelo de banco',
+        'É sempre mais lento usar DTOs',
+        'Não há diferença prática real',
+      ],
+      correctIndex: 1,
+      explanation: 'DTOs definem exatamente o que a API expõe, independente da estrutura interna do banco — permitindo evoluir um sem quebrar o outro, e evitando vazar dados internos sensíveis.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm8-e13',
+      prompt: 'Lombok elimina a necessidade de escrever getters, setters e construtores manualmente, gerando esse código em tempo de compilação via anotações.',
+      answer: true,
+      explanation: 'Anotações como @Data e @RequiredArgsConstructor instruem o Lombok a gerar esse código repetitivo automaticamente, reduzindo a quantidade de boilerplate visível no arquivo fonte.',
+    },
   ],
   games: [
     {
@@ -654,6 +695,26 @@ export const mes09: Module = {
         code: 'services:\n  api:\n    image: minha-api:1.0\n    environment:\n      - DATABASE_URL=postgres://db:5432/app\n      - NODE_ENV=production',
       },
     },
+    {
+      id: 'l8',
+      heading: '.dockerignore: o que nunca deveria entrar na imagem',
+      body:
+        'Assim como `.gitignore` evita que arquivos indesejados sejam versionados, `.dockerignore` evita que sejam copiados para dentro da imagem durante o build. Sem ele, um simples `COPY . .` no Dockerfile copia literalmente tudo da pasta — incluindo `node_modules` (que deveria ser reinstalado dentro do container, não copiado do seu computador), arquivos `.env` com segredos locais, e o histórico do `.git`, inflando o tamanho da imagem e potencialmente vazando informação sensível.\n\nUm `.dockerignore` básico para um projeto Node.js deveria sempre incluir `node_modules`, `.env`, `.git`, e arquivos de log — a mesma lógica de "o que não deveria estar no controle de versão" geralmente se aplica também ao build de imagens.',
+      codeExample: {
+        lang: 'text',
+        code: 'node_modules\n.env\n.git\n*.log\nDockerfile\n.dockerignore',
+      },
+    },
+    {
+      id: 'l9',
+      heading: 'Docker Registry: onde as imagens vivem entre o build e o deploy',
+      body:
+        'Depois de construir uma imagem localmente, ela precisa chegar até o servidor onde vai rodar — é para isso que existe um Registry, um repositório de imagens Docker. Docker Hub é o registry público mais conhecido, mas a maioria das empresas usa um registry privado (AWS ECR, Google Artifact Registry, GitHub Container Registry) para não expor publicamente suas imagens.\n\nO fluxo típico numa pipeline de CI/CD: o código é commitado, o CI builda a imagem, dá `tag` com uma versão (frequentemente o hash do commit), faz `push` para o registry, e o ambiente de produção faz `pull` dessa imagem específica para rodar — garantindo que o que foi testado é exatamente o que vai para produção, sem rebuilds inconsistentes em cada etapa.',
+      codeExample: {
+        lang: 'bash',
+        code: 'docker build -t minha-api:a1b2c3d .\ndocker tag minha-api:a1b2c3d registry.empresa.com/minha-api:a1b2c3d\ndocker push registry.empresa.com/minha-api:a1b2c3d',
+      },
+    },
   ],
   resources: [
     { label: 'Docker Docs', url: 'https://docs.docker.com' },
@@ -756,6 +817,26 @@ export const mes09: Module = {
       prompt: 'A mesma imagem Docker pode ser usada em desenvolvimento, staging e produção, mudando apenas as variáveis de ambiente injetadas.',
       answer: true,
       explanation: 'Esse é um princípio central de aplicações cloud native: a imagem não muda entre ambientes, só a configuração externa via variáveis de ambiente.',
+    },
+    {
+      type: 'mcq',
+      id: 'm9-e10',
+      prompt: 'O que acontece se você não tiver um .dockerignore e usar COPY . . no Dockerfile?',
+      options: [
+        'O build falha automaticamente',
+        'Arquivos como node_modules, .env e .git são copiados para dentro da imagem, inflando o tamanho e potencialmente vazando segredos',
+        'Não há nenhuma consequência prática',
+        '.dockerignore é obrigatório por padrão no Docker'
+      ],
+      correctIndex: 1,
+      explanation: 'Sem .dockerignore, tudo na pasta é copiado literalmente — incluindo arquivos que deveriam ser gerados dentro do container (node_modules) ou que nunca deveriam estar na imagem (.env, .git).',
+    },
+    {
+      type: 'truefalse',
+      id: 'm9-e11',
+      prompt: 'Um Docker Registry é necessário porque a imagem construída localmente precisa de alguma forma chegar até o servidor onde vai rodar em produção.',
+      answer: true,
+      explanation: 'O fluxo típico é build → push para um registry → pull no ambiente de destino — o registry é o intermediário que torna a imagem acessível fora da máquina onde foi construída.',
     },
   ],
   games: [

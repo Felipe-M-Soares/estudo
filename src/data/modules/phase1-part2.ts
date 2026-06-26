@@ -369,11 +369,12 @@ export const mes05: Module = {
       id: 'l6',
       heading: 'Validação de entrada: nunca confie no que chega na requisição',
       body:
-        'Todo dado que chega numa API — seja do formulário de um usuário bem-intencionado ou de um atacante testando seu sistema — deve ser validado antes de ser usado. Sem validação, campos podem chegar vazios, em formato errado, ou maliciosamente construídos para explorar falhas (como SQL Injection, quando texto não validado é inserido direto numa query).\n\nBibliotecas como Zod ou Joi permitem declarar exatamente a forma esperada dos dados (quais campos, quais tipos, quais obrigatórios) e rejeitar automaticamente qualquer requisição que não corresponda, antes mesmo de chegar na lógica de negócio.',
+        'Todo dado que chega numa API — seja do formulário de um usuário bem-intencionado ou de um atacante testando seu sistema — deve ser validado antes de ser usado. Sem validação, campos podem chegar vazios, em formato errado, ou maliciosamente construídos para explorar falhas (como SQL Injection, quando texto não validado é inserido direto numa query).\n\nBibliotecas como Zod ou Joi permitem declarar exatamente a forma esperada dos dados (quais campos, quais tipos, quais obrigatórios) e rejeitar automaticamente qualquer requisição que não corresponda, antes mesmo de chegar na lógica de negócio. Veja abaixo a diferença entre um cadastro válido e um rejeitado.',
       codeExample: {
         lang: 'javascript',
         code: 'const schema = z.object({\n  nome: z.string().min(2),\n  email: z.string().email(),\n});\n\nconst resultado = schema.safeParse(req.body);\nif (!resultado.success) {\n  return res.status(400).json({ erro: "Dados inválidos" });\n}',
       },
+      diagramId: 'validation',
     },
     {
       id: 'l7',
@@ -393,6 +394,26 @@ export const mes05: Module = {
       codeExample: {
         lang: 'javascript',
         code: 'const upload = multer({ dest: "uploads/" });\n\napp.post("/perfil/foto", upload.single("foto"), (req, res) => {\n  res.json({ caminho: req.file.path });\n});',
+      },
+    },
+    {
+      id: 'l9',
+      heading: 'Logging estruturado: console.log não serve para produção',
+      body:
+        '`console.log` funciona bem no seu computador, mas em produção, com múltiplas instâncias do servidor rodando, logs em texto livre ficam impossíveis de buscar e correlacionar. Logging estruturado escreve cada entrada como um objeto JSON, com campos consistentes (`timestamp`, `nível`, `mensagem`, e dados extras como `requestId` ou `userId`).\n\nBibliotecas como `pino` ou `winston` fazem isso de forma performática, e integram com sistemas de centralização de logs (que você vai estudar a fundo no módulo de CI/CD e Observabilidade). Um princípio importante: nunca logar dados sensíveis (senhas, tokens completos, números de cartão) — mesmo em ambiente de desenvolvimento, esse hábito evita vazamentos acidentais quando o código vai para produção.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'logger.info({ requestId: req.id, userId: req.user?.id, rota: req.path }, "Requisição recebida");\n// Saída: {"level":30,"time":1718900000,"requestId":"abc123","userId":42,"msg":"Requisição recebida"}',
+      },
+    },
+    {
+      id: 'l10',
+      heading: 'Compressão de resposta: menos bytes, mais velocidade percebida',
+      body:
+        'Respostas JSON grandes (uma lista com centenas de itens, por exemplo) podem ser comprimidas antes de sair do servidor, reduzindo drasticamente o tempo de transferência pela rede — especialmente importante para usuários em conexões móveis mais lentas.\n\nO middleware `compression` no Express ativa isso automaticamente: ele verifica o header `Accept-Encoding` da requisição (que navegadores enviam automaticamente informando que aceitam gzip/brotli), comprime a resposta nesse formato, e o navegador descomprime do outro lado de forma transparente. O custo é CPU adicional no servidor para comprimir — quase sempre um trade-off favorável, já que rede costuma ser o gargalo mais comum.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'import compression from "compression";\napp.use(compression()); // comprime toda resposta automaticamente, quando suportado',
       },
     },
   ],
@@ -518,6 +539,34 @@ export const mes05: Module = {
       correctIndex: 1,
       explanation: '`multipart/form-data` permite combinar campos de texto normais com dados binários (arquivos) numa única requisição, algo que JSON puro não suporta nativamente.',
     },
+    {
+      type: 'truefalse',
+      id: 'm5-e12',
+      prompt: 'É uma boa prática logar senhas e tokens completos durante o desenvolvimento, desde que removidos antes de subir para produção.',
+      answer: false,
+      explanation: 'O hábito de nunca logar dados sensíveis deveria valer também em desenvolvimento — isso evita vazamentos acidentais quando o código (ou os logs) chega à produção por engano.',
+    },
+    {
+      type: 'mcq',
+      id: 'm5-e13',
+      prompt: 'Qual a principal vantagem do logging estruturado (JSON) sobre console.log em texto livre?',
+      options: [
+        'É mais bonito visualmente',
+        'Permite buscar e correlacionar logs por campos específicos (ex: todos os logs de um requestId), algo difícil em texto livre espalhado entre múltiplas instâncias',
+        'console.log não funciona em produção',
+        'JSON ocupa menos espaço em disco sempre',
+      ],
+      correctIndex: 1,
+      explanation: 'Logs estruturados com campos consistentes permitem ferramentas de busca filtrarem exatamente pelo que importa (um usuário, uma requisição, um nível de severidade), o que texto livre não viabiliza bem em escala.',
+    },
+    {
+      type: 'mcq',
+      id: 'm5-e14',
+      prompt: 'O middleware de compressão no Express verifica qual header da requisição para decidir como comprimir a resposta?',
+      options: ['Content-Type', 'Accept-Encoding', 'Authorization', 'User-Agent'],
+      correctIndex: 1,
+      explanation: '`Accept-Encoding` informa quais algoritmos de compressão (gzip, brotli) o cliente aceita — o servidor escolhe um compatível e comprime a resposta nesse formato.',
+    },
   ],
   games: [
     {
@@ -622,6 +671,22 @@ export const mes06: Module = {
       body:
         'Mesmo um projeto pessoal se beneficia de documentação básica: quando você voltar nele em 3 meses (ou mostrar para um recrutador), um README claro economiza horas de "como é que isso funciona mesmo?".\n\nNo mínimo, documente: como instalar e rodar o projeto localmente, quais variáveis de ambiente são necessárias, e a lista de endpoints com método HTTP, parâmetros esperados e exemplo de resposta. Ferramentas como Swagger/OpenAPI (que você vai estudar com mais profundidade no módulo de APIs Avançadas) automatizam isso, mas mesmo uma tabela simples no README já é muito melhor que nenhuma documentação.',
     },
+    {
+      id: 'l6',
+      heading: 'Tratamento de erros no frontend: o que o usuário vê quando algo falha',
+      body:
+        'Um erro de rede, um token expirado, um servidor temporariamente fora do ar — tudo isso vai acontecer em produção, e a pergunta é o que o usuário vê quando isso ocorre. Uma tela branca ou um erro técnico ("TypeError: Cannot read property of undefined") é a pior experiência possível; uma mensagem clara ("Não conseguimos carregar suas tarefas agora — tentar de novo?") é o mínimo aceitável.\n\nNa prática: toda chamada `fetch` deveria ter um bloco de tratamento de erro que cobre tanto falhas de rede (sem conexão, timeout) quanto respostas de erro do servidor (4xx, 5xx) — tratando cada caso de forma apropriada. Para erros de autenticação (401), o tratamento correto geralmente é redirecionar para o login, não mostrar uma mensagem de erro genérica.',
+      codeExample: {
+        lang: 'javascript',
+        code: 'try {\n  const resposta = await fetch("/api/tarefas");\n  if (resposta.status === 401) {\n    redirecionarParaLogin();\n    return;\n  }\n  if (!resposta.ok) throw new Error("Falha ao buscar tarefas");\n  return await resposta.json();\n} catch (erro) {\n  mostrarMensagem("Não conseguimos carregar suas tarefas agora.");\n}',
+      },
+    },
+    {
+      id: 'l7',
+      heading: 'Colocando o projeto no ar: deploy de frontend e backend separados',
+      body:
+        'Para um sistema fullstack simples como esse, uma abordagem comum e gratuita: hospedar o frontend num serviço como Vercel ou Netlify (que detectam automaticamente projetos React/Next.js e fazem deploy a cada push no GitHub), e o backend num serviço como Railway ou Render (que suportam Node.js + um banco PostgreSQL gerenciado).\n\nO ponto de atenção mais comum nesse tipo de deploy: CORS. Como frontend e backend agora vivem em domínios diferentes (ex: `meuapp.vercel.app` e `minha-api.railway.app`), o backend precisa explicitamente permitir requisições vindas do domínio do frontend, ou o navegador bloqueia a comunicação por segurança — configurar isso corretamente (e não simplesmente liberar tudo com `*` em produção) é parte do trabalho de finalizar um projeto de verdade.',
+    },
   ],
   resources: [
     { label: 'Express — MDN', url: 'https://developer.mozilla.org/pt-BR/docs/Learn/Server-side/Express_Nodejs' },
@@ -704,6 +769,26 @@ export const mes06: Module = {
       prompt: 'É uma boa prática usar o mesmo banco de dados de produção para rodar testes automatizados.',
       answer: false,
       explanation: 'Usar um banco de testes separado evita que dados de teste se misturem com dados reais, e permite resetar o estado entre execuções sem risco de apagar informação real.',
+    },
+    {
+      type: 'mcq',
+      id: 'm6-e7',
+      prompt: 'Quando uma chamada à API retorna status 401 (não autenticado), qual o tratamento mais apropriado no frontend?',
+      options: [
+        'Mostrar uma mensagem de erro genérica e deixar o usuário na mesma tela',
+        'Redirecionar o usuário para a tela de login, já que o token expirou ou é inválido',
+        'Tentar a mesma requisição repetidamente até funcionar',
+        'Ignorar o erro silenciosamente'
+      ],
+      correctIndex: 1,
+      explanation: '401 geralmente significa que a sessão/token não é mais válido — a ação correta é levar o usuário para autenticar de novo, não tratar como um erro genérico.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm6-e8',
+      prompt: 'Quando frontend e backend estão hospedados em domínios diferentes, o backend precisa configurar CORS explicitamente para aceitar requisições do domínio do frontend.',
+      answer: true,
+      explanation: 'Sem configurar CORS para permitir o domínio do frontend, o navegador bloqueia as requisições por segurança — mesmo que a API esteja funcionando perfeitamente do lado do servidor.',
     },
   ],
   games: [

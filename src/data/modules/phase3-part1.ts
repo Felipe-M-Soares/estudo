@@ -271,11 +271,12 @@ export const mes14: Module = {
       id: 'l5',
       heading: 'Liveness e Readiness Probes: como o Kubernetes sabe se um Pod está saudável',
       body:
-        'Um **Liveness Probe** verifica periodicamente se o container ainda está funcionando — se falhar repetidamente, o Kubernetes reinicia o container automaticamente. Um **Readiness Probe** verifica se o container está pronto para receber tráfego — um Pod pode estar "vivo" mas ainda inicializando (carregando cache, conectando ao banco), e nesse caso o Service não deve enviar requisições para ele ainda.\n\nSem essas probes configuradas, o Kubernetes assume que qualquer Pod em execução está pronto para tráfego, o que pode causar erros para usuários durante deploys ou reinicializações.',
+        'Um **Liveness Probe** verifica periodicamente se o container ainda está funcionando — se falhar repetidamente, o Kubernetes reinicia o container automaticamente. Um **Readiness Probe** verifica se o container está pronto para receber tráfego — um Pod pode estar "vivo" mas ainda inicializando (carregando cache, conectando ao banco), e nesse caso o Service não deve enviar requisições para ele ainda.\n\nSem essas probes configuradas, o Kubernetes assume que qualquer Pod em execução está pronto para tráfego, o que pode causar erros para usuários durante deploys ou reinicializações. Veja os três estados possíveis abaixo.',
       codeExample: {
         lang: 'yaml',
         code: 'livenessProbe:\n  httpGet:\n    path: /health\n    port: 8080\n  periodSeconds: 10\nreadinessProbe:\n  httpGet:\n    path: /ready\n    port: 8080',
       },
+      diagramId: 'probes',
     },
     {
       id: 'l6',
@@ -291,6 +292,26 @@ export const mes14: Module = {
       codeExample: {
         lang: 'bash',
         code: 'kubectl create namespace staging\nkubectl apply -f deployment.yaml --namespace=staging\nkubectl get pods --namespace=staging',
+      },
+    },
+    {
+      id: 'l8',
+      heading: 'Resource Requests e Limits: dizendo ao Kubernetes quanto cada Pod precisa',
+      body:
+        '**Requests** declaram quanto de CPU/memória um Pod precisa para funcionar normalmente — o Kubernetes usa isso para decidir em qual nó (máquina física/virtual) colocar o Pod, garantindo que aquele nó tenha recursos suficientes disponíveis. **Limits** declaram o máximo que um Pod pode consumir — se ele tentar usar mais memória que o limite, o Kubernetes o encerra (OOMKilled); se tentar usar mais CPU, ele é apenas restringido, sem ser encerrado.\n\nSem requests/limits configurados, um Pod com bug (como um memory leak) pode consumir toda a memória do nó, afetando outros Pods que nem têm relação com o problema — um caso clássico de "vizinho ruidoso" em ambientes compartilhados. Configurar isso corretamente é tão importante quanto qualquer linha de código da aplicação.',
+      codeExample: {
+        lang: 'yaml',
+        code: 'resources:\n  requests:\n    memory: "256Mi"\n    cpu: "250m"\n  limits:\n    memory: "512Mi"\n    cpu: "500m"',
+      },
+    },
+    {
+      id: 'l9',
+      heading: 'Rolling Updates: atualizando sem downtime',
+      body:
+        'Por padrão, um Deployment do Kubernetes atualiza Pods gradualmente: cria um Pod novo (com a versão atualizada), espera ele ficar pronto (via Readiness Probe), e só então remove um Pod antigo — repetindo até todos estarem atualizados. Isso garante que sempre haja Pods disponíveis respondendo, mesmo durante o deploy.\n\nParâmetros como `maxUnavailable` e `maxSurge` controlam o ritmo dessa troca: quantos Pods antigos podem estar indisponíveis simultaneamente, e quantos Pods extras (acima da contagem normal) podem existir temporariamente durante a atualização. Se algo der errado no meio do rollout, `kubectl rollout undo` volta para a versão anterior rapidamente.',
+      codeExample: {
+        lang: 'bash',
+        code: 'kubectl set image deployment/api api=minha-api:v2\nkubectl rollout status deployment/api\n# Se algo der errado:\nkubectl rollout undo deployment/api',
       },
     },
   ],
@@ -380,6 +401,26 @@ export const mes14: Module = {
       correctIndex: 1,
       explanation: 'Namespaces permitem que múltiplos ambientes (dev, staging, produção) ou times coexistam no mesmo cluster físico, com isolamento lógico e controle de cotas.',
     },
+    {
+      type: 'mcq',
+      id: 'm14-e8',
+      prompt: 'O que acontece quando um Pod tenta usar mais memória do que o limit configurado?',
+      options: [
+        'Nada, o limite é só uma sugestão',
+        'O Kubernetes encerra o Pod (OOMKilled)',
+        'O Pod fica mais lento, mas continua rodando indefinidamente',
+        'O Kubernetes aumenta o limite automaticamente'
+      ],
+      correctIndex: 1,
+      explanation: 'Diferente do limite de CPU (que apenas restringe), exceder o limite de memória faz o Kubernetes encerrar o container — por isso configurar esse valor corretamente é importante para evitar reinícios inesperados.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm14-e9',
+      prompt: 'Num Rolling Update, o Kubernetes remove todos os Pods antigos de uma vez antes de criar os novos.',
+      answer: false,
+      explanation: 'Rolling Update faz a troca gradualmente: cria Pods novos, espera ficarem prontos via Readiness Probe, e só então remove Pods antigos — garantindo que sempre haja capacidade disponível durante o deploy.',
+    },
   ],
   games: [
     {
@@ -448,7 +489,8 @@ export const mes15: Module = {
       id: 'l3',
       heading: 'OpenTelemetry: rastreando uma requisição por todo o sistema',
       body:
-        'Numa arquitetura de microsserviços, uma única requisição do usuário pode passar por 5 serviços diferentes. Quando algo dá errado, "onde exatamente?" Tracing distribuído (via OpenTelemetry) anexa um identificador único à requisição desde o início, permitindo visualizar o caminho completo e identificar exatamente onde o tempo foi gasto ou o erro ocorreu.',
+        'Numa arquitetura de microsserviços, uma única requisição do usuário pode passar por 5 serviços diferentes. Quando algo dá errado, "onde exatamente?" Tracing distribuído (via OpenTelemetry) anexa um identificador único à requisição desde o início, permitindo visualizar o caminho completo e identificar exatamente onde o tempo foi gasto ou o erro ocorreu. Clique em "Rastrear" abaixo para ver um trace completo se revelando serviço por serviço.',
+      diagramId: 'tracing',
     },
     {
       id: 'l4',
@@ -477,6 +519,18 @@ export const mes15: Module = {
         lang: 'javascript',
         code: 'if (featureFlags.isEnabled("novo-checkout", usuario)) {\n  return <NovoCheckout />;\n}\nreturn <CheckoutAntigo />;',
       },
+    },
+    {
+      id: 'l8',
+      heading: 'Alerting eficaz: o problema da fadiga de alertas',
+      body:
+        'Ter métricas e dashboards não ajuda se ninguém é avisado quando algo dá errado de madrugada. Alertas conectam métricas (do Prometheus, por exemplo) a notificações (Slack, PagerDuty, SMS) quando um limite é cruzado.\n\nO maior risco de um sistema de alertas é a **fadiga de alertas**: configurar limites tão sensíveis que o time recebe alertas constantes, a maioria sem ação real necessária — depois de um tempo, as pessoas simplesmente ignoram ou silenciam notificações, inclusive as que importam de verdade. A prática recomendada: todo alerta deveria ser **acionável** (exigir uma ação humana específica) e vinculado a um impacto real percebido pelo usuário (não só "CPU passou de 80%", que pode ser normal em certos horários).',
+    },
+    {
+      id: 'l9',
+      heading: 'Chaos Engineering: quebrando o sistema de propósito para descobrir fraquezas',
+      body:
+        'Em vez de esperar uma falha real em produção para descobrir que seu sistema não é resiliente, Chaos Engineering introduz falhas controladas deliberadamente (derrubar uma instância, simular latência de rede, esgotar memória) em ambientes controlados, observando como o sistema reage.\n\nO objetivo não é "quebrar por quebrar" — é validar hipóteses específicas: "se o serviço de pagamento cair, o checkout deveria mostrar uma mensagem de erro amigável, não travar a tela inteira" é uma hipótese testável de forma controlada. Ferramentas como Chaos Monkey (criada pela Netflix) automatizam esse processo, derrubando instâncias aleatoriamente em produção para garantir que o sistema realmente tolera esse tipo de falha — uma prática mais comum em empresas com alta maturidade de engenharia, mas o princípio (testar resiliência deliberadamente, não só esperar) vale em qualquer escala.',
     },
   ],
   resources: [
@@ -573,6 +627,26 @@ export const mes15: Module = {
       ],
       correctIndex: 1,
       explanation: 'Feature flags desacoplam "código em produção" de "funcionalidade ativa para usuários", permitindo rollout gradual e rollback instantâneo sem novo deploy.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm15-e8',
+      prompt: 'Configurar alertas muito sensíveis, mesmo gerando notificações constantes, é sempre melhor do que configurar poucos alertas.',
+      answer: false,
+      explanation: 'Alertas excessivos causam fadiga de alertas — o time passa a ignorar ou silenciar notificações, inclusive as que de fato importam, tornando o sistema de alertas menos eficaz, não mais.',
+    },
+    {
+      type: 'mcq',
+      id: 'm15-e9',
+      prompt: 'Qual o objetivo principal de Chaos Engineering?',
+      options: [
+        'Causar instabilidade aleatória sem propósito',
+        'Validar deliberadamente, em ambiente controlado, hipóteses sobre como o sistema se comporta diante de falhas — antes que essas falhas aconteçam de surpresa em produção',
+        'Substituir testes automatizados',
+        'É uma técnica só aplicável a jogos'
+      ],
+      correctIndex: 1,
+      explanation: 'Chaos Engineering testa resiliência de forma proativa e controlada, validando hipóteses específicas sobre comportamento do sistema sob falha — não é caos sem propósito.',
     },
   ],
   games: [

@@ -48,7 +48,8 @@ export const mes10: Module = {
       id: 'l5',
       heading: 'Otimização automática de imagens e fontes',
       body:
-        'O componente `<Image>` do Next.js redimensiona, otimiza o formato (WebP/AVIF quando suportado) e carrega imagens de forma "lazy" (só quando estão próximas de aparecer na tela) automaticamente — algo que, feito manualmente, exigiria bastante configuração de build.\n\nO mesmo princípio se aplica a fontes via `next/font`: elas são baixadas em tempo de build e auto-hospedadas, eliminando uma requisição externa a serviços como Google Fonts e evitando o "flash" de texto sem estilo (FOUT) comum quando fontes externas demoram para carregar.',
+        'O componente `<Image>` do Next.js redimensiona, otimiza o formato (WebP/AVIF quando suportado) e carrega imagens de forma "lazy" (só quando estão próximas de aparecer na tela) automaticamente — algo que, feito manualmente, exigiria bastante configuração de build.\n\nO mesmo princípio se aplica a fontes via `next/font`: elas são baixadas em tempo de build e auto-hospedadas, eliminando uma requisição externa a serviços como Google Fonts e evitando o "flash" de texto sem estilo (FOUT) comum quando fontes externas demoram para carregar. Compare o tamanho de uma imagem otimizada por viewport abaixo.',
+      diagramId: 'image-optimization',
     },
     {
       id: 'l6',
@@ -68,6 +69,26 @@ export const mes10: Module = {
       codeExample: {
         lang: 'typescript',
         code: '// app/produtos/[id]/page.tsx\nexport default async function Produto({ params }: { params: { id: string } }) {\n  const produto = await buscarProduto(params.id);\n  return <h1>{produto.nome}</h1>;\n}',
+      },
+    },
+    {
+      id: 'l8',
+      heading: 'Layouts compartilhados: estrutura que persiste entre navegações',
+      body:
+        'Um arquivo `layout.tsx` no App Router envolve todas as páginas daquela pasta (e subpastas), definindo elementos que se repetem visualmente — um cabeçalho, menu lateral, rodapé. A grande vantagem sobre repetir esse código em cada página: ao navegar entre páginas que compartilham o mesmo layout, o React não desmonta e remonta esse layout, preservando estado (como a posição de scroll de um menu lateral) e evitando re-renderizar elementos que não mudaram.\n\nLayouts podem ser aninhados: um layout raiz define a estrutura global do site, e um layout específico de uma seção (como `/dashboard/layout.tsx`) adiciona uma navegação própria daquela área, sem duplicar o cabeçalho global.',
+      codeExample: {
+        lang: 'tsx',
+        code: '// app/dashboard/layout.tsx\nexport default function DashboardLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <div>\n      <SidebarDashboard />\n      <main>{children}</main>\n    </div>\n  );\n}',
+      },
+    },
+    {
+      id: 'l9',
+      heading: 'Streaming SSR: mostrar parte da página antes de tudo estar pronto',
+      body:
+        'SSR tradicional espera **todos** os dados de uma página ficarem prontos antes de enviar qualquer HTML ao navegador — se uma parte da página depende de uma consulta lenta, a página inteira fica em branco até ela terminar. Streaming SSR (via Server Components + Suspense) resolve isso enviando o HTML em partes: o conteúdo que já está pronto aparece imediatamente, enquanto partes mais lentas mostram um esqueleto de carregamento e são "encaixadas" na página conforme ficam prontas.\n\nIsso melhora drasticamente métricas de performance percebida (como o LCP — Largest Contentful Paint) sem precisar otimizar a consulta lenta em si — só reorganizando quando cada parte é enviada ao navegador.',
+      codeExample: {
+        lang: 'tsx',
+        code: 'export default function Pagina() {\n  return (\n    <div>\n      <Cabecalho /> {/* aparece imediatamente */}\n      <Suspense fallback={<Esqueleto />}>\n        <DadosLentos /> {/* aparece quando pronto, via streaming */}\n      </Suspense>\n    </div>\n  );\n}',
       },
     },
   ],
@@ -162,6 +183,26 @@ export const mes10: Module = {
       correctIndex: 1,
       explanation: 'Isso permite gerar estaticamente as páginas mais importantes (ex: produtos mais acessados) enquanto outras são geradas sob demanda, equilibrando performance e tempo de build.',
     },
+    {
+      type: 'mcq',
+      id: 'm10-e8',
+      prompt: 'Qual a vantagem de um layout.tsx compartilhado sobre repetir o cabeçalho/menu em cada página?',
+      options: [
+        'Reduz o tamanho do código-fonte apenas',
+        'O React não desmonta/remonta o layout ao navegar entre páginas que o compartilham, preservando estado e evitando re-renders desnecessários',
+        'Layouts são obrigatórios no Next.js',
+        'Não há vantagem real além de organização'
+      ],
+      correctIndex: 1,
+      explanation: 'Como o layout persiste entre navegações dentro da mesma seção, estado interno dele (como scroll de um menu) não é perdido, e ele não precisa ser recalculado a cada troca de página.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm10-e9',
+      prompt: 'No streaming SSR, a página inteira só é exibida depois que todos os dados de todas as suas partes estiverem prontos.',
+      answer: false,
+      explanation: 'Esse é justamente o problema que streaming SSR resolve: partes prontas aparecem imediatamente, enquanto partes mais lentas (envolvidas em Suspense) são "encaixadas" depois, sem bloquear a página inteira.',
+    },
   ],
   games: [
     {
@@ -224,11 +265,12 @@ export const mes11: Module = {
       id: 'l2',
       heading: 'WebSockets: quando o servidor precisa falar primeiro',
       body:
-        'HTTP tradicional é "pergunta e resposta": o cliente sempre inicia. Um chat em tempo real precisa do inverso também — o servidor avisando "chegou mensagem nova" sem o cliente perguntar a cada segundo (polling).\n\nWebSocket abre uma conexão persistente e bidirecional. Socket.io é a biblioteca mais popular em Node.js para isso, abstraindo detalhes de reconexão e fallback.',
+        'HTTP tradicional é "pergunta e resposta": o cliente sempre inicia. Um chat em tempo real precisa do inverso também — o servidor avisando "chegou mensagem nova" sem o cliente perguntar a cada segundo (polling).\n\nWebSocket abre uma conexão persistente e bidirecional. Socket.io é a biblioteca mais popular em Node.js para isso, abstraindo detalhes de reconexão e fallback. Compare visualmente os dois modelos abaixo.',
       codeExample: {
         lang: 'javascript',
         code: 'io.on("connection", (socket) => {\n  socket.on("mensagem", (texto) => {\n    io.emit("mensagem", texto); // envia para todos conectados\n  });\n});',
       },
+      diagramId: 'websocket-vs-polling',
     },
     {
       id: 'l3',
@@ -270,6 +312,26 @@ export const mes11: Module = {
       codeExample: {
         lang: 'http',
         code: 'POST /pagamentos\nIdempotency-Key: 8f14e45f-ceea-4b19-9c5e-1234567890ab\n\n{ "valor": 100, "cartao": "..." }',
+      },
+    },
+    {
+      id: 'l8',
+      heading: 'Server-Sent Events: tempo real "leve" quando você só precisa de um sentido',
+      body:
+        'WebSocket é poderoso, mas exige mais infraestrutura (gerenciar conexões bidirecionais, lidar com reconexão) do que muitos casos realmente precisam. Quando você só precisa que o **servidor envie atualizações para o cliente** — sem o cliente precisar mandar mensagens de volta pela mesma conexão — Server-Sent Events (SSE) é uma alternativa mais simples: roda sobre HTTP comum, reconecta automaticamente por padrão, e não exige uma biblioteca especial no cliente (a API `EventSource` já é nativa do navegador).\n\nCasos típicos de SSE: barra de progresso de um processo longo no servidor, notificações simples, atualizações de status de um pedido. Para chat bidirecional ou jogos em tempo real (onde o cliente também precisa enviar dados constantemente), WebSocket ainda é a escolha certa.',
+      codeExample: {
+        lang: 'javascript',
+        code: '// Servidor (Express)\napp.get("/eventos", (req, res) => {\n  res.setHeader("Content-Type", "text/event-stream");\n  setInterval(() => res.write(`data: ${JSON.stringify({ status: "processando" })}\\n\\n`), 1000);\n});\n\n// Cliente\nconst events = new EventSource("/eventos");\nevents.onmessage = (e) => console.log(JSON.parse(e.data));',
+      },
+    },
+    {
+      id: 'l9',
+      heading: 'gRPC: quando REST e GraphQL não são rápidos o suficiente',
+      body:
+        'Para comunicação entre microsserviços internos (não exposta diretamente ao navegador), gRPC oferece uma alternativa mais performática que REST/JSON: ele usa Protocol Buffers (um formato binário compacto, não texto como JSON) e HTTP/2 (que permite múltiplas requisições simultâneas numa única conexão), resultando em payloads menores e latência mais baixa.\n\nO contrato entre cliente e servidor é definido num arquivo `.proto`, a partir do qual código de cliente e servidor é gerado automaticamente em várias linguagens — eliminando boa parte dos erros de "o backend mudou um campo e o frontend não soube". A desvantagem: não é nativamente suportado por navegadores (precisa de um proxy como gRPC-Web), e o formato binário não é legível diretamente como JSON — por isso gRPC é mais comum em comunicação interna entre serviços do que em APIs públicas.',
+      codeExample: {
+        lang: 'protobuf',
+        code: 'service PedidoService {\n  rpc BuscarPedido (PedidoRequest) returns (PedidoResponse);\n}\n\nmessage PedidoRequest {\n  string id = 1;\n}',
       },
     },
   ],
@@ -393,6 +455,26 @@ export const mes11: Module = {
       correctIndex: 1,
       explanation: 'Se a mesma chave de idempotência chegar de novo, o servidor retorna o resultado já calculado da primeira vez, sem repetir o efeito de cobrar novamente.',
     },
+    {
+      type: 'mcq',
+      id: 'm11-e11',
+      prompt: 'Qual cenário é mais adequado para Server-Sent Events em vez de WebSocket?',
+      options: [
+        'Um jogo multiplayer em tempo real onde o cliente envia posições constantemente',
+        'Uma barra de progresso que mostra o status de um processamento longo no servidor, sem o cliente precisar enviar dados de volta',
+        'Um chat bidirecional',
+        'SSE e WebSocket são sempre intercambiáveis sem diferença prática',
+      ],
+      correctIndex: 1,
+      explanation: 'SSE é mais simples e suficiente quando a comunicação é só do servidor para o cliente — para comunicação verdadeiramente bidirecional e frequente, WebSocket continua sendo a escolha certa.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm11-e12',
+      prompt: 'gRPC usa JSON como formato de mensagem, assim como REST tradicional.',
+      answer: false,
+      explanation: 'gRPC usa Protocol Buffers, um formato binário compacto — diferente do JSON em texto usado por REST — o que contribui para payloads menores e menor latência.',
+    },
   ],
   games: [
     {
@@ -450,7 +532,8 @@ export const mes12: Module = {
       id: 'l2',
       heading: 'IAM e Lambda: permissões e computação sem servidor',
       body:
-        '**IAM** (Identity and Access Management) controla quem (pessoa ou serviço) pode fazer o quê na sua conta AWS. A regra de ouro é o **princípio do menor privilégio**: dar a cada usuário/serviço só as permissões mínimas necessárias, nunca acesso total "por garantia".\n\n**Lambda** executa código sob demanda, sem você gerenciar servidor algum — você só paga pelo tempo de execução real. Ideal para tarefas pontuais: processar uma imagem ao ser enviada, rodar uma rotina agendada.',
+        '**IAM** (Identity and Access Management) controla quem (pessoa ou serviço) pode fazer o quê na sua conta AWS. A regra de ouro é o **princípio do menor privilégio**: dar a cada usuário/serviço só as permissões mínimas necessárias, nunca acesso total "por garantia".\n\n**Lambda** executa código sob demanda, sem você gerenciar servidor algum — você só paga pelo tempo de execução real. Ideal para tarefas pontuais: processar uma imagem ao ser enviada, rodar uma rotina agendada. Compare abaixo o risco de uma permissão ampla versus uma restrita.',
+      diagramId: 'iam-permissions',
     },
     {
       id: 'l3',
@@ -486,6 +569,18 @@ export const mes12: Module = {
       heading: 'VPC: isolando sua infraestrutura numa rede privada',
       body:
         'Uma VPC (Virtual Private Cloud) é uma rede isolada dentro da AWS, onde você controla quais recursos podem se comunicar entre si e com a internet. Subdividir a VPC em **subnets públicas** (acessíveis da internet, como um Load Balancer) e **subnets privadas** (sem acesso direto externo, como um banco de dados) é uma prática de segurança básica — o banco nunca deveria ser alcançável diretamente da internet, só através da camada de aplicação.\n\nIsso é o equivalente, na nuvem, a separar fisicamente "o que o público pode tocar" de "o que só o sistema interno pode acessar" — um princípio de segurança que vale tanto para uma VPC na AWS quanto para a arquitetura de qualquer sistema.',
+    },
+    {
+      id: 'l8',
+      heading: 'SQS e SNS: filas e notificações gerenciadas pela AWS',
+      body:
+        '**SQS** (Simple Queue Service) é uma fila de mensagens totalmente gerenciada — em vez de operar seu próprio cluster Kafka ou RabbitMQ, você usa o serviço da AWS diretamente, sem se preocupar com infraestrutura. Funciona bem para desacoplar serviços (igual você estudou no módulo de Microsserviços): um serviço publica uma mensagem, outro a processa quando puder.\n\n**SNS** (Simple Notification Service) resolve um problema relacionado, mas diferente: "fan-out", onde uma única mensagem precisa chegar a **múltiplos** consumidores simultaneamente (por exemplo, "pedido criado" deveria notificar o serviço de email, o serviço de estoque, e o serviço de analytics, todos ao mesmo tempo). Um padrão comum na AWS é combinar os dois: SNS publica para múltiplas filas SQS, cada uma sendo consumida por um serviço diferente, no seu próprio ritmo.',
+    },
+    {
+      id: 'l9',
+      heading: 'Route 53 e DNS: como um nome de domínio se transforma num servidor',
+      body:
+        'Quando alguém digita `seusite.com`, o navegador precisa descobrir o endereço IP real do servidor — esse processo é resolução de DNS. Route 53 é o serviço de DNS da AWS: você configura registros que mapeiam seu domínio para os recursos certos (um Load Balancer, uma instância EC2, um bucket S3 configurado como site estático).\n\nUm recurso útil para alta disponibilidade: **health checks** no Route 53 monitoram se um servidor está respondendo, e podem redirecionar tráfego automaticamente para uma região ou servidor alternativo se o principal cair — uma camada adicional de resiliência além do Load Balancer dentro de uma única região.',
     },
   ],
   resources: [
@@ -584,6 +679,32 @@ export const mes12: Module = {
       prompt: 'Um banco de dados deveria ficar numa subnet pública da VPC, para facilitar o acesso.',
       answer: false,
       explanation: 'O banco de dados deveria ficar numa subnet privada, sem acesso direto da internet — só acessível através da camada de aplicação, que fica na subnet pública.',
+    },
+    {
+      type: 'mcq',
+      id: 'm12-e9',
+      prompt: 'Qual a diferença principal entre SQS e SNS?',
+      options: [
+        'São exatamente o mesmo serviço com nomes diferentes',
+        'SQS é uma fila consumida por um processador (ponto a ponto); SNS distribui a mesma mensagem para múltiplos consumidores simultaneamente (fan-out)',
+        'SNS é só para SMS, SQS é só para email',
+        'SQS não pode ser usado com Lambda'
+      ],
+      correctIndex: 1,
+      explanation: 'SQS resolve desacoplamento ponto a ponto; SNS resolve o caso de uma mensagem precisar notificar vários consumidores diferentes ao mesmo tempo — frequentemente combinados na prática.',
+    },
+    {
+      type: 'mcq',
+      id: 'm12-e10',
+      prompt: 'O que um health check no Route 53 permite fazer?',
+      options: [
+        'Verificar a saúde do código da aplicação',
+        'Monitorar se um servidor/recurso está respondendo, redirecionando tráfego automaticamente para uma alternativa se o principal cair',
+        'Validar certificados SSL apenas',
+        'Não existe esse recurso no Route 53'
+      ],
+      correctIndex: 1,
+      explanation: 'Health checks no Route 53 adicionam uma camada de resiliência a nível de DNS, redirecionando para servidores/regiões alternativas quando o destino principal falha.',
     },
   ],
   games: [

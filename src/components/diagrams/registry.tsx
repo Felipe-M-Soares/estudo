@@ -44,6 +44,18 @@ const LayeredArchitectureDiagram = lazy(() =>
 const AsyncMessageQualityDiagram = lazy(() =>
   import('./AsyncMessageQualityDiagram').then((m) => ({ default: m.AsyncMessageQualityDiagram }))
 );
+const ValidationDiagram = lazy(() => import('./ValidationDiagram').then((m) => ({ default: m.ValidationDiagram })));
+const SolidPrinciplesDiagram = lazy(() => import('./SolidPrinciplesDiagram').then((m) => ({ default: m.SolidPrinciplesDiagram })));
+const ImageOptimizationDiagram = lazy(() =>
+  import('./ImageOptimizationDiagram').then((m) => ({ default: m.ImageOptimizationDiagram }))
+);
+const WebSocketVsPollingDiagram = lazy(() =>
+  import('./WebSocketVsPollingDiagram').then((m) => ({ default: m.WebSocketVsPollingDiagram }))
+);
+const IamPermissionsDiagram = lazy(() => import('./IamPermissionsDiagram').then((m) => ({ default: m.IamPermissionsDiagram })));
+const ProbesDiagram = lazy(() => import('./ProbesDiagram').then((m) => ({ default: m.ProbesDiagram })));
+const TracingDiagram = lazy(() => import('./TracingDiagram').then((m) => ({ default: m.TracingDiagram })));
+const AdrStructureDiagram = lazy(() => import('./AdrStructureDiagram').then((m) => ({ default: m.AdrStructureDiagram })));
 
 function withLoader(node: ReactNode): ReactNode {
   return <Suspense fallback={<GameLoader />}>{node}</Suspense>;
@@ -81,4 +93,12 @@ export const diagramRegistry: Record<string, () => ReactNode> = {
   'async-communication': () => withLoader(<AsyncCommunicationDiagram />),
   'layered-architecture': () => withLoader(<LayeredArchitectureDiagram />),
   'async-message-quality': () => withLoader(<AsyncMessageQualityDiagram />),
+  validation: () => withLoader(<ValidationDiagram />),
+  'solid-principles': () => withLoader(<SolidPrinciplesDiagram />),
+  'image-optimization': () => withLoader(<ImageOptimizationDiagram />),
+  'websocket-vs-polling': () => withLoader(<WebSocketVsPollingDiagram />),
+  'iam-permissions': () => withLoader(<IamPermissionsDiagram />),
+  probes: () => withLoader(<ProbesDiagram />),
+  tracing: () => withLoader(<TracingDiagram />),
+  'adr-structure': () => withLoader(<AdrStructureDiagram />),
 };

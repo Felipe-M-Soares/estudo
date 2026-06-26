@@ -255,7 +255,8 @@ export const mes17: Module = {
       id: 'l2',
       heading: 'Mentoria e tomada de decisão técnica',
       body:
-        'Mentorar não é dar a resposta pronta — é fazer as perguntas certas para que a pessoa chegue à resposta sozinha, desenvolvendo o raciocínio dela, não sua dependência de você.\n\nDecisões técnicas relevantes merecem registro: um ADR (Architecture Decision Record) documenta o que foi decidido, por quê, e quais alternativas foram consideradas — isso evita repetir debates antigos e dá contexto para quem entra no time depois.',
+        'Mentorar não é dar a resposta pronta — é fazer as perguntas certas para que a pessoa chegue à resposta sozinha, desenvolvendo o raciocínio dela, não sua dependência de você.\n\nDecisões técnicas relevantes merecem registro: um ADR (Architecture Decision Record) documenta o que foi decidido, por quê, e quais alternativas foram consideradas — isso evita repetir debates antigos e dá contexto para quem entra no time depois. Explore a estrutura de um ADR real abaixo.',
+      diagramId: 'adr-structure',
     },
     {
       id: 'l3',
@@ -299,6 +300,18 @@ export const mes17: Module = {
       heading: '[Nível sênior] Influência sem autoridade: como mudar decisões quando você não é o chefe',
       body:
         'Engenheiros sêniores (e mesmo plenos avançados) frequentemente precisam convencer pessoas que não se reportam a eles — outro time, um PM, um arquiteto de outra área. Autoridade formal não resolve isso; influência sim.\n\nTrês táticas que funcionam na prática: (1) **trazer dados, não opinião** — "esse endpoint está com p95 de 3 segundos, baseado nos logs de produção" convence mais que "acho que está lento"; (2) **entender o incentivo da outra pessoa** — um PM resiste a refatoração não porque não entenda dívida técnica, mas porque o roadmap dele tem datas — conectar a proposta a um resultado que ele já valoriza (menos bugs, deploys mais rápidos) muda a conversa; (3) **escolher o momento e o formato certo** — uma proposta de mudança de arquitetura cabe melhor num documento detalhado com tempo para reação assíncrona do que numa reunião de 15 minutos, onde a reação imediata tende a ser defensiva.\n\nEm entrevistas para vagas sêniores, perguntas como "conte sobre uma vez que você precisou convencer alguém de outra área" avaliam exatamente essa habilidade — frequentemente mais determinante para o nível da vaga do que conhecimento técnico puro.',
+    },
+    {
+      id: 'l10',
+      heading: 'Comunicação escrita vs verbal: escolhendo o canal certo para cada conversa',
+      body:
+        'Nem toda conversa deveria acontecer no mesmo canal. Decisões que exigem nuance, tom de voz, ou leitura de reação (uma demissão, um conflito interpessoal sério) pedem conversa verbal — texto perde contexto emocional e pode ser mal interpretado exatamente nos momentos mais sensíveis. Decisões que precisam de registro, que afetam pessoas que não estão na sala, ou que se beneficiam de tempo para reflexão (uma proposta de arquitetura, uma mudança de processo) costumam funcionar melhor por escrito.\n\nUm erro comum de quem está crescendo de pleno para sênior: resolver tudo por mensagem instantânea, incluindo discordâncias que precisariam de uma conversa de 10 minutos — o que vira uma troca de 40 mensagens ambíguas ao longo do dia. A regra prática: se uma thread de chat passou de 5-6 mensagens sem resolução, é hora de chamar uma call rápida.',
+    },
+    {
+      id: 'l11',
+      heading: 'Gestão de conflitos em time: discordância técnica não é briga pessoal',
+      body:
+        'Conflitos técnicos saudáveis (duas pessoas discordando de uma abordagem de arquitetura) e conflitos pessoais (alguém se sentindo desrespeitado ou ignorado repetidamente) exigem respostas completamente diferentes — tratá-los da mesma forma piora ambos.\n\nPara conflito técnico: traga a decisão para critérios objetivos sempre que possível (dados de performance, requisitos do produto, prazos reais) e, quando não houver resposta objetiva clara, reconheça isso explicitamente — "os dois caminhos são defensáveis, vamos escolher um e revisar em 2 semanas" é uma saída legítima quando a discussão já trouxe os argumentos principais.\n\nPara conflito pessoal: a pior coisa que um líder técnico pode fazer é ignorar e esperar que se resolva sozinho — geralmente piora. Uma conversa individual e privada, perguntando genuinamente como a pessoa está vendo a situação (sem já ter um veredito pronto), é o primeiro passo antes de qualquer mediação formal.',
     },
   ],
   resources: [
@@ -421,6 +434,26 @@ export const mes17: Module = {
       correctIndex: 1,
       explanation: 'Influência sem autoridade funciona melhor conectando a proposta aos incentivos que a outra pessoa já tem, sustentada por dados — não por insistência ou imposição hierárquica.',
     },
+    {
+      type: 'mcq',
+      id: 'm17-e10',
+      prompt: 'Qual tipo de conversa tende a funcionar melhor por texto escrito do que verbalmente?',
+      options: [
+        'Uma demissão',
+        'Um conflito interpessoal sério precisando de leitura de tom de voz',
+        'Uma proposta de arquitetura que precisa de tempo de reflexão e afeta pessoas que não estão na sala agora',
+        'Qualquer conversa, texto é sempre melhor'
+      ],
+      correctIndex: 2,
+      explanation: 'Decisões que se beneficiam de registro, tempo de reflexão, ou alcance a pessoas ausentes tendem a funcionar melhor por escrito — já conversas emocionalmente sensíveis perdem nuance importante em texto.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm17-e11',
+      prompt: 'Um conflito técnico (discordância sobre arquitetura) e um conflito pessoal (alguém se sentindo desrespeitado) deveriam ser tratados da mesma forma por um líder técnico.',
+      answer: false,
+      explanation: 'Conflito técnico se beneficia de critérios objetivos e dados; conflito pessoal precisa de uma conversa individual e genuína — tratá-los da mesma forma tende a piorar ambos.',
+    },
   ],
   games: [
     {
@@ -510,6 +543,18 @@ export const mes18: Module = {
       body:
         'Lançar a primeira versão do projeto final é uma conquista real, mas é também onde o trabalho mais sênior começa: observar como o sistema se comporta com uso de verdade, corrigir bugs que só aparecem fora do ambiente controlado de desenvolvimento, e decidir o que evoluir primeiro com base em sinais reais (não em achismo).\n\nSe possível, depois de lançar, monitore por algumas semanas: o que falha, o que é lento, o que ninguém usa. Documentar isso — mesmo informalmente, num arquivo `LIÇÕES.md` — é exatamente o tipo de reflexão que distingue alguém que só "termina projetos" de alguém que aprende a melhorá-los continuamente, e é ótimo material para contar numa entrevista sobre seu próprio crescimento ao longo do tempo.',
     },
+    {
+      id: 'l7',
+      heading: 'Mapeando o processo seletivo: o que esperar em cada etapa',
+      body:
+        'Processos seletivos para vagas de desenvolvedor costumam seguir um padrão reconhecível, mesmo variando entre empresas: (1) **triagem de currículo/RH** — geralmente foca em fit cultural e expectativa salarial, não em profundidade técnica; (2) **teste técnico ou desafio de código** — pode ser uma prova online cronometrada, ou um projeto para fazer em casa em alguns dias; (3) **entrevista técnica** — perguntas teóricas, exercícios de código ao vivo, ou discussão de System Design dependendo do nível da vaga; (4) **entrevista comportamental** — geralmente com um gestor, focada em como você trabalha em time, lida com conflito e prioriza; (5) **proposta e negociação**.\n\nSaber essa estrutura ajuda a não ser pego de surpresa, e também a perguntar diretamente ao recrutador "como é o processo de vocês?" no início — isso é uma pergunta perfeitamente normal de se fazer, e ajuda a se preparar para o que realmente vem a seguir, em vez de estudar tudo de forma genérica.',
+    },
+    {
+      id: 'l8',
+      heading: 'Negociando a proposta: você tem mais espaço do que imagina',
+      body:
+        'Muita gente aceita a primeira proposta por desconforto em negociar, mesmo quando há espaço real para ajuste — a maioria das empresas já espera alguma negociação e tem uma margem reservada para isso. Algumas práticas que reduzem o desconforto: nunca seja o primeiro a dar um número se puder evitar ("qual a faixa orçada para a vaga?" é uma pergunta legítima); peça tempo para pensar em vez de aceitar ou recusar na hora ("posso te dar uma resposta até [dia]?" é sempre aceitável); e negocie o pacote todo, não só salário — benefícios, formato de trabalho remoto, orçamento para cursos, e data de início também têm valor real.\n\nPara quem está entrando no mercado pela primeira vez (sem múltiplas propostas para comparar), o espaço de negociação costuma ser menor, mas ainda existe — vale ao menos perguntar educadamente se há flexibilidade, em vez de assumir que não há.',
+    },
   ],
   resources: [
     { label: 'Seu repositório no GitHub', url: 'https://github.com' },
@@ -592,6 +637,26 @@ export const mes18: Module = {
       ],
       correctIndex: 1,
       explanation: 'Refletir sobre o que aconteceu depois do lançamento (não só durante o desenvolvimento) demonstra maturidade e capacidade de evolução contínua — uma habilidade sênior real, independente do tamanho do projeto.',
+    },
+    {
+      type: 'order',
+      id: 'm18-e7',
+      prompt: 'Ordene as etapas típicas de um processo seletivo de desenvolvedor, da primeira à última.',
+      steps: [
+        'Triagem de currículo/RH',
+        'Teste técnico ou desafio de código',
+        'Entrevista técnica (teoria, exercícios, ou system design)',
+        'Entrevista comportamental com gestor',
+        'Proposta e negociação',
+      ],
+      explanation: 'Embora possa variar entre empresas, esse é o fluxo mais comum — saber essa estrutura ajuda a se preparar especificamente para cada etapa, em vez de estudar tudo genericamente de uma vez.',
+    },
+    {
+      type: 'truefalse',
+      id: 'm18-e8',
+      prompt: 'A maioria das empresas não espera nenhuma negociação e a primeira proposta é sempre a única possível.',
+      answer: false,
+      explanation: 'A maioria das empresas reserva alguma margem para negociação — perguntar educadamente sobre flexibilidade (salário, benefícios, formato de trabalho) raramente prejudica, mesmo quando o espaço é pequeno.',
     },
   ],
   games: [
