@@ -12,11 +12,11 @@ export function XpBar({ xp, compact = false }: XpBarProps) {
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400/20 to-amber-500/10 font-display text-[12px] font-bold text-amber-300 ring-1 ring-amber-400/30">
           {level}
         </div>
-        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-base-700/80 ring-1 ring-black/20">
+        <div className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-base-700/80 ring-1 ring-black/20 xs:block">
           <div
             className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300 transition-all duration-500"
             style={{ width: `${pct}%` }}

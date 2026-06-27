@@ -27,7 +27,7 @@ export function DashboardPage({ progress, overallPercent, onReviewResult }: Dash
   const completedExerciseCount = Object.values(progress.completedExercises).filter(Boolean).length;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:py-8 lg:px-8">
       <div className="mb-8 animate-rise-in">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-mint-400">
           ⟢ Bem-vindo de volta
@@ -40,7 +40,7 @@ export function DashboardPage({ progress, overallPercent, onReviewResult }: Dash
         </p>
       </div>
 
-      <div className="mb-6 grid gap-3.5 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-3 gap-2.5 sm:gap-3.5">
         <StatCard icon={<Target size={17} />} label="Progresso geral" value={`${overallPercent}%`} accent="mint" />
         <StatCard icon={<Flame size={17} />} label="Sequência atual" value={`${progress.streakDays} ${progress.streakDays === 1 ? 'dia' : 'dias'}`} accent="amber" />
         <StatCard icon={<Trophy size={17} />} label="Conquistas" value={`${unlockedCount}/${achievements.length}`} accent="violet" />
@@ -49,16 +49,16 @@ export function DashboardPage({ progress, overallPercent, onReviewResult }: Dash
       <div className="mb-5 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <Link
           to={`/modulo/${currentModule.id}`}
-          className="card-surface card-surface-hover group relative overflow-hidden rounded-2xl p-7"
+          className="card-surface card-surface-hover group relative overflow-hidden rounded-2xl p-5 sm:p-7"
         >
-          <div className="absolute -right-6 -top-6 text-9xl opacity-[0.07] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
+          <div className="absolute -right-6 -top-6 text-7xl opacity-[0.07] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 sm:text-9xl">
             {currentModule.emoji}
           </div>
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-mint-400/40 to-transparent" />
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-base-400">
             Continue estudando · Mês {currentModule.month}
           </p>
-          <h2 className="mt-2.5 font-display text-[1.7rem] font-bold leading-tight text-base-50">{currentModule.title}</h2>
+          <h2 className="mt-2.5 font-display text-2xl font-bold leading-tight text-base-50 sm:text-[1.7rem]">{currentModule.title}</h2>
           <p className="mt-1.5 text-sm text-base-300">{currentModule.tagline}</p>
           <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-mint-400/10 px-3.5 py-1.5 text-sm font-semibold text-mint-300 ring-1 ring-mint-400/20 transition-colors group-hover:bg-mint-400/15">
             Continuar de onde parou <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
@@ -158,11 +158,11 @@ function StatCard({ icon, label, value, accent }: { icon: ReactNode; label: stri
     violet: 'text-violet-400 bg-violet-500/15',
   }[accent];
   return (
-    <div className="card-surface card-surface-hover flex items-center gap-3.5 rounded-2xl p-4">
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${colors}`}>{icon}</div>
-      <div>
-        <div className="font-display text-xl font-bold leading-tight text-base-50">{value}</div>
-        <div className="text-[12px] text-base-400">{label}</div>
+    <div className="card-surface card-surface-hover flex flex-col items-center gap-2 rounded-2xl p-3 text-center sm:flex-row sm:items-center sm:gap-3.5 sm:p-4 sm:text-left">
+      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10 ${colors}`}>{icon}</div>
+      <div className="min-w-0">
+        <div className="font-display text-base font-bold leading-tight text-base-50 sm:text-xl">{value}</div>
+        <div className="text-[10.5px] leading-snug text-base-400 sm:text-[12px]">{label}</div>
       </div>
     </div>
   );

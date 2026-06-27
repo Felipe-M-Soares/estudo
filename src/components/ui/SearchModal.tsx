@@ -66,8 +66,12 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             placeholder="Buscar módulos, lições, exercícios, jogos..."
             className="flex-1 bg-transparent text-sm text-base-100 outline-none placeholder:text-base-500"
           />
-          <button onClick={onClose} className="shrink-0 text-base-500 hover:text-base-200" aria-label="Fechar busca">
-            <X size={16} />
+          <button
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base-500 hover:bg-base-800 hover:text-base-200"
+            aria-label="Fechar busca"
+          >
+            <X size={17} />
           </button>
         </div>
 

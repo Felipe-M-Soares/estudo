@@ -9,7 +9,7 @@ export function AchievementsPage({ progress }: AchievementsPageProps) {
   const unlockedCount = progress.unlockedAchievements.length;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8 lg:px-8">
       <div className="mb-6 animate-rise-in">
         <p className="font-mono text-xs uppercase tracking-widest text-amber-400">Sua coleção</p>
         <h1 className="mt-1 font-display text-3xl font-bold text-base-50">Conquistas</h1>

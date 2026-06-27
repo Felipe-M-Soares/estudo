@@ -42,7 +42,7 @@ export function InterviewPracticalStage({ challenges, currentIdx, onMark, onNext
   if (!challenge) return null;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 lg:px-8">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8 lg:px-8">
       <div className="mb-4">
         <span className="font-mono text-xs text-base-400">Prática · Desafio {currentIdx + 1}/{challenges.length}</span>
         <h2 className="mt-1 font-display text-xl font-bold text-base-50">{challenge.title}</h2>

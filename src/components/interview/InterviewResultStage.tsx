@@ -31,7 +31,7 @@ export function InterviewResultStage({ result, onRestart }: InterviewResultStage
   }, [result.overallScore]);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10 lg:px-8">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-10 lg:px-8">
       <div className="text-center animate-rise-in">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-400">
           Simulação · {result.trackLabel} · {result.levelLabel}

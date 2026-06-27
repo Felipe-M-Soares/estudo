@@ -31,7 +31,7 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-[280px] flex-col border-r border-base-700 bg-base-900 transition-transform duration-300 lg:sticky lg:top-0 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-[86vw] max-w-[300px] flex-col border-r border-base-700 bg-base-900 transition-transform duration-300 lg:sticky lg:top-0 lg:w-[280px] lg:max-w-none lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -45,8 +45,12 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
               <div className="text-[11px] leading-tight text-base-400">Full Stack · 22 meses</div>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-base-300 hover:bg-base-800 lg:hidden" aria-label="Fechar menu">
-            <X size={18} />
+          <button
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-base-300 hover:bg-base-800 lg:hidden"
+            aria-label="Fechar menu"
+          >
+            <X size={20} />
           </button>
         </div>
 
@@ -91,7 +95,7 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
                         to={`/modulo/${m.id}`}
                         onClick={onClose}
                         className={({ isActive }) =>
-                          `group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors ${
+                          `group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-colors ${
                             isActive
                               ? 'bg-base-800 text-base-50'
                               : 'text-base-300 hover:bg-base-800/60 hover:text-base-100'
@@ -125,11 +129,11 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
           <span className="flex-1 truncate text-sm font-medium text-base-200" title={profileName}>{profileName}</span>
           <button
             onClick={onLogout}
-            className="shrink-0 rounded-lg p-1.5 text-base-400 hover:bg-base-800 hover:text-base-100"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base-400 hover:bg-base-800 hover:text-base-100"
             aria-label="Trocar de perfil"
             title="Trocar de perfil"
           >
-            <LogOut size={15} />
+            <LogOut size={16} />
           </button>
         </div>
       </aside>
@@ -155,7 +159,7 @@ function SidebarLink({
       to={to}
       onClick={onClick}
       className={({ isActive }) =>
-        `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${
+        `flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-colors ${
           isActive
             ? highlight
               ? 'bg-cyan-400/15 text-cyan-300'

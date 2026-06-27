@@ -133,7 +133,10 @@ export function MentorPage({ apiKey, currentModuleId, progress }: MentorPageProp
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-57px)] max-w-2xl flex-col px-4 py-6 lg:px-8">
+    <div
+      className="mx-auto -mb-20 flex max-w-2xl flex-col px-4 py-4 sm:py-6 lg:mb-0 lg:px-8"
+      style={{ height: 'calc(100dvh - var(--topbar-h, 57px) - var(--bottomnav-h, 0px))' }}
+    >
       <div className="mb-4">
         <h1 className="font-display text-xl font-bold text-base-50">🤖 Mentor IA</h1>
         {currentModule && (

@@ -3,7 +3,7 @@ import { RotateCcw, GitCommit, CheckCircle2, ListChecks, BookOpen, Terminal as T
 
 interface FileState {
   name: string;
-  status: 'untracked' | 'staged' | 'committed' | 'modified';
+  status: 'untracked' | 'staged' | 'committed' | 'modified' | 'conflict';
   content: string;
 }
 
@@ -77,6 +77,18 @@ const MISSIONS: Mission[] = [
     ],
     check: (s) => s.history.some((l) => l.type === 'success' && /merge/i.test(l.text)),
   },
+  {
+    id: 'conflito',
+    title: 'Resolva um conflito de merge',
+    steps: [
+      'Crie um arquivo (ex: config.js) na main, adicione e comite',
+      'Crie e mude para uma branch nova',
+      'Edite o conteúdo desse MESMO arquivo na branch nova, adicione e comite',
+      'Volte para main, edite o MESMO arquivo de um jeito diferente, adicione e comite',
+      'Rode git merge <branch> — vai dar conflito! Edite o arquivo escolhendo o conteúdo final, depois git add e git commit pra resolver',
+    ],
+    check: (s) => s.history.some((l) => l.type === 'success' && /conflito resolvido/i.test(l.text)),
+  },
 ];
 
 const INITIAL_FILES: FileState[] = [];
@@ -87,6 +99,7 @@ export function GitLab() {
   const [branches, setBranches] = useState(['main']);
   const [commits, setCommits] = useState<Commit[]>([]);
   const [stash, setStash] = useState<FileState[] | null>(null);
+  const [resolvedConflictFiles, setResolvedConflictFiles] = useState<Set<string>>(new Set());
   const [history, setHistory] = useState<TerminalLine[]>([
     { type: 'output', text: 'Bem-vindo ao terminal Git simulado. Digite "ajuda" para ver os comandos disponíveis.' },
   ]);
@@ -126,7 +139,11 @@ export function GitLab() {
   }
 
   function updateFileContent(name: string, content: string) {
-    setFiles((prev) => prev.map((f) => (f.name === name ? { ...f, content, status: f.status === 'committed' ? 'modified' : f.status } : f)));
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.name === name ? { ...f, content, status: f.status === 'committed' ? 'modified' : f.status } : f
+      )
+    );
   }
 
   function isIgnored(name: string): boolean {
@@ -178,8 +195,18 @@ export function GitLab() {
         return;
       }
       const lines = visibleFiles.map((f) => ({
-        type: 'output' as const,
-        text: `  ${f.status === 'staged' ? 'staged: ' : f.status === 'committed' ? 'committed: ' : f.status === 'modified' ? 'modified: ' : 'untracked: '}${f.name}`,
+        type: (f.status === 'conflict' ? 'error' : 'output') as 'error' | 'output',
+        text: `  ${
+          f.status === 'conflict'
+            ? 'CONFLITO (não resolvido): '
+            : f.status === 'staged'
+            ? 'staged: '
+            : f.status === 'committed'
+            ? 'committed: '
+            : f.status === 'modified'
+            ? 'modified: '
+            : 'untracked: '
+        }${f.name}`,
       }));
       print([{ type: 'output', text: `On branch ${branch}` }, ...lines]);
       return;
@@ -204,9 +231,19 @@ export function GitLab() {
       }
       if (target === '.') {
         const ignoredCount = files.filter((f) => isIgnored(f.name) && f.status === 'untracked').length;
+        const conflictsBeingResolved = files.filter((f) => f.status === 'conflict' && !isIgnored(f.name)).map((f) => f.name);
         setFiles((prev) =>
-          prev.map((f) => ((f.status === 'untracked' || f.status === 'modified') && !isIgnored(f.name) ? { ...f, status: 'staged' } : f))
+          prev.map((f) =>
+            (f.status === 'untracked' || f.status === 'modified' || f.status === 'conflict') && !isIgnored(f.name) ? { ...f, status: 'staged' } : f
+          )
         );
+        if (conflictsBeingResolved.length > 0) {
+          setResolvedConflictFiles((prev) => {
+            const next = new Set(prev);
+            conflictsBeingResolved.forEach((n) => next.add(n));
+            return next;
+          });
+        }
         print([
           { type: 'success', text: 'todos os arquivos rastreáveis foram adicionados à staging area.' },
           ...(ignoredCount > 0 ? [{ type: 'output' as const, text: `(${ignoredCount} arquivo(s) ignorado(s) pelo .gitignore não foram adicionados)` }] : []),
@@ -222,8 +259,10 @@ export function GitLab() {
         print([{ type: 'error', text: `"${target}" está no .gitignore — o Git nunca vai rastrear esse arquivo.` }]);
         return;
       }
+      const wasConflict = exists.status === 'conflict';
       setFiles((prev) => prev.map((f) => (f.name === target ? { ...f, status: 'staged' } : f)));
-      print([{ type: 'success', text: `"${target}" adicionado à staging area.` }]);
+      if (wasConflict) setResolvedConflictFiles((prev) => new Set(prev).add(target));
+      print([{ type: 'success', text: wasConflict ? `"${target}" marcado como resolvido e adicionado à staging area.` : `"${target}" adicionado à staging area.` }]);
       return;
     }
 
@@ -254,9 +293,19 @@ export function GitLab() {
         print([{ type: 'error', text: 'nada para commitar — use "git add" primeiro.' }]);
         return;
       }
+      const resolvingNow = staged.filter((f) => resolvedConflictFiles.has(f.name));
       const hash = randomHash();
       setCommits((prev) => [...prev, { hash, message: messageMatch[1], files: staged.map((f) => f.name), branch }]);
       setFiles((prev) => prev.map((f) => (f.status === 'staged' ? { ...f, status: 'committed' } : f)));
+      if (resolvingNow.length > 0) {
+        setResolvedConflictFiles((prev) => {
+          const next = new Set(prev);
+          resolvingNow.forEach((f) => next.delete(f.name));
+          return next;
+        });
+        print([{ type: 'success', text: `Conflito resolvido e commitado: [${branch} ${hash}] ${messageMatch[1]}` }]);
+        return;
+      }
       print([{ type: 'success', text: `[${branch} ${hash}] ${messageMatch[1]} — ${staged.length} arquivo(s) alterado(s)` }]);
       return;
     }
@@ -324,6 +373,23 @@ export function GitLab() {
         print([{ type: 'output', text: `"${name}" não tem commits próprios — já está tudo atualizado.` }]);
         return;
       }
+
+      // Detecta conflito real: o mesmo arquivo foi commitado em AMBAS as branches
+      // (divergiram), e o conteúdo atual do arquivo (da branch de destino) é
+      // diferente do conteúdo registrado no(s) commit(s) da branch de origem.
+      const currentBranchFiles = new Set(commits.filter((c) => c.branch === branch).flatMap((c) => c.files));
+      const incomingFileNames = new Set(incoming.flatMap((c) => c.files));
+      const conflictingNames = [...incomingFileNames].filter((n) => currentBranchFiles.has(n));
+
+      if (conflictingNames.length > 0) {
+        setFiles((prev) => prev.map((f) => (conflictingNames.includes(f.name) ? { ...f, status: 'conflict' as const } : f)));
+        print([
+          { type: 'error', text: `CONFLITO: ${conflictingNames.join(', ')} foi modificado tanto em "${branch}" quanto em "${name}".` },
+          { type: 'output', text: 'O Git não sabe qual versão manter. Edite o arquivo (clique nele na lista), decida o conteúdo final, depois rode "git add <arquivo>" e \'git commit -m "..."\' para resolver.' },
+        ]);
+        return;
+      }
+
       setCommits((prev) => [...prev, ...incoming.map((c) => ({ ...c, branch }))]);
       print([{ type: 'success', text: `Merge feito: ${incoming.length} commit(s) de "${name}" trazidos para "${branch}".` }]);
       return;
@@ -361,6 +427,7 @@ export function GitLab() {
     setBranches(['main']);
     setCommits([]);
     setStash(null);
+    setResolvedConflictFiles(new Set());
     setHistory([{ type: 'output', text: 'Repositório resetado. Digite "ajuda" para começar de novo.' }]);
   }
 
@@ -456,7 +523,9 @@ export function GitLab() {
                         {ignored && <span className="rounded-full bg-base-700 px-2 py-0.5 text-[10px] text-base-400">ignorado</span>}
                         <span
                           className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                            f.status === 'committed'
+                            f.status === 'conflict'
+                              ? 'bg-ember-500/20 text-ember-300'
+                              : f.status === 'committed'
                               ? 'bg-mint-900/40 text-mint-300'
                               : f.status === 'staged'
                               ? 'bg-amber-500/15 text-amber-300'

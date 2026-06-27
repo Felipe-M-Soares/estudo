@@ -110,10 +110,10 @@ export function ProfileGate({ profiles, avatarOptions, onCreateProfile, onSwitch
                 ) : (
                   <button
                     onClick={() => setConfirmDelete(profile.id)}
-                    className="shrink-0 rounded-lg p-2 text-base-500 hover:bg-ember-500/10 hover:text-ember-400"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base-500 hover:bg-ember-500/10 hover:text-ember-400"
                     aria-label="Excluir perfil"
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={16} />
                   </button>
                 )}
               </div>

@@ -62,11 +62,19 @@ export function OrderExerciseCard({ exercise, onResult }: OrderProps) {
               <span className="flex-1">{item}</span>
               {!revealed && (
                 <div className="flex shrink-0 gap-1">
-                  <button onClick={() => move(idx, -1)} className="rounded p-1 text-base-400 hover:bg-base-700 hover:text-base-100" aria-label="Mover para cima">
-                    <ArrowUp size={14} />
+                  <button
+                    onClick={() => move(idx, -1)}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-base-400 hover:bg-base-700 hover:text-base-100"
+                    aria-label="Mover para cima"
+                  >
+                    <ArrowUp size={16} />
                   </button>
-                  <button onClick={() => move(idx, 1)} className="rounded p-1 text-base-400 hover:bg-base-700 hover:text-base-100" aria-label="Mover para baixo">
-                    <ArrowDown size={14} />
+                  <button
+                    onClick={() => move(idx, 1)}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-base-400 hover:bg-base-700 hover:text-base-100"
+                    aria-label="Mover para baixo"
+                  >
+                    <ArrowDown size={16} />
                   </button>
                 </div>
               )}

@@ -32,7 +32,7 @@ export function GamesPage({ progress, onGameComplete }: GamesPageProps) {
 
   if (activeGameId) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8 lg:px-8">
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8 lg:px-8">
         <button onClick={() => setActiveGameId(null)} className="mb-4 inline-flex items-center gap-1.5 text-sm text-base-400 hover:text-base-100">
           <ArrowLeft size={14} /> Todos os jogos
         </button>
@@ -42,7 +42,7 @@ export function GamesPage({ progress, onGameComplete }: GamesPageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8 lg:px-8">
       <div className="mb-6 animate-rise-in">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-400">⟢ Aprenda jogando</p>
         <h1 className="mt-2 font-display text-4xl font-bold text-base-50">Mini-jogos</h1>
@@ -51,7 +51,7 @@ export function GamesPage({ progress, onGameComplete }: GamesPageProps) {
         </p>
       </div>
 
-      <div className="mb-5 flex gap-1.5 overflow-x-auto scrollbar-none">
+      <div className="mb-5 flex gap-1.5 overflow-x-auto scrollbar-none fade-scroll-x">
         {phaseFilters.map((f) => (
           <button
             key={f.id}

@@ -122,6 +122,53 @@ const PRESETS: Preset[] = [
   background: #ff2e9e;
 }`,
   },
+  {
+    label: 'Box Model — padding, border e margin',
+    group: 'Box Model',
+    css: `.caixa {
+  display: flex;
+  gap: 16px;
+}
+.item {
+  box-sizing: border-box;
+  width: 70px;
+  height: 70px;
+  padding: 8px;
+  border: 4px solid #1ee6ff;
+  margin: 6px;
+}`,
+  },
+  {
+    label: 'Variáveis CSS — tema com :root',
+    group: 'Variáveis CSS',
+    css: `.caixa {
+  --cor-principal: #00ffc2;
+  --espaco: 14px;
+  display: flex;
+  gap: var(--espaco);
+}
+.item {
+  background: var(--cor-principal);
+  border-radius: 10px;
+}`,
+  },
+  {
+    label: 'Pseudo-classes — primeiro e último filho',
+    group: 'Pseudo-classes',
+    css: `.caixa {
+  display: flex;
+  gap: 8px;
+}
+.item:first-child {
+  background: #1ee6ff;
+}
+.item:last-child {
+  background: #ff2e9e;
+}
+.item:nth-child(odd) {
+  border-radius: 50%;
+}`,
+  },
 ];
 
 const GROUPS = Array.from(new Set(PRESETS.map((p) => p.group)));
@@ -187,6 +234,42 @@ const CHALLENGES: Challenge[] = [
   display: flex;
 }`,
     check: (css) => /\.caixa\s*\{[^}]*position:\s*relative/i.test(css) && /\.item[^{]*\{[^}]*position:\s*absolute/i.test(css),
+  },
+  {
+    id: 'box-model',
+    title: 'Domine o Box Model',
+    goal: 'Dê a cada item um padding de pelo menos 8px e uma borda visível (border), mantendo box-sizing: border-box para o tamanho não "explodir".',
+    hint: 'box-sizing: border-box faz o padding e a borda ficarem DENTRO do width/height definido, em vez de somar a ele.',
+    startCss: `.item {
+  width: 60px;
+  height: 60px;
+}`,
+    check: (css) => /\.item[^{]*\{[^}]*box-sizing:\s*border-box/i.test(css) && /padding:\s*([89]|1[0-9])px/i.test(css) && /border:\s*\d/i.test(css),
+  },
+  {
+    id: 'variavel-css',
+    title: 'Crie uma variável CSS reutilizável',
+    goal: 'Declare uma variável (ex: --cor-principal) dentro de .caixa e use ela com var(...) para colorir o background dos itens.',
+    hint: 'Uma variável CSS se declara como --nome: valor; e se usa como var(--nome).',
+    startCss: `.caixa {
+  display: flex;
+  gap: 10px;
+}
+.item {
+  background: gray;
+}`,
+    check: (css) => /--[\w-]+\s*:/i.test(css) && /var\(\s*--[\w-]+/i.test(css),
+  },
+  {
+    id: 'pseudo-classe',
+    title: 'Destaque o primeiro item com pseudo-classe',
+    goal: 'Sem adicionar nenhuma classe nova no HTML, faça o primeiro item da caixa ficar com uma cor diferente dos outros, usando uma pseudo-classe.',
+    hint: ':first-child seleciona o primeiro elemento dentro do pai, sem precisar de uma classe extra.',
+    startCss: `.caixa {
+  display: flex;
+  gap: 10px;
+}`,
+    check: (css) => /\.item:first-child\s*\{[^}]*background/i.test(css),
   },
 ];
 

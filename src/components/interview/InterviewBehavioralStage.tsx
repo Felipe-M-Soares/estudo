@@ -18,7 +18,7 @@ export function InterviewBehavioralStage({ questions, currentIdx, answers, onAns
   if (!question) return null;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 lg:px-8">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8 lg:px-8">
       <div className="mb-4">
         <span className="font-mono text-xs text-base-400">Comportamental · {currentIdx + 1}/{questions.length}</span>
       </div>

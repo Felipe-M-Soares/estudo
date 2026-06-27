@@ -2,6 +2,7 @@ import { useState, Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
+import { BottomNav } from './components/layout/BottomNav';
 import { XpToast } from './components/ui/XpToast';
 import { AchievementToast } from './components/ui/AchievementToast';
 import { PageLoader } from './components/ui/PageLoader';
@@ -79,7 +80,7 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
       <div className="flex min-h-screen flex-1 flex-col lg:pl-0">
         <Topbar progress={progress} overallPercent={overallPercent} onMenuClick={() => setSidebarOpen(true)} />
 
-        <main className="flex-1">
+        <main className="flex-1 pb-20 lg:pb-0">
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<DashboardPage progress={progress} overallPercent={overallPercent} onReviewResult={markReviewDone} />} />
@@ -126,6 +127,7 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
         </main>
       </div>
 
+      <BottomNav onMoreClick={() => setSidebarOpen(true)} />
       <XpToast event={lastXpGain} />
       <AchievementToast achievementId={newAchievement} onDismiss={clearNewAchievement} />
     </div>

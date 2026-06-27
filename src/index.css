@@ -195,6 +195,13 @@
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .scrollbar-none { scrollbar-width: none; }
 
+  /* Indica visualmente que há mais conteúdo rolável à direita — usado em filas de
+     abas/pílulas com overflow-x-auto, para não parecer que o conteúdo foi cortado. */
+  .fade-scroll-x {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+  }
+
   /* Cartão padrão com profundidade real e borda sutil em gradiente */
   .card-surface {
     background: linear-gradient(165deg, var(--color-base-850), var(--color-base-900));

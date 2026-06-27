@@ -30,7 +30,7 @@ export function InterviewSetup({ onStart, interviewHistory }: InterviewSetupProp
     recentHistory.length >= 2 ? recentHistory[0].overallScore - recentHistory[1].overallScore : null;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10 lg:px-8">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-10 lg:px-8">
       <div className="mb-8 text-center animate-rise-in">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/15 ring-1 ring-cyan-400/30 shadow-[0_0_30px_-6px_theme(colors.cyan.400)]">
           <Sparkles size={26} className="text-cyan-300" />

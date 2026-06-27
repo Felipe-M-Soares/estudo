@@ -20,7 +20,8 @@ export function XpToast({ event }: XpToastProps) {
   return (
     <div
       key={event.key}
-      className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-amber-400/30 bg-base-850 px-4 py-2 shadow-2xl shadow-black/40 animate-rise-in"
+      className="fixed left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-amber-400/30 bg-base-850 px-4 py-2 shadow-2xl shadow-black/40 animate-rise-in"
+      style={{ bottom: 'calc(var(--bottomnav-h, 0px) + 1.25rem)' }}
     >
       <span className="font-display text-sm font-bold text-amber-400">+{event.amount} XP</span>
       <span className="text-xs text-base-300">{event.reason}</span>

@@ -88,21 +88,21 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
   ];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8 lg:px-8">
       <Link to="/" className="mb-4 inline-flex items-center gap-1.5 text-sm text-base-400 transition-colors hover:text-base-100">
         <ArrowLeft size={14} /> Painel
       </Link>
 
-      <div className={`relative mb-6 overflow-hidden rounded-2xl border border-base-700 bg-gradient-to-br ${accent.glow} via-base-850 to-base-850 p-6 animate-rise-in`}>
+      <div className={`relative mb-6 overflow-hidden rounded-2xl border border-base-700 bg-gradient-to-br ${accent.glow} via-base-850 to-base-850 p-4 animate-rise-in sm:p-6`}>
         <div className="absolute -right-10 -top-10 text-[7rem] opacity-[0.08]">{mod.emoji}</div>
-        <div className="flex items-center gap-3.5">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-base-900/60 text-3xl ring-1 ring-base-600">{mod.emoji}</span>
-          <div>
+        <div className="flex items-center gap-3 sm:gap-3.5">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-base-900/60 text-2xl ring-1 ring-base-600 sm:h-14 sm:w-14 sm:text-3xl">{mod.emoji}</span>
+          <div className="min-w-0 flex-1">
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-base-400">Mês {mod.month} · Fase {mod.phase}</p>
-            <h1 className="font-display text-2xl font-bold leading-tight text-base-50 sm:text-3xl">{mod.title}</h1>
+            <h1 className="font-display text-xl font-bold leading-tight text-base-50 sm:text-3xl">{mod.title}</h1>
           </div>
         </div>
-        <p className="mt-3 text-[15px] text-base-300">{mod.tagline}</p>
+        <p className="mt-3 text-[14px] leading-relaxed text-base-300 sm:text-[15px]">{mod.tagline}</p>
         <div className="mt-4 flex items-center gap-2.5">
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-base-700/80 ring-1 ring-black/20">
             <div className={`h-full rounded-full ${accent.bar} transition-all duration-500`} style={{ width: `${pct}%` }} />
@@ -111,7 +111,7 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
         </div>
       </div>
 
-      <div className="mb-6 flex gap-1.5 overflow-x-auto scrollbar-none">
+      <div className="mb-6 flex gap-1.5 overflow-x-auto scrollbar-none fade-scroll-x">
         {tabs.filter((t) => t.show).map((t) => (
           <button
             key={t.id}
@@ -282,15 +282,21 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
         </div>
       )}
 
-      <div className="mt-10 flex items-center justify-between border-t border-base-700 pt-6">
+      <div className="mt-10 flex flex-col gap-3 border-t border-base-700 pt-6 sm:flex-row sm:items-center sm:justify-between">
         {prev ? (
-          <button onClick={() => navigate(`/modulo/${prev.id}`)} className="flex items-center gap-1.5 text-sm text-base-300 transition-colors hover:text-base-100">
-            <ArrowLeft size={14} /> {prev.title}
+          <button
+            onClick={() => navigate(`/modulo/${prev.id}`)}
+            className="flex min-w-0 items-center gap-1.5 rounded-lg py-2 text-sm text-base-300 transition-colors hover:text-base-100 sm:py-0"
+          >
+            <ArrowLeft size={14} className="shrink-0" /> <span className="truncate">{prev.title}</span>
           </button>
         ) : <span />}
         {next && (
-          <button onClick={() => navigate(`/modulo/${next.id}`)} className="flex items-center gap-1.5 text-sm font-semibold text-mint-400 transition-colors hover:text-mint-300">
-            {next.title} <ArrowRight size={14} />
+          <button
+            onClick={() => navigate(`/modulo/${next.id}`)}
+            className="flex min-w-0 items-center justify-end gap-1.5 rounded-lg py-2 text-sm font-semibold text-mint-400 transition-colors hover:text-mint-300 sm:py-0 sm:self-auto"
+          >
+            <span className="truncate">{next.title}</span> <ArrowRight size={14} className="shrink-0" />
           </button>
         )}
       </div>

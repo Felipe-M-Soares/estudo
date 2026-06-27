@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { ShieldAlert, ShieldCheck, RotateCcw, Eye, Database, Code2, KeyRound, FileWarning } from 'lucide-react';
+import {
+  ShieldAlert, ShieldCheck, RotateCcw, Eye, Database, Code2, KeyRound, FileWarning,
+  Link2Off, Gauge, ListChecks, CheckCircle2,
+} from 'lucide-react';
 
 // Tudo nesta tela é 100% falso e local — só existe na memória deste componente,
 // nunca sai do navegador, não é um servidor real, não representa nenhum
@@ -7,13 +10,16 @@ import { ShieldAlert, ShieldCheck, RotateCcw, Eye, Database, Code2, KeyRound, Fi
 // como vulnerabilidades comuns funcionam e como se defender delas.
 
 type Mode = 'vulnerable' | 'safe';
-type Scenario = 'sqli' | 'xss' | 'password' | 'leak';
+type Scenario = 'sqli' | 'xss' | 'password' | 'leak' | 'csrf' | 'bruteforce' | 'owasp';
 
 const SCENARIOS: { id: Scenario; label: string; icon: typeof Database; color: string }[] = [
   { id: 'sqli', label: 'SQL Injection', icon: Database, color: 'text-ember-300' },
   { id: 'xss', label: 'XSS (script malicioso)', icon: Code2, color: 'text-amber-300' },
+  { id: 'csrf', label: 'CSRF', icon: Link2Off, color: 'text-amber-300' },
   { id: 'password', label: 'Força de senha', icon: KeyRound, color: 'text-cyan-300' },
+  { id: 'bruteforce', label: 'Brute force & rate limiting', icon: Gauge, color: 'text-cyan-300' },
   { id: 'leak', label: 'Exposição de dados', icon: FileWarning, color: 'text-mint-300' },
+  { id: 'owasp', label: 'Quiz OWASP Top 10', icon: ListChecks, color: 'text-mint-300' },
 ];
 
 // --- Cenário 1: SQL Injection ---
@@ -125,6 +131,96 @@ function simulateApiError(query: string, mode: Mode): { status: number; body: st
   };
 }
 
+// --- Cenário 5: CSRF ---
+// Simula um "banco real" mudando de email só porque o usuário clicou num link
+// malicioso enquanto estava logado — sem token CSRF, o navegador envia o
+// cookie de sessão automaticamente, e o servidor não tem como saber que o
+// pedido não veio de uma ação intencional do usuário no site real.
+function simulateCsrfClick(mode: Mode, loggedIn: boolean): { changed: boolean; message: string } {
+  if (!loggedIn) {
+    return { changed: false, message: 'Você precisa estar "logado" no banco fake para esse ataque fazer sentido. Marque a opção de login acima.' };
+  }
+  if (mode === 'vulnerable') {
+    return {
+      changed: true,
+      message:
+        '🚨 O email da conta foi trocado para invasor@maligno.com sem você perceber! O site malicioso mandou uma requisição para o banco, ' +
+        'seu navegador anexou o cookie de sessão automaticamente (porque você estava logado), e o servidor aceitou — sem checar se o pedido realmente partiu do site do banco.',
+    };
+  }
+  return {
+    changed: false,
+    message:
+      '✅ A requisição foi bloqueada. O servidor exigia um token CSRF único (gerado só dentro do site do banco) que o site malicioso não tinha como conhecer — então o pedido foi rejeitado.',
+  };
+}
+
+// --- Cenário 6: Brute force & rate limiting ---
+const FAKE_PASSWORD = 'flores123';
+
+interface BruteForceState {
+  attempts: number;
+  blocked: boolean;
+  log: { text: string; ok: boolean }[];
+}
+
+function attemptLogin(currentSenha: string, mode: Mode, state: BruteForceState): BruteForceState {
+  if (mode === 'safe' && state.blocked) {
+    return { ...state, log: [...state.log, { text: '🔒 Bloqueado por rate limiting — espere antes de tentar de novo.', ok: false }] };
+  }
+  const correct = currentSenha === FAKE_PASSWORD;
+  const attempts = state.attempts + 1;
+  const log = [...state.log, { text: correct ? `Tentativa ${attempts}: "${currentSenha}" → ✅ senha correta!` : `Tentativa ${attempts}: "${currentSenha}" → ❌ incorreta`, ok: correct }];
+
+  if (mode === 'safe' && !correct && attempts >= 3) {
+    return { attempts, blocked: true, log: [...log, { text: '🛑 3 tentativas erradas — conta temporariamente bloqueada por 10 segundos (rate limiting).', ok: false }] };
+  }
+  return { attempts, blocked: false, log };
+}
+
+const COMMON_PASSWORD_LIST = ['123456', 'senha123', 'flores123', 'admin', 'qwerty', 'password', '111111'];
+
+// --- Cenário 7: Quiz OWASP Top 10 ---
+interface OwaspQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+const OWASP_QUESTIONS: OwaspQuestion[] = [
+  {
+    question: 'Um atacante consegue ver pedidos de outros clientes só trocando o número no final da URL (/pedidos/123 → /pedidos/124), sem nenhuma checagem de permissão. Isso é um exemplo de:',
+    options: ['Quebra de controle de acesso', 'Falha criptográfica', 'Design inseguro', 'Falha de log e monitoramento'],
+    correctIndex: 0,
+    explanation: 'Quando o sistema não verifica se o usuário logado tem permissão sobre aquele recurso específico, isso é "Broken Access Control" — a categoria #1 do OWASP Top 10.',
+  },
+  {
+    question: 'Um site guarda senhas de usuários em texto puro no banco de dados. Se esse banco for vazado, todas as senhas reais ficam expostas. Que categoria é essa?',
+    options: ['Injeção', 'Falhas criptográficas', 'CSRF', 'Componentes vulneráveis'],
+    correctIndex: 1,
+    explanation: 'Não usar hash (como bcrypt) para senhas é uma falha criptográfica — dados sensíveis precisam estar protegidos mesmo se o armazenamento for comprometido.',
+  },
+  {
+    question: 'Uma aplicação usa uma biblioteca de terceiros com uma vulnerabilidade conhecida publicada há 2 anos, e nunca foi atualizada. Esse risco se chama:',
+    options: ['Injeção de SQL', 'Componentes vulneráveis e desatualizados', 'XSS', 'Falha de identificação'],
+    correctIndex: 1,
+    explanation: 'Usar dependências com vulnerabilidades conhecidas e não corrigidas é uma categoria própria no OWASP Top 10 — manter dependências atualizadas é parte da segurança.',
+  },
+  {
+    question: 'Um formulário de "esqueci minha senha" informa "email não encontrado" quando o email não existe, e "senha incorreta" quando existe. Isso ajuda um atacante a:',
+    options: ['Quebrar a criptografia do banco', 'Descobrir quais emails têm conta no sistema', 'Fazer um ataque de CSRF', 'Explorar XSS'],
+    correctIndex: 1,
+    explanation: 'Mensagens de erro diferentes "vazam" informação (enumeração de usuários). A defesa é responder sempre com uma mensagem genérica.',
+  },
+  {
+    question: 'Um sistema de e-commerce loga todas as tentativas de login, mas ninguém nunca olha esses logs nem é alertado sobre padrões suspeitos. Que categoria descreve essa fragilidade?',
+    options: ['Falhas de log e monitoramento', 'Design inseguro', 'Injeção', 'SSRF'],
+    correctIndex: 0,
+    explanation: 'Ter logs que nunca são monitorados é quase tão arriscado quanto não ter logs — ataques em andamento passam despercebidos por muito tempo.',
+  },
+];
+
 export function SecurityLab() {
   const [scenario, setScenario] = useState<Scenario>('sqli');
   const [mode, setMode] = useState<Mode>('vulnerable');
@@ -146,12 +242,29 @@ export function SecurityLab() {
   const [apiQuery, setApiQuery] = useState('');
   const [apiResult, setApiResult] = useState<ReturnType<typeof simulateApiError> | null>(null);
 
+  // csrf state
+  const [csrfLoggedIn, setCsrfLoggedIn] = useState(true);
+  const [csrfResult, setCsrfResult] = useState<ReturnType<typeof simulateCsrfClick> | null>(null);
+
+  // brute force state
+  const [bfPassword, setBfPassword] = useState('');
+  const [bfState, setBfState] = useState<BruteForceState>({ attempts: 0, blocked: false, log: [] });
+
+  // owasp quiz state
+  const [owaspIdx, setOwaspIdx] = useState(0);
+  const [owaspSelected, setOwaspSelected] = useState<number | null>(null);
+  const [owaspScore, setOwaspScore] = useState<Set<number>>(new Set());
+
   function changeScenario(s: Scenario) {
     setScenario(s);
     setSqliResult(null);
     setPostedComments([]);
     setApiResult(null);
     setShowHint(false);
+    setCsrfResult(null);
+    setBfState({ attempts: 0, blocked: false, log: [] });
+    setOwaspIdx(0);
+    setOwaspSelected(null);
   }
 
   function tryLogin() {
@@ -167,6 +280,44 @@ export function SecurityLab() {
   function runApiQuery() {
     setApiResult(simulateApiError(apiQuery, mode));
   }
+
+  function clickMaliciousLink() {
+    setCsrfResult(simulateCsrfClick(mode, csrfLoggedIn));
+  }
+
+  function submitBfAttempt() {
+    setBfState((prev) => attemptLogin(bfPassword, mode, prev));
+    setBfPassword('');
+  }
+
+  function tryCommonPassword(pwd: string) {
+    setBfPassword(pwd);
+  }
+
+  function unlockBf() {
+    setBfState({ attempts: 0, blocked: false, log: [] });
+  }
+
+  function answerOwasp(idx: number) {
+    if (owaspSelected !== null) return;
+    setOwaspSelected(idx);
+    if (idx === OWASP_QUESTIONS[owaspIdx].correctIndex) {
+      setOwaspScore((prev) => new Set(prev).add(owaspIdx));
+    }
+  }
+
+  function nextOwasp() {
+    setOwaspSelected(null);
+    setOwaspIdx((i) => Math.min(i + 1, OWASP_QUESTIONS.length - 1));
+  }
+
+  function restartOwasp() {
+    setOwaspIdx(0);
+    setOwaspSelected(null);
+    setOwaspScore(new Set());
+  }
+
+  const owaspDone = owaspIdx === OWASP_QUESTIONS.length - 1 && owaspSelected !== null;
 
   function reset() {
     setEmail('');
@@ -205,16 +356,16 @@ export function SecurityLab() {
         })}
       </div>
 
-      {(scenario === 'sqli' || scenario === 'xss' || scenario === 'leak') && (
+      {(scenario === 'sqli' || scenario === 'xss' || scenario === 'leak' || scenario === 'csrf' || scenario === 'bruteforce') && (
         <div className="flex justify-center gap-1.5">
           <button
-            onClick={() => { setMode('vulnerable'); reset(); }}
+            onClick={() => { setMode('vulnerable'); reset(); setCsrfResult(null); setBfState({ attempts: 0, blocked: false, log: [] }); }}
             className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold ${mode === 'vulnerable' ? 'bg-ember-500 text-white' : 'bg-base-800 text-base-300'}`}
           >
             <ShieldAlert size={12} /> Versão vulnerável
           </button>
           <button
-            onClick={() => { setMode('safe'); reset(); }}
+            onClick={() => { setMode('safe'); reset(); setCsrfResult(null); setBfState({ attempts: 0, blocked: false, log: [] }); }}
             className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold ${mode === 'safe' ? 'bg-mint-400 text-base-950' : 'bg-base-800 text-base-300'}`}
           >
             <ShieldCheck size={12} /> Versão corrigida
@@ -456,6 +607,143 @@ export function SecurityLab() {
               <p className="text-xs text-base-500">Rode uma busca para ver a resposta da API aqui.</p>
             )}
           </div>
+        </div>
+      )}
+      {scenario === 'csrf' && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-base-700 bg-base-900/60 p-4">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-base-400">
+              Cenário: você está logado no "banco" {mode === 'vulnerable' ? '(sem proteção CSRF)' : '(com token CSRF)'}
+            </p>
+            <label className="flex items-center gap-2 text-[12.5px] text-base-300">
+              <input type="checkbox" checked={csrfLoggedIn} onChange={(e) => setCsrfLoggedIn(e.target.checked)} className="accent-cyan-400" />
+              Estou logado no site do banco fake (cookie de sessão ativo)
+            </label>
+            <div className="mt-3 rounded-lg border border-base-600 bg-base-800/60 p-3">
+              <p className="text-[12px] text-base-300">
+                Agora imagine que, em outra aba, você visita um site qualquer que tem este botão escondido:
+              </p>
+              <button onClick={clickMaliciousLink} className="mt-2 w-full rounded-lg bg-amber-400 px-4 py-2 text-sm font-bold text-base-950 hover:opacity-90">
+                🎁 Clique aqui para ganhar um prêmio!
+              </button>
+              <p className="mt-2 text-[11px] text-base-500">(esse botão, sem você saber, manda uma requisição escondida para trocar o email da sua conta no banco)</p>
+            </div>
+            <button onClick={() => setCsrfResult(null)} className="mt-3 flex items-center gap-1.5 text-xs text-base-400 hover:text-base-200">
+              <RotateCcw size={11} /> Limpar
+            </button>
+          </div>
+          <div className="rounded-xl border border-base-700 bg-base-950/60 p-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-base-400">O que aconteceu no servidor (simulado)</p>
+            {csrfResult ? (
+              <div
+                className={`rounded-lg border p-3 text-sm ${
+                  csrfResult.changed ? 'border-ember-400/30 bg-ember-500/10 text-ember-200' : 'border-mint-400/30 bg-mint-900/15 text-mint-200'
+                }`}
+              >
+                {csrfResult.message}
+              </div>
+            ) : (
+              <p className="text-xs text-base-500">Clique no botão "prêmio" para ver o resultado aqui.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {scenario === 'bruteforce' && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-base-700 bg-base-900/60 p-4">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-base-400">
+              Login fake {mode === 'vulnerable' ? '(tentativas ilimitadas)' : '(com rate limiting após 3 erros)'}
+            </p>
+            <div className="flex gap-1.5">
+              <input
+                value={bfPassword}
+                onChange={(e) => setBfPassword(e.target.value)}
+                placeholder="tente uma senha"
+                className="flex-1 rounded-lg border border-base-600 bg-base-800 px-3 py-2 font-mono text-sm text-base-100 outline-none focus:border-cyan-400"
+              />
+              <button onClick={submitBfAttempt} className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-bold text-base-950 hover:opacity-90">
+                Entrar
+              </button>
+            </div>
+            <p className="mt-2 text-[11px] text-base-400">Senhas comuns para testar (como um atacante faria):</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {COMMON_PASSWORD_LIST.map((p) => (
+                <button key={p} onClick={() => tryCommonPassword(p)} className="rounded-full border border-base-600 px-2.5 py-1 font-mono text-[11px] text-base-300 hover:bg-base-800">
+                  {p}
+                </button>
+              ))}
+            </div>
+            {mode === 'safe' && bfState.blocked && (
+              <button onClick={unlockBf} className="mt-3 flex items-center gap-1.5 text-xs text-amber-300 hover:underline">
+                <RotateCcw size={11} /> Simular espera de 10s e tentar de novo
+              </button>
+            )}
+          </div>
+          <div className="rounded-xl border border-base-700 bg-base-950/60 p-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-base-400">Log de tentativas</p>
+            <div className="rounded-lg bg-base-900 p-2.5 font-mono text-[11.5px]" style={{ minHeight: '180px', maxHeight: '220px', overflowY: 'auto' }}>
+              {bfState.log.length === 0 && <p className="text-base-600">Tente fazer login para ver o log aqui.</p>}
+              {bfState.log.map((l, i) => (
+                <div key={i} className={l.ok ? 'text-mint-300' : 'text-base-300'}>{l.text}</div>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-base-500">
+              {mode === 'vulnerable'
+                ? '🚨 Sem limite de tentativas, um atacante pode testar milhares de senhas comuns por segundo (brute force) até acertar.'
+                : '✅ Depois de poucas tentativas erradas, o rate limiting bloqueia novas tentativas por um tempo — tornando o brute force inviável na prática.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {scenario === 'owasp' && (
+        <div className="mx-auto max-w-2xl">
+          {!owaspDone || owaspSelected === null ? (
+            <div className="rounded-xl border border-base-700 bg-base-900/60 p-4">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-base-400">
+                Pergunta {owaspIdx + 1} de {OWASP_QUESTIONS.length}
+              </p>
+              <p className="text-sm text-base-100">{OWASP_QUESTIONS[owaspIdx].question}</p>
+              <div className="mt-3 space-y-1.5">
+                {OWASP_QUESTIONS[owaspIdx].options.map((opt, idx) => {
+                  const isCorrect = idx === OWASP_QUESTIONS[owaspIdx].correctIndex;
+                  const isSelected = owaspSelected === idx;
+                  let style = 'border-base-600 text-base-200 hover:bg-base-800';
+                  if (owaspSelected !== null) {
+                    if (isCorrect) style = 'border-mint-400/60 bg-mint-900/20 text-mint-200';
+                    else if (isSelected) style = 'border-ember-400/60 bg-ember-500/10 text-ember-200';
+                  }
+                  return (
+                    <button key={idx} onClick={() => answerOwasp(idx)} disabled={owaspSelected !== null} className={`w-full rounded-lg border px-3 py-2 text-left text-sm ${style}`}>
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {owaspSelected !== null && (
+                <>
+                  <p className="mt-3 rounded-lg bg-base-800/60 p-2.5 text-[12px] text-base-300">{OWASP_QUESTIONS[owaspIdx].explanation}</p>
+                  {owaspIdx < OWASP_QUESTIONS.length - 1 && (
+                    <button onClick={nextOwasp} className="mt-3 rounded-lg bg-cyan-400 px-4 py-2 text-sm font-bold text-base-950 hover:opacity-90">
+                      Próxima pergunta →
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          ) : null}
+          {owaspDone && owaspSelected !== null && owaspIdx === OWASP_QUESTIONS.length - 1 && (
+            <div className="mt-4 rounded-xl border border-mint-400/30 bg-mint-900/10 p-4 text-center">
+              <CheckCircle2 className="mx-auto mb-2 text-mint-300" size={24} />
+              <p className="text-sm font-semibold text-base-50">
+                Você acertou {owaspScore.size} de {OWASP_QUESTIONS.length}
+              </p>
+              <button onClick={restartOwasp} className="mt-3 flex items-center gap-1.5 mx-auto rounded-lg border border-base-600 px-3 py-1.5 text-xs text-base-300 hover:bg-base-800">
+                <RotateCcw size={12} /> Refazer quiz
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

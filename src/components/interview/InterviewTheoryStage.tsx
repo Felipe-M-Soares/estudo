@@ -41,7 +41,7 @@ export function InterviewTheoryStage({ questions, currentIdx, onAnswer, onNext }
   if (!question) return null;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 lg:px-8">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8 lg:px-8">
       <div className="mb-4 flex items-center justify-between">
         <span className="font-mono text-xs text-base-400">Teoria · Pergunta {currentIdx + 1}/{questions.length}</span>
         <span className={`flex items-center gap-1 font-mono text-xs font-semibold ${timeLeft <= 10 ? 'text-ember-400' : 'text-base-300'}`}>
