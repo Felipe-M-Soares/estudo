@@ -12,11 +12,12 @@ rodar o backend, escolha o que combina com o que voce ja faz:
 ## Deploy na Vercel (GitHub -> Vercel automatico)
 
 A Vercel nao roda um servidor Node "ligado o tempo todo" (o `server/server.mjs`
-antigo). Ela roda **funcoes serverless**: cada requisicao para `/api/*` chama
-a funcao em `api/[...path].mjs`, que reaproveita toda a mesma logica de
-`server/app.mjs` (nenhuma regra de negocio duplicada entre os dois modos).
-Isso ja esta configurado no projeto - voce so precisa cadastrar as variaveis
-de ambiente.
+antigo). Ela roda **funcoes serverless**: uma regra de `rewrite` em
+`vercel.json` manda toda requisicao para `/api/*` (com qualquer numero de
+segmentos no caminho) para `api/index.mjs`, que reaproveita toda a mesma
+logica de `server/app.mjs` (nenhuma regra de negocio duplicada entre os
+dois modos). Isso ja esta configurado no projeto - voce so precisa
+cadastrar as variaveis de ambiente.
 
 **Passo a passo (tudo pelo navegador, direto no painel da Vercel):**
 

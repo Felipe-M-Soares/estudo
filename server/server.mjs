@@ -1,7 +1,7 @@
 // Servidor HTTP tradicional para quem hospeda em VPS, Railway, Render, ou
 // roda localmente (`npm run dev` / `npm start`). Toda a logica de negocio
 // (rotas da API, checagens de seguranca) mora em `server/app.mjs`, que e
-// compartilhada com a versao serverless usada na Vercel (`api/[...path].mjs`).
+// compartilhada com a versao serverless usada na Vercel (`api/index.mjs`, roteada via rewrite em vercel.json).
 // Se voce so faz deploy pela Vercel, este arquivo nao roda em producao -
 // quem atende as requisicoes la e a funcao em `api/`.
 import { createServer } from 'node:http';

@@ -42,7 +42,7 @@ funcoes serverless da Vercel):
 **Se voce so sobe o codigo pro GitHub e a Vercel publica sozinha:** nao
 precisa rodar nada local. Configure as variaveis de ambiente no painel da
 Vercel (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TOKEN_SECRET`,
-`ADMIN_TOKEN`) e o proprio deploy ja ativa a API via `api/[...path].mjs`.
+`ADMIN_TOKEN`) e o proprio deploy ja ativa a API via `api/index.mjs`.
 Passo a passo completo em `PRIMEIROS_PASSOS_SUPABASE.md` (secao "Caminho
 Vercel") e `COMMERCIAL_DEPLOY.md`.
 

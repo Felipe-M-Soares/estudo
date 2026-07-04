@@ -1,5 +1,34 @@
 # DevQuest - Analise de Seguranca
 
+## Correcao: rotas com mais de um segmento davam 404 na Vercel (04/07/2026)
+
+Depois do suporte inicial a Vercel (secao abaixo), o usuario reportou em
+producao: `/api/health`, `/api/plans` e `/api/me` (todas com 1 segmento
+depois de `/api/`) funcionavam, mas `/api/auth/register`,
+`/api/admin/summary` etc. (2+ segmentos) davam 404 da propria Vercel (nao
+um 404 da nossa aplicacao) - confirmado tanto pelo Network tab do navegador
+quanto testando `/api/admin/summary` direto na URL.
+
+Causa provavel: a chave `"api/[...path].mjs"` dentro de `functions` no
+`vercel.json` e interpretada como um **padrao glob**, onde colchetes tem
+significado especial (classe de caracteres), nao como texto literal do
+nome do arquivo. Isso pode fazer o glob nao casar com o arquivo real,
+gerando comportamento de rota inconsistente.
+
+Correcao aplicada: renomeado `api/[...path].mjs` para `api/index.mjs`
+(sem colchetes, sem ambiguidade de glob) e adicionada uma regra de
+**rewrite explicita** no `vercel.json`:
+
+```json
+"rewrites": [
+  { "source": "/api/:path*", "destination": "/api/index" }
+]
+```
+
+Isso e a forma mais direta e documentada de garantir que qualquer
+requisicao a `/api/*` (com quantos segmentos for) chegue nessa unica
+funcao, sem depender de convencao de nome de arquivo dinamico.
+
 ## Suporte nativo a deploy na Vercel (04/07/2026)
 
 O usuario informou que o fluxo real de uso e: subir para o GitHub, com o
@@ -15,8 +44,8 @@ mudanca de arquitetura, nao so de configuracao:
   agora reaproveitam esse mesmo modulo:
   - `server/server.mjs`: servidor tradicional (`node:http` + `.listen()`),
     para quem hospeda em VPS/Railway/Render ou roda `npm run dev` local.
-  - `api/[...path].mjs`: funcao serverless da Vercel (convencao de
-    "catch-all route" - qualquer requisicao a `/api/*` cai aqui).
+  - `api/index.mjs`: funcao serverless da Vercel, roteada via `rewrite` em
+    `vercel.json` (qualquer requisicao a `/api/*` cai aqui).
 - **Geracao automatica de segredos desativada em ambiente serverless.**
   Antes, se `TOKEN_SECRET`/`ADMIN_TOKEN` faltassem, o servidor gerava
   valores aleatorios e salvava em `.data/secrets.json` para sobreviver a

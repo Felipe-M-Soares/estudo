@@ -1,9 +1,11 @@
-// Funcao serverless da Vercel. Qualquer requisicao para /api/* cai aqui
-// automaticamente (convencao de arquivo "catch-all" da Vercel: o nome
-// [...path].mjs dentro da pasta api/ significa "qualquer coisa depois de
-// /api/"). Toda a logica de negocio real mora em server/app.mjs, que e a
-// MESMA usada pelo servidor tradicional em server/server.mjs - nada de
-// regra de negocio duplicada entre os dois jeitos de hospedar.
+// Funcao serverless da Vercel. TODA requisicao para /api/* cai aqui porque
+// vercel.json tem uma regra de "rewrite" explicita mandando /api/(.*) para
+// cá - isso evita depender da convencao de nome de arquivo com colchetes
+// ([...path].mjs), que pode ser mal interpretada como um padrao glob em
+// algumas configuracoes. Toda a logica de negocio real mora em
+// server/app.mjs, que e a MESMA usada pelo servidor tradicional em
+// server/server.mjs - nada de regra de negocio duplicada entre os dois
+// jeitos de hospedar.
 import { handleApi, seedDb, sendError, withCors } from '../server/app.mjs';
 
 // Evita rodar a semeadura da licenca de demonstracao em toda invocacao fria;
