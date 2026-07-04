@@ -380,6 +380,26 @@ button {
   min-height: 42px;
   outline: 0;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 30px;
+  /* Sem isso, o navegador desenha a lista de opcoes do <select> com o tema
+     claro nativo do sistema mesmo com o app no tema escuro, o que parecia
+     um "tema bugado" no seletor. */
+  color-scheme: dark;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2396a5c1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.language-switch option {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.theme-daybreak .language-switch {
+  color-scheme: light;
 }
 
 .main-shell {
@@ -508,7 +528,20 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.48;
+  opacity: 1;
+}
+
+.primary-btn:disabled,
+.success-pill:disabled {
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.ghost-btn:disabled,
+.danger-btn:disabled,
+.panel-head button:disabled {
+  opacity: 0.55;
 }
 
 .full {
@@ -1332,16 +1365,11 @@ button:disabled {
   min-height: 0;
 }
 
-.account-status-grid,
 .account-facts,
 .sync-grid {
   display: grid;
   gap: 10px;
   margin-top: 18px;
-}
-
-.account-status-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .sync-grid {
@@ -1400,7 +1428,6 @@ button:disabled {
   font-size: 13px;
 }
 
-.account-status-grid div,
 .account-facts span {
   padding: 14px;
   border: 1px solid var(--line);
@@ -1408,7 +1435,6 @@ button:disabled {
   background: var(--surface-3);
 }
 
-.account-status-grid span,
 .account-facts span {
   color: var(--muted);
   font-size: 12px;
@@ -1416,7 +1442,6 @@ button:disabled {
   text-transform: uppercase;
 }
 
-.account-status-grid strong,
 .account-facts strong {
   display: block;
   margin-top: 5px;
@@ -1824,7 +1849,6 @@ button:disabled {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .account-status-grid,
   .sync-grid {
     grid-template-columns: 1fr;
   }

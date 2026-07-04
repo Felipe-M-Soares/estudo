@@ -173,6 +173,8 @@ const copy: Record<Language, Record<string, string>> = {
     'account.license': 'Chave de licenca',
     'account.activate': 'Ativar licenca',
     'account.sync': 'Sincronizacao',
+    'account.billingLifetime': 'Vitalicio',
+    'account.billingMonthly': 'Mensal',
   },
   en: {
     'nav.command': 'Start',
@@ -231,6 +233,8 @@ const copy: Record<Language, Record<string, string>> = {
     'account.license': 'License key',
     'account.activate': 'Activate license',
     'account.sync': 'Sync',
+    'account.billingLifetime': 'Lifetime',
+    'account.billingMonthly': 'Monthly',
   },
   es: {
     'nav.command': 'Inicio',
@@ -289,6 +293,8 @@ const copy: Record<Language, Record<string, string>> = {
     'account.license': 'Clave de licencia',
     'account.activate': 'Activar licencia',
     'account.sync': 'Sincronizacion',
+    'account.billingLifetime': 'Vitalicio',
+    'account.billingMonthly': 'Mensual',
   },
 };
 
@@ -332,6 +338,12 @@ function formatPrice(priceCents: number) {
     style: 'currency',
     currency: 'BRL',
   });
+}
+
+function unlockCopy(language: Language, maxMonth: number) {
+  if (language === 'en') return `Unlocks up to month ${maxMonth} of the path.`;
+  if (language === 'es') return `Libera hasta el mes ${maxMonth} de la ruta.`;
+  return `Libera ate o mes ${maxMonth} da trilha.`;
 }
 
 function fallbackPlans(language: Language = 'pt'): CommercialPlan[] {
@@ -1847,20 +1859,6 @@ function CommercialAccount({
           <span className="eyebrow"><ShieldCheck size={15} /> {t('nav.account')}</span>
           <h1>{t('account.heroTitle')}</h1>
           <p>{t('account.heroBody')}</p>
-          <div className="account-status-grid">
-            <div>
-              <span>API</span>
-              <strong>{commercial.online ? 'Online' : 'Offline'}</strong>
-            </div>
-            <div>
-              <span>Modo</span>
-              <strong>{commercial.mode}</strong>
-            </div>
-            <div>
-              <span>Acesso</span>
-              <strong>{commercial.access ? 'Liberado' : 'Pendente'}</strong>
-            </div>
-          </div>
         </article>
 
         <Panel title={t('account.plans')} icon={<CreditCard size={22} weight="duotone" />}>
@@ -1874,10 +1872,10 @@ function CommercialAccount({
                     {plan.id === 'pro' && <ChartLineUp size={28} weight="duotone" />}
                     {plan.id === 'lifetime' && <Certificate size={28} weight="duotone" />}
                   </div>
-                  <span>{plan.billing === 'lifetime' ? 'Lifetime' : 'Monthly'}</span>
+                  <span>{plan.billing === 'lifetime' ? t('account.billingLifetime') : t('account.billingMonthly')}</span>
                   <h3>{plan.name}</h3>
                   <strong>{formatPrice(plan.priceCents)}{plan.billing === 'monthly' ? '/mes' : ''}</strong>
-                  <p>Libera ate o mes {plan.maxMonth} da trilha.</p>
+                  <p>{unlockCopy(language, plan.maxMonth)}</p>
                   <div className="checklist compact-list">
                     {plan.features.map((feature) => (
                       <div key={feature}><CheckCircle2 size={16} /><span>{feature}</span></div>
