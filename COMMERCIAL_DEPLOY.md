@@ -165,6 +165,13 @@ curl -X POST http://localhost:8787/api/admin/payments/confirm \
 4. Somente depois do plano ativo acessa aulas, laboratorio, arcade, revisoes e progresso.
 5. Usa "Enviar progresso" e "Baixar progresso" para sincronizar.
 
+**Excecao para o dono da plataforma:** o primeiro cadastro (papel `owner`)
+ve um botao extra na tela Conta - "Ativar acesso vitalicio (dono da
+plataforma)" - que libera uma licenca vitalicia gratuita para a propria
+conta com um clique, sem precisar de chave nem do token de admin. Isso
+existe so para o dono testar o proprio produto; qualquer outra conta
+segue o fluxo normal de compra/ativacao.
+
 Sem usuario logado e plano ativo, o frontend redireciona qualquer tentativa de acesso para Conta.
 
 ## Endpoints principais
@@ -180,6 +187,7 @@ Sem usuario logado e plano ativo, o frontend redireciona qualquer tentativa de a
 - `POST /api/checkout`
 - `POST /api/payments/mercadopago/webhook`
 - `POST /api/license/activate`
+- `POST /api/owner/claim-license`
 - `GET /api/progress`
 - `PUT /api/progress`
 - `POST /api/admin/licenses`

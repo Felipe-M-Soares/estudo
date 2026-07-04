@@ -130,6 +130,10 @@ export async function activateCommercialLicense(licenseKey: string): Promise<Omi
   });
 }
 
+export async function claimOwnerLicense(): Promise<Omit<CommercialSession, 'token'> & { alreadyActive?: boolean }> {
+  return apiRequest('/api/owner/claim-license', { method: 'POST' });
+}
+
 export async function createCommercialCheckout(planId: CommercialPlan['id']): Promise<{
   ok: boolean;
   checkoutUrl: string;

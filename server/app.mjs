@@ -669,6 +669,43 @@ async function handleApi(req, res, pathname) {
     return;
   }
 
+  if (req.method === 'POST' && pathname === '/api/owner/claim-license') {
+    // Auto-ativacao de licenca vitalicia gratuita, exclusiva para quem tem
+    // o papel "owner" (o dono da plataforma - normalmente o primeiro
+    // cadastro). Nao precisa de token de admin: o proprio login (Bearer
+    // token) do owner e a autorizacao. Isso evita que o dono do site
+    // precise gerar uma licenca manual por curl so pra testar o proprio
+    // produto.
+    const user = await requireUser(req, res);
+    if (!user) return;
+    if (user.role !== 'owner') {
+      return sendError(res, 403, 'Somente o dono da plataforma pode usar essa ativacao automatica.', 'forbidden');
+    }
+    if (await hasAccess(user)) {
+      return sendJson(res, 200, { ok: true, user: await publicUser(user), access: true, alreadyActive: true });
+    }
+    const rawKey = `DEVQUEST-${randomBytes(4).toString('hex').toUpperCase()}-${randomBytes(4).toString('hex').toUpperCase()}`;
+    const license = await store.insertLicense({
+      id: createId('lic'),
+      keyHash: sha256(rawKey),
+      plan: 'lifetime',
+      seats: 1,
+      usedBy: [user.id],
+      status: 'active',
+      expiresAt: null,
+      createdAt: nowIso(),
+      orderId: null,
+      source: 'owner-self-claim',
+      note: 'Licenca vitalicia auto-gerada para o dono da plataforma.',
+    });
+    user.licenseId = license.id;
+    user.updatedAt = nowIso();
+    await store.updateUser(user);
+    await store.insertEvent('license.owner_self_claimed', user.id, { licenseId: license.id });
+    sendJson(res, 200, { ok: true, user: await publicUser(user), access: await hasAccess(user) });
+    return;
+  }
+
   if (req.method === 'POST' && pathname === '/api/license/activate') {
     const user = await requireUser(req, res);
     if (!user) return;

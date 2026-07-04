@@ -52,6 +52,7 @@ import { GameIcon } from './components/ui/GameIcon';
 import { ExerciseRouter } from './components/ui/ExerciseRouter';
 import {
   activateCommercialLicense,
+  claimOwnerLicense,
   createCommercialCheckout,
   getCommercialPlans,
   getCommercialMe,
@@ -1826,6 +1827,20 @@ function CommercialAccount({
     }
   }
 
+  async function claimOwner() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await claimOwnerLicense();
+      setCommercial((current) => ({ ...current, user: result.user, access: result.access, error: null }));
+      setMessage(result.alreadyActive ? 'Sua conta ja tem acesso ativo.' : 'Acesso vitalicio de dono ativado com sucesso.');
+    } catch (error) {
+      setCommercial((current) => ({ ...current, error: error instanceof Error ? error.message : 'Erro ao ativar acesso de dono.' }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function startCheckout(planId: CommercialPlan['id']) {
     setBusy(true);
     setMessage(null);
@@ -1959,6 +1974,16 @@ function CommercialAccount({
             <button className="primary-btn full" disabled={busy || !licenseKey.trim()} onClick={activateLicense}>
               {t('account.activate')}
             </button>
+            {commercial.user.role === 'owner' && !commercial.access && (
+              <>
+                <button className="ghost-btn full owner-claim-btn" disabled={busy} onClick={claimOwner}>
+                  <Crown size={15} /> Ativar acesso vitalicio (dono da plataforma)
+                </button>
+                <small className="offline-hint">
+                  Voce e o dono desta instalacao (primeiro cadastro) - pode liberar seu proprio acesso vitalicio sem precisar de chave.
+                </small>
+              </>
+            )}
           </>
         ) : (
           <>

@@ -1621,6 +1621,12 @@ button:disabled {
   font-size: 12px;
 }
 
+.owner-claim-btn {
+  margin-top: 10px;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  color: var(--accent);
+}
+
 .offline-hint {
   display: block;
   margin-top: 6px;
