@@ -1,25 +1,31 @@
 import { useMemo, useState } from 'react';
 import {
+  Activity,
   Award,
   BarChart3,
   BookOpen,
   Bot,
+  Boxes,
   BriefcaseBusiness,
   CheckCircle2,
   ChevronRight,
+  CircleDot,
   Code2,
+  Coins,
   Crown,
   Flame,
   Gamepad2,
+  Gem,
   GraduationCap,
   Home,
   Layers3,
   Lock,
   Map,
-  Medal,
   Menu,
   Moon,
+  Play,
   Search,
+  ShieldCheck,
   Sparkles,
   Star,
   Swords,
@@ -28,182 +34,336 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { modules } from './data';
+import { modules, totalChecklistCount, totalExerciseCount } from './data';
+import type { LessonBlock, Module } from './data/types';
+import {
+  achievementCatalog,
+  careerLadder,
+  dailyPlan,
+  intelligenceCards,
+  learningWorlds,
+  marketplace,
+  mentorActions,
+  productStats,
+  projectCampaigns,
+  reviewQueue,
+  seasons,
+  skillTree,
+  studioFiles,
+  type PlatformTheme,
+} from './data/platform';
 
-type Screen = 'dashboard' | 'academy' | 'story' | 'labs' | 'arcade' | 'career' | 'ai' | 'stats';
-type Theme = 'aurora' | 'cyber' | 'royal';
+type Screen =
+  | 'command'
+  | 'worlds'
+  | 'learn'
+  | 'story'
+  | 'lab'
+  | 'arcade'
+  | 'career'
+  | 'review'
+  | 'mentor'
+  | 'analytics'
+  | 'market';
 
-const tracks = [
-  { id: 'frontend', name: 'Frontend', icon: '🎨', color: 'cyan', description: 'Interfaces, React, performance e experiência visual.' },
-  { id: 'backend', name: 'Backend', icon: '🧠', color: 'violet', description: 'APIs, autenticação, bancos, cache e arquitetura.' },
-  { id: 'devops', name: 'DevOps & Cloud', icon: '🚀', color: 'orange', description: 'Docker, CI/CD, Kubernetes, deploy e observabilidade.' },
-  { id: 'fullstack', name: 'Fullstack Pro', icon: '⚔️', color: 'green', description: 'Projetos completos simulando empresas reais.' },
-  { id: 'ia', name: 'IA Aplicada', icon: '🤖', color: 'pink', description: 'Prompts, agentes, automações, RAG e copilotos.' },
-  { id: 'career', name: 'Carreira Tech', icon: '🏆', color: 'gold', description: 'Entrevistas, portfólio, comunicação e liderança.' },
+const navItems = [
+  { id: 'command', label: 'Command Center', icon: Home },
+  { id: 'worlds', label: 'Mundos', icon: Map },
+  { id: 'learn', label: 'Sala de Aula', icon: BookOpen },
+  { id: 'story', label: 'Modo Historia', icon: Sparkles },
+  { id: 'lab', label: 'Laboratorio', icon: Code2 },
+  { id: 'arcade', label: 'Arcade', icon: Gamepad2 },
+  { id: 'career', label: 'Carreira', icon: BriefcaseBusiness },
+  { id: 'review', label: 'Revisao', icon: ShieldCheck },
+  { id: 'mentor', label: 'Mentor IA', icon: Bot },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'market', label: 'Loja', icon: Coins },
+] as const;
+
+const arcadeModes = [
+  { title: 'Quiz Rush', icon: Zap, tag: 'Velocidade', reward: '+120 XP', detail: 'Responda rapido para manter combo.' },
+  { title: 'Debug Arena', icon: Target, tag: 'Investigacao', reward: '+240 XP', detail: 'Analise logs, sintomas e causa raiz.' },
+  { title: 'Memory Code', icon: Boxes, tag: 'Memoria', reward: '+90 XP', detail: 'Combine conceito, exemplo e aplicacao.' },
+  { title: 'SQL Duel', icon: Activity, tag: 'Dados', reward: '+180 XP', detail: 'Monte consultas com objetivo claro.' },
+  { title: 'API Builder', icon: Layers3, tag: 'Backend', reward: '+220 XP', detail: 'Crie contratos, status e validacoes.' },
+  { title: 'Boss Fight', icon: Swords, tag: 'Final', reward: '+900 XP', detail: 'Resolva um desafio de modulo completo.' },
 ];
 
-const bossFights = [
-  { title: 'Boss API REST', xp: 800, timer: '45 min', objective: 'Criar autenticação, rotas protegidas, paginação e tratamento de erro.' },
-  { title: 'Boss React Performance', xp: 950, timer: '50 min', objective: 'Encontrar gargalos, memorizar componentes e cortar renderizações inúteis.' },
-  { title: 'Boss Deploy Sem Medo', xp: 1100, timer: '60 min', objective: 'Containerizar app, criar pipeline e publicar uma versão estável.' },
-];
+function clampPercent(value: number) {
+  return Math.max(0, Math.min(100, value));
+}
 
-const achievements = [
-  ['Primeiro Commit', 'Conclua sua primeira missão'],
-  ['Debug Master', 'Resolva 25 bugs simulados'],
-  ['Streak de Ferro', 'Estude por 30 dias seguidos'],
-  ['Arquiteto', 'Finalize 5 laboratórios de sistema'],
-  ['Boss Slayer', 'Vença 10 chefões'],
-  ['Mentorável', 'Use IA para revisar 50 respostas'],
-  ['Fullstack Hero', 'Complete a trilha fullstack'],
-  ['Tech Lead', 'Finalize o modo carreira'],
-];
+function cleanMarkdown(text: string) {
+  return text.replace(/\*\*/g, '').replace(/`/g, '').trim();
+}
 
-const dailyMissions = [
-  { label: 'Revisar Event Loop', meta: '5 min', xp: 80, type: 'Revisão ativa' },
-  { label: 'Resolver 8 exercícios de API', meta: '12 min', xp: 160, type: 'Treino rápido' },
-  { label: 'Corrigir bug de autenticação', meta: '10 min', xp: 220, type: 'Debug mode' },
-  { label: 'Continuar Sprint do projeto', meta: '18 min', xp: 300, type: 'Laboratório' },
-];
-
-const worldNodes = modules.slice(0, 22).map((m, i) => ({
-  ...m,
-  status: i < 3 ? 'done' : i === 3 ? 'active' : i < 12 ? 'open' : 'locked',
-  power: Math.min(99, 18 + i * 4),
-}));
-
-const careerSteps = ['Estagiário', 'Júnior', 'Júnior Avançado', 'Pleno', 'Pleno Pro', 'Sênior', 'Especialista', 'Tech Lead', 'Staff Engineer', 'Principal'];
+function firstParagraph(text: string) {
+  return cleanMarkdown(text).split(/\n\s*\n/)[0] ?? cleanMarkdown(text).slice(0, 220);
+}
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('dashboard');
-  const [theme, setTheme] = useState<Theme>('aurora');
+  const [screen, setScreen] = useState<Screen>('command');
+  const [theme, setTheme] = useState<PlatformTheme>('obsidian');
   const [navOpen, setNavOpen] = useState(false);
-  const [activeModule, setActiveModule] = useState(worldNodes[3]);
   const [query, setQuery] = useState('');
+  const [activeModuleId, setActiveModuleId] = useState(modules[3]?.id ?? modules[0]?.id);
+  const [activeLessonId, setActiveLessonId] = useState(modules[3]?.lessons[0]?.id ?? modules[0]?.lessons[0]?.id);
+
+  const activeModule = useMemo(
+    () => modules.find((module) => module.id === activeModuleId) ?? modules[0],
+    [activeModuleId],
+  );
+
+  const activeLesson = useMemo(() => {
+    return activeModule.lessons.find((lesson) => lesson.id === activeLessonId) ?? activeModule.lessons[0];
+  }, [activeLessonId, activeModule]);
 
   const filteredModules = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return worldNodes;
-    return worldNodes.filter((m) => `${m.title} ${m.tagline} ${m.track}`.toLowerCase().includes(q));
+    if (!q) return modules;
+    return modules.filter((module) => {
+      const source = [
+        module.title,
+        module.tagline,
+        module.intro,
+        module.track,
+        ...module.lessons.map((lesson) => lesson.heading),
+      ].join(' ');
+      return source.toLowerCase().includes(q);
+    });
   }, [query]);
 
-  const completedPercent = 34;
-  const xp = 12450;
-  const level = 18;
+  const metrics = useMemo(() => {
+    const lessons = modules.reduce((sum, module) => sum + module.lessons.length, 0);
+    const games = modules.reduce((sum, module) => sum + module.games.length, 0);
+    const projects = modules.filter((module) => module.projectBrief || module.sprintLab).length;
+    const progress = clampPercent(Math.round((6 / modules.length) * 100));
+    return {
+      modules: modules.length,
+      lessons,
+      exercises: totalExerciseCount(),
+      checklist: totalChecklistCount(),
+      games,
+      projects,
+      progress,
+      xp: 12450,
+      level: 18,
+      coins: 3280,
+      streak: 15,
+    };
+  }, []);
 
-  const nav = [
-    { id: 'dashboard', label: 'Command Center', icon: Home },
-    { id: 'academy', label: 'Academia', icon: GraduationCap },
-    { id: 'story', label: 'Modo História', icon: Map },
-    { id: 'labs', label: 'Laboratórios', icon: Code2 },
-    { id: 'arcade', label: 'Arcade', icon: Gamepad2 },
-    { id: 'career', label: 'Carreira', icon: BriefcaseBusiness },
-    { id: 'ai', label: 'Mentor IA', icon: Bot },
-    { id: 'stats', label: 'Estatísticas', icon: BarChart3 },
-  ] as const;
+  function selectModule(module: Module, nextScreen: Screen = 'learn') {
+    setActiveModuleId(module.id);
+    setActiveLessonId(module.lessons[0]?.id);
+    setScreen(nextScreen);
+    setNavOpen(false);
+  }
 
   return (
-    <div className={`mega-app theme-${theme}`}>
-      <aside className={`mega-sidebar ${navOpen ? 'open' : ''}`}>
-        <div className="brand-card">
-          <div className="brand-orb"><Zap size={26} /></div>
-          <div>
-            <strong>DevQuest 2.0</strong>
-            <span>RPG de aprendizado técnico</span>
+    <div className={`platform theme-${theme}`}>
+      <aside className={`sidebar ${navOpen ? 'open' : ''}`}>
+        <div className="brand">
+          <div className="brand-mark">
+            <Zap size={26} />
           </div>
-          <button className="mobile-close" onClick={() => setNavOpen(false)}><X size={20} /></button>
+          <div>
+            <strong>DevQuest</strong>
+            <span>Academia RPG Tech</span>
+          </div>
+          <button className="icon-btn close-btn" onClick={() => setNavOpen(false)} aria-label="Fechar menu">
+            <X size={20} />
+          </button>
         </div>
 
-        <div className="profile-card">
-          <div className="avatar">👨‍💻</div>
+        <div className="player-card">
+          <div className="player-avatar">
+            <Crown size={22} />
+          </div>
           <div>
             <strong>Felipe</strong>
-            <span>Lv {level} • Programador</span>
+            <span>Lv {metrics.level} - Junior Avancado</span>
           </div>
         </div>
 
-        <nav className="side-nav">
-          {nav.map((item) => {
+        <nav className="nav-list" aria-label="Navegacao principal">
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = screen === item.id;
             return (
-              <button key={item.id} className={active ? 'active' : ''} onClick={() => { setScreen(item.id as Screen); setNavOpen(false); }}>
-                <Icon size={20} />
+              <button
+                key={item.id}
+                className={active ? 'active' : ''}
+                onClick={() => {
+                  setScreen(item.id);
+                  setNavOpen(false);
+                }}
+              >
+                <Icon size={19} />
                 <span>{item.label}</span>
               </button>
             );
           })}
         </nav>
 
-        <div className="sidebar-progress">
-          <div className="row"><span>Progresso global</span><strong>{completedPercent}%</strong></div>
-          <div className="progress"><i style={{ width: `${completedPercent}%` }} /></div>
-          <small>Próximo título: Desenvolvedor Pleno</small>
+        <div className="sidebar-card">
+          <div className="split">
+            <span>Progresso global</span>
+            <strong>{metrics.progress}%</strong>
+          </div>
+          <div className="meter">
+            <i style={{ width: `${metrics.progress}%` }} />
+          </div>
+          <small>Proximo rank: Pleno em evolucao</small>
         </div>
       </aside>
 
-      <div className="mega-main">
+      <div className="app-view">
         <header className="topbar">
-          <button className="hamburger" onClick={() => setNavOpen(true)}><Menu /></button>
-          <div className="search-box"><Search size={18} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Pesquisar aulas, missões, bugs, projetos..." /></div>
-          <div className="top-stats">
-            <span><Flame size={16} />15 dias</span>
-            <span><Star size={16} />{xp.toLocaleString('pt-BR')} XP</span>
-            <span><Crown size={16} />Lv {level}</span>
+          <button className="icon-btn menu-btn" onClick={() => setNavOpen(true)} aria-label="Abrir menu">
+            <Menu size={22} />
+          </button>
+          <div className="search">
+            <Search size={18} />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Pesquisar aulas, mundos, bugs, projetos..."
+            />
           </div>
-          <button className="theme-btn" onClick={() => setTheme(theme === 'aurora' ? 'cyber' : theme === 'cyber' ? 'royal' : 'aurora')}><Moon size={18} /> Tema</button>
+          <div className="hud">
+            <span><Flame size={16} />{metrics.streak} dias</span>
+            <span><Star size={16} />{metrics.xp.toLocaleString('pt-BR')} XP</span>
+            <span><Coins size={16} />{metrics.coins.toLocaleString('pt-BR')}</span>
+          </div>
+          <button
+            className="theme-switch"
+            onClick={() => setTheme(theme === 'obsidian' ? 'nexus' : theme === 'nexus' ? 'daybreak' : 'obsidian')}
+          >
+            <Moon size={17} />
+            Tema
+          </button>
         </header>
 
-        <main className="content-shell">
-          {screen === 'dashboard' && <Dashboard setScreen={setScreen} completedPercent={completedPercent} />}
-          {screen === 'academy' && <Academy modules={filteredModules} activeModule={activeModule} setActiveModule={setActiveModule} />}
-          {screen === 'story' && <StoryMode activeModule={activeModule} />}
-          {screen === 'labs' && <Labs />}
-          {screen === 'arcade' && <Arcade />}
-          {screen === 'career' && <Career />}
-          {screen === 'ai' && <MentorAI activeModule={activeModule} />}
-          {screen === 'stats' && <Stats />}
+        <main className="main-shell">
+          {screen === 'command' && <CommandCenter metrics={metrics} activeModule={activeModule} selectModule={selectModule} setScreen={setScreen} />}
+          {screen === 'worlds' && <WorldMap modules={filteredModules} activeModule={activeModule} selectModule={selectModule} />}
+          {screen === 'learn' && (
+            <LearningRoom
+              module={activeModule}
+              lesson={activeLesson}
+              setLessonId={setActiveLessonId}
+              setScreen={setScreen}
+            />
+          )}
+          {screen === 'story' && <StoryMode module={activeModule} setScreen={setScreen} />}
+          {screen === 'lab' && <LabStudio module={activeModule} />}
+          {screen === 'arcade' && <ArcadeHub />}
+          {screen === 'career' && <CareerMode />}
+          {screen === 'review' && <ReviewCenter />}
+          {screen === 'mentor' && <MentorHub module={activeModule} lesson={activeLesson} />}
+          {screen === 'analytics' && <AnalyticsCenter metrics={metrics} />}
+          {screen === 'market' && <Marketplace />}
         </main>
       </div>
     </div>
   );
 }
 
-function Dashboard({ setScreen, completedPercent }: { setScreen: (screen: Screen) => void; completedPercent: number }) {
+function CommandCenter({
+  metrics,
+  activeModule,
+  selectModule,
+  setScreen,
+}: {
+  metrics: ReturnType<typeof createMetricsShape>;
+  activeModule: Module;
+  selectModule: (module: Module, nextScreen?: Screen) => void;
+  setScreen: (screen: Screen) => void;
+}) {
   return (
-    <section className="page-stack">
-      <div className="hero-grid">
-        <div className="hero-card">
-          <span className="eyebrow"><Sparkles size={16} /> Plataforma 2.0 → 5.0</span>
-          <h1>Seu centro de treinamento para virar desenvolvedor completo.</h1>
-          <p>Missões diárias, aulas narrativas, projetos reais, revisão inteligente, IA contextual, arcade, carreira simulada e boss fights em uma experiência única.</p>
+    <section className="stack">
+      <div className="hero-layout">
+        <article className="hero-panel">
+          <span className="eyebrow"><Sparkles size={16} /> Plataforma 2.0 completa</span>
+          <h1>Aprenda como se estivesse subindo de nivel em uma carreira tech real.</h1>
+          <p>
+            Uma academia com mundos, aulas narrativas, revisao inteligente, projetos em sprint,
+            laboratorio estilo IDE, mentor contextual, arcade, carreira, loja, conquistas e analytics.
+          </p>
           <div className="hero-actions">
-            <button onClick={() => setScreen('academy')} className="primary">Continuar jornada <ChevronRight size={18} /></button>
-            <button onClick={() => setScreen('labs')} className="secondary">Abrir laboratório</button>
+            <button className="primary-btn" onClick={() => selectModule(activeModule)}>
+              Continuar aula <ChevronRight size={18} />
+            </button>
+            <button className="ghost-btn" onClick={() => setScreen('lab')}>Abrir laboratorio</button>
           </div>
-        </div>
-        <div className="rank-card">
-          <div className="rank-ring"><span>{completedPercent}%</span></div>
-          <h3>Rank atual</h3>
-          <strong>Programador</strong>
-          <p>Complete mais 4 missões para desbloquear Pleno.</p>
-        </div>
+        </article>
+
+        <aside className="rank-panel">
+          <div className="rank-ring" style={{ ['--value' as string]: `${metrics.progress * 3.6}deg` }}>
+            <span>{metrics.progress}%</span>
+          </div>
+          <strong>Junior Avancado</strong>
+          <p>Faltam 4 missoes e 1 boss fight para liberar o rank Pleno.</p>
+        </aside>
       </div>
 
-      <div className="section-head"><h2>Missão de hoje</h2><span>35 min • +760 XP</span></div>
+      <StatStrip stats={[
+        ['Modulos', metrics.modules],
+        ['Aulas', metrics.lessons],
+        ['Exercicios', metrics.exercises],
+        ['Projetos', metrics.projects],
+        ['Jogos', metrics.games],
+        ['Checklists', metrics.checklist],
+      ]} />
+
+      <div className="section-title">
+        <div>
+          <span className="eyebrow"><Target size={15} /> Plano adaptativo</span>
+          <h2>Missao de hoje</h2>
+        </div>
+        <strong>43 min - +760 XP</strong>
+      </div>
       <div className="mission-grid">
-        {dailyMissions.map((m, i) => <MissionCard key={m.label} mission={m} index={i} />)}
+        {dailyPlan.map((mission, index) => (
+          <article className="mission-card" key={mission.id}>
+            <div className="mission-index">0{index + 1}</div>
+            <span>{mission.mode}</span>
+            <h3>{mission.title}</h3>
+            <p>{mission.duration} - {mission.focus}</p>
+            <footer>
+              <strong>{mission.xp} XP</strong>
+              <small>{mission.reward}</small>
+            </footer>
+          </article>
+        ))}
       </div>
 
-      <div className="two-col">
-        <Panel title="Trilhas principais" icon={<Layers3 size={20} />}>
-          <div className="track-grid compact">
-            {tracks.map((track) => <div className={`track-card ${track.color}`} key={track.id}><b>{track.icon} {track.name}</b><span>{track.description}</span></div>)}
+      <div className="dashboard-grid">
+        <Panel title="Temporadas" icon={<Trophy size={20} />}>
+          <div className="season-list">
+            {seasons.map((season) => (
+              <div className="season-row" key={season.title}>
+                <div>
+                  <strong>{season.title}</strong>
+                  <span>{season.subtitle}</span>
+                </div>
+                <div className="meter mini"><i style={{ width: `${season.progress}%` }} /></div>
+                <small>{season.reward}</small>
+              </div>
+            ))}
           </div>
         </Panel>
-        <Panel title="Boss fights liberados" icon={<Swords size={20} />}>
-          <div className="boss-list">
-            {bossFights.map((b) => <div className="boss-row" key={b.title}><Trophy size={19} /><div><b>{b.title}</b><span>{b.objective}</span></div><strong>{b.xp} XP</strong></div>)}
+
+        <Panel title="Inteligencia de estudo" icon={<Activity size={20} />}>
+          <div className="insight-grid">
+            {intelligenceCards.map((card) => (
+              <div className="insight-card" key={card.title}>
+                <span>{card.title}</span>
+                <strong>{card.value}</strong>
+                <p>{card.detail}</p>
+              </div>
+            ))}
           </div>
         </Panel>
       </div>
@@ -211,59 +371,498 @@ function Dashboard({ setScreen, completedPercent }: { setScreen: (screen: Screen
   );
 }
 
-function MissionCard({ mission, index }: { mission: typeof dailyMissions[number]; index: number }) {
-  return <article className="mission-card"><div className="mission-index">0{index + 1}</div><span>{mission.type}</span><h3>{mission.label}</h3><p>{mission.meta} • +{mission.xp} XP</p><button>Iniciar</button></article>;
-}
-
-function Academy({ modules, activeModule, setActiveModule }: { modules: typeof worldNodes; activeModule: typeof worldNodes[number]; setActiveModule: (m: typeof worldNodes[number]) => void }) {
+function WorldMap({
+  modules,
+  activeModule,
+  selectModule,
+}: {
+  modules: Module[];
+  activeModule: Module;
+  selectModule: (module: Module, nextScreen?: Screen) => void;
+}) {
   return (
-    <section className="academy-layout">
-      <div className="academy-map">
-        <div className="section-head"><h2>Mapa de conhecimento</h2><span>{modules.length} mundos</span></div>
-        <div className="world-grid">
-          {modules.map((m, i) => <button key={m.id} onClick={() => setActiveModule(m)} className={`world-node ${activeModule.id === m.id ? 'selected' : ''} ${m.status}`}><span className="node-emoji">{m.status === 'locked' ? '🔒' : m.emoji}</span><b>{m.title}</b><small>Mundo {i + 1} • {m.power}%</small><div className="node-bar"><i style={{ width: `${m.status === 'locked' ? 0 : m.power}%` }} /></div></button>)}
+    <section className="world-layout">
+      <div className="stack">
+        <div className="section-title">
+          <div>
+            <span className="eyebrow"><Map size={15} /> Mapa de conhecimento</span>
+            <h2>Mundos e trilhas</h2>
+          </div>
+          <strong>{modules.length} modulos encontrados</strong>
+        </div>
+
+        <div className="worlds-grid">
+          {learningWorlds.map((world) => (
+            <article className={`world-card ${world.color}`} key={world.id}>
+              <span>{world.track}</span>
+              <h3>{world.title}</h3>
+              <p>{world.subtitle}</p>
+              <div className="chip-row">
+                {world.chapters.slice(0, 4).map((chapter) => <small key={chapter}>{chapter}</small>)}
+              </div>
+              <strong>Capstone: {world.capstone}</strong>
+            </article>
+          ))}
+        </div>
+
+        <div className="module-grid">
+          {modules.map((module, index) => {
+            const progress = clampPercent(index < 3 ? 100 : index === 3 ? 62 : index < 12 ? 20 + index * 4 : 0);
+            const locked = index > 15;
+            return (
+              <button
+                className={`module-tile ${activeModule.id === module.id ? 'selected' : ''} ${locked ? 'locked' : ''}`}
+                key={module.id}
+                onClick={() => selectModule(module)}
+              >
+                <div className="module-topline">
+                  <span>{module.emoji}</span>
+                  {locked ? <Lock size={18} /> : <CheckCircle2 size={18} />}
+                </div>
+                <strong>{module.title}</strong>
+                <p>{module.tagline}</p>
+                <div className="meter mini"><i style={{ width: `${locked ? 0 : progress}%` }} /></div>
+                <small>{module.lessons.length} aulas - {module.exercises.length} exercicios - {module.games.length} jogos</small>
+              </button>
+            );
+          })}
         </div>
       </div>
-      <aside className="module-command">
-        <span className="eyebrow"><Target size={15} /> Missão ativa</span>
+
+      <aside className="command-card sticky">
+        <span className="eyebrow"><CircleDot size={15} /> Modulo ativo</span>
         <h2>{activeModule.emoji} {activeModule.title}</h2>
-        <p>{activeModule.intro || activeModule.tagline}</p>
-        <div className="module-stats"><span>{activeModule.lessons.length} aulas</span><span>{activeModule.exercises.length} exercícios</span><span>{activeModule.games.length} jogos</span></div>
-        <div className="lesson-list">
-          {activeModule.lessons.slice(0, 5).map((lesson, i) => <div key={lesson.id} className="lesson-row"><CheckCircle2 size={18} /><div><b>{lesson.heading}</b><span>{i < 2 ? 'Concluído' : 'Disponível'}</span></div></div>)}
+        <p>{activeModule.intro}</p>
+        <div className="quick-stats">
+          <span><strong>{activeModule.lessons.length}</strong>Aulas</span>
+          <span><strong>{activeModule.exercises.length}</strong>Exercicios</span>
+          <span><strong>{activeModule.checklist.length}</strong>Checklists</span>
         </div>
-        <button className="primary full">Entrar na aula</button>
+        <button className="primary-btn full" onClick={() => selectModule(activeModule)}>Entrar no modulo</button>
       </aside>
     </section>
   );
 }
 
-function StoryMode({ activeModule }: { activeModule: typeof worldNodes[number] }) {
-  const story = activeModule.storyLessons?.[0];
-  return <section className="page-stack"><div className="cinema-card"><span className="eyebrow"><Map size={16} /> Story Mode</span><h1>{story?.title || 'Primeiro dia na startup'}</h1><p>{story?.mission || 'Você entrou em uma empresa em crescimento. Cada decisão técnica altera a estabilidade do produto, sua reputação e o XP recebido.'}</p><div className="story-terminal"><b>Contexto</b><span>{story?.tension || 'O sistema está lento, os usuários reclamam e a equipe precisa de uma solução ainda hoje.'}</span></div><div className="choice-grid">{(story?.choices || [{ label: 'Corrigir sem investigar', consequence: 'Rápido, mas perigoso.' }, { label: 'Ler logs e reproduzir o bug', consequence: 'Mais confiável e profissional.', correct: true }, { label: 'Reescrever tudo', consequence: 'Custo alto e risco enorme.' }]).map((c) => <button key={c.label} className={c.correct ? 'best' : ''}><b>{c.label}</b><span>{c.consequence}</span></button>)}</div></div><Panel title="Capítulos da campanha" icon={<BookOpen size={20} />}><div className="chapter-grid">{['Onboarding', 'Primeiro bug', 'Feature urgente', 'Deploy crítico', 'Incidente real', 'Promoção'].map((c, i) => <div className="chapter" key={c}><span>{i + 1}</span><b>{c}</b><small>{i < 2 ? 'Aberto' : 'Bloqueado por nível'}</small></div>)}</div></Panel></section>;
+function LearningRoom({
+  module,
+  lesson,
+  setLessonId,
+  setScreen,
+}: {
+  module: Module;
+  lesson: LessonBlock | undefined;
+  setLessonId: (lessonId: string) => void;
+  setScreen: (screen: Screen) => void;
+}) {
+  if (!lesson) return null;
+
+  return (
+    <section className="learn-layout">
+      <aside className="lesson-nav">
+        <span className="eyebrow"><BookOpen size={15} /> {module.title}</span>
+        <h2>Aulas do modulo</h2>
+        <div className="lesson-list">
+          {module.lessons.map((item, index) => (
+            <button
+              key={item.id}
+              className={item.id === lesson.id ? 'active' : ''}
+              onClick={() => setLessonId(item.id)}
+            >
+              <span>{index + 1}</span>
+              <strong>{item.heading}</strong>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      <article className="lesson-stage">
+        <span className="eyebrow"><GraduationCap size={15} /> Aula escrita com contexto</span>
+        <h1>{lesson.heading}</h1>
+        <div className="lesson-copy">
+          {cleanMarkdown(lesson.body).split(/\n\s*\n/).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        </div>
+        {lesson.codeExample && (
+          <pre className="code-block">
+            <code>{lesson.codeExample.code}</code>
+          </pre>
+        )}
+        <div className="lesson-actions">
+          <button className="primary-btn" onClick={() => setScreen('story')}>Transformar em historia</button>
+          <button className="ghost-btn" onClick={() => setScreen('review')}>Criar revisao</button>
+          <button className="ghost-btn" onClick={() => setScreen('mentor')}>Pedir ajuda da IA</button>
+        </div>
+      </article>
+
+      <aside className="command-card">
+        <span className="eyebrow"><Target size={15} /> Sprint do modulo</span>
+        <h2>{module.projectBrief?.title ?? module.sprintLab?.title ?? 'Projeto pratico'}</h2>
+        <p>{module.projectBrief?.description ?? module.sprintLab?.sprints[0]?.objective}</p>
+        <div className="checklist">
+          {module.checklist.slice(0, 6).map((item, index) => (
+            <div key={item.id}>
+              {index < 2 ? <CheckCircle2 size={18} /> : <CircleDot size={18} />}
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </aside>
+    </section>
+  );
 }
 
-function Labs() {
-  return <section className="page-stack"><div className="section-head"><h2>Laboratórios estilo VS Code</h2><span>Projetos reais em sprints</span></div><div className="lab-shell"><aside><b>Explorer</b>{['auth.ts', 'routes.ts', 'database.sql', 'dockerfile', 'README.md'].map((f) => <span key={f}>{f}</span>)}</aside><div className="editor"><div className="tabs"><span>auth.ts</span><span>terminal</span><span>preview</span></div><pre>{`async function login(req, res) {\n  const user = await db.user.findUnique({ email })\n  if (!user) return res.status(401).json({ error: 'Credenciais inválidas' })\n  const token = signJwt({ sub: user.id })\n  return res.json({ token })\n}`}</pre></div><aside className="brief"><b>Sprint atual</b><h3>Login seguro com JWT</h3><p>Objetivo: criar autenticação, refresh token, proteção de rotas e checklist de segurança.</p><button className="primary full">Validar entrega</button></aside></div></section>;
+function StoryMode({ module, setScreen }: { module: Module; setScreen: (screen: Screen) => void }) {
+  const story = module.storyLessons?.[0];
+  const choices = story?.choices ?? [];
+
+  return (
+    <section className="stack">
+      <article className="cinema-panel">
+        <span className="eyebrow"><Sparkles size={15} /> Story Mode</span>
+        <h1>{story?.title ?? `Missao: ${module.title}`}</h1>
+        <p>{story?.mission ?? module.intro}</p>
+        <div className="terminal-card">
+          <strong>Tensao do capitulo</strong>
+          <span>{story?.tension ?? firstParagraph(module.intro)}</span>
+        </div>
+        <div className="choice-grid">
+          {choices.map((choice) => (
+            <button className={choice.correct ? 'best' : ''} key={choice.label}>
+              <strong>{choice.label}</strong>
+              <span>{choice.consequence}</span>
+            </button>
+          ))}
+        </div>
+        <div className="reveal-card">
+          <strong>Descoberta</strong>
+          <p>{story?.reveal ?? 'A teoria aparece depois do problema, para criar contexto e memoria.'}</p>
+        </div>
+        <button className="primary-btn" onClick={() => setScreen('learn')}>Voltar para aula</button>
+      </article>
+
+      <Panel title="Campanhas narrativas" icon={<Map size={20} />}>
+        <div className="campaign-grid">
+          {projectCampaigns.map((campaign) => (
+            <article className="campaign-card" key={campaign.id}>
+              <span>{campaign.company}</span>
+              <h3>{campaign.title}</h3>
+              <p>{campaign.difficulty} - {campaign.duration}</p>
+              <strong>{campaign.reward}</strong>
+            </article>
+          ))}
+        </div>
+      </Panel>
+    </section>
+  );
 }
 
-function Arcade() {
-  const games = ['Quiz Rush', 'Debug Arena', 'Memory Code', 'Speed Typing', 'Boss Fight', 'Flashcards', 'SQL Duel', 'API Builder'];
-  return <section className="page-stack"><div className="section-head"><h2>Arcade de aprendizado</h2><span>Jogos rápidos para fixação</span></div><div className="arcade-grid">{games.map((g, i) => <article className="game-card" key={g}><div className="game-icon">{['⚡','🐞','🧩','⌨️','👹','🃏','🗃️','🔌'][i]}</div><h3>{g}</h3><p>Treino rápido com pontuação, combo, tempo e recompensa de XP.</p><button>Jogar</button></article>)}</div></section>;
+function LabStudio({ module }: { module: Module }) {
+  const lab = module.sprintLab;
+
+  return (
+    <section className="stack">
+      <div className="section-title">
+        <div>
+          <span className="eyebrow"><Code2 size={15} /> Laboratorio profissional</span>
+          <h2>IDE de treino por sprints</h2>
+        </div>
+        <strong>{lab?.company ?? 'Produto real'} - {lab?.role ?? 'dev em treinamento'}</strong>
+      </div>
+      <div className="studio">
+        <aside className="file-tree">
+          <strong>Explorer</strong>
+          {studioFiles.map((file) => <button key={file}>{file}</button>)}
+        </aside>
+        <section className="editor-panel">
+          <div className="editor-tabs">
+            <span>login.ts</span>
+            <span>tests.spec.ts</span>
+            <span>terminal</span>
+          </div>
+          <pre className="code-block">
+            <code>{`async function completeSprint(ticket) {
+  const context = await readRequirements(ticket)
+  const solution = buildSmallestUsefulVersion(context)
+  await testHappyPath(solution)
+  await testRiskyCase(solution)
+  return explainTradeoffs(solution)
+}`}</code>
+          </pre>
+          <div className="terminal-output">
+            <span>$ npm run validate:sprint</span>
+            <strong>Checklist aprovado: contexto, teste, entrega e explicacao.</strong>
+          </div>
+        </section>
+        <aside className="sprint-panel">
+          <span className="eyebrow"><Target size={15} /> Sprint ativa</span>
+          <h2>{lab?.title ?? `Projeto guiado: ${module.title}`}</h2>
+          <div className="sprint-list">
+            {(lab?.sprints ?? []).slice(0, 4).map((sprint, index) => (
+              <div key={sprint.title}>
+                <strong>{index + 1}. {sprint.title}</strong>
+                <p>{sprint.objective}</p>
+                <small>Entrega: {sprint.deliverable}</small>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
 }
 
-function Career() {
-  return <section className="page-stack"><div className="section-head"><h2>Carreira simulada</h2><span>De estagiário a principal engineer</span></div><div className="career-road">{careerSteps.map((step, i) => <div className={`career-step ${i < 3 ? 'done' : i === 3 ? 'active' : ''}`} key={step}><div>{i < 3 ? <CheckCircle2 /> : i === 3 ? <Crown /> : <Lock />}</div><b>{step}</b><span>{i < 3 ? 'Concluído' : i === 3 ? 'Atual' : 'Bloqueado'}</span></div>)}</div><Panel title="Tickets da empresa" icon={<BriefcaseBusiness size={20} />}><div className="ticket-grid">{['Corrigir login no Safari', 'Criar endpoint de pagamento', 'Reduzir bundle inicial', 'Criar testes de integração'].map((t) => <div className="ticket" key={t}><b>BUG #{Math.floor(Math.random()*800)+100}</b><h3>{t}</h3><p>Recompensa: XP + reputação técnica.</p></div>)}</div></Panel></section>;
+function ArcadeHub() {
+  return (
+    <section className="stack">
+      <div className="section-title">
+        <div>
+          <span className="eyebrow"><Gamepad2 size={15} /> Arcade tecnico</span>
+          <h2>Jogos para fixar sem virar aula longa</h2>
+        </div>
+        <strong>Combos, tempo, XP e ranking pessoal</strong>
+      </div>
+      <div className="arcade-grid">
+        {arcadeModes.map((game) => {
+          const Icon = game.icon;
+          return (
+            <article className="game-card" key={game.title}>
+              <div className="game-mark"><Icon size={28} /></div>
+              <span>{game.tag}</span>
+              <h3>{game.title}</h3>
+              <p>{game.detail}</p>
+              <strong>{game.reward}</strong>
+              <button className="ghost-btn full"><Play size={16} /> Jogar</button>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
-function MentorAI({ activeModule }: { activeModule: typeof worldNodes[number] }) {
-  return <section className="page-stack"><div className="ai-card"><span className="eyebrow"><Bot size={16} /> Mentor contextual</span><h1>IA integrada em cada aula, exercício e projeto.</h1><p>O mentor sabe qual módulo você está estudando: <b>{activeModule.title}</b>. Ele pode explicar de outro jeito, gerar exercícios, criar flashcards e revisar suas respostas.</p><div className="prompt-grid">{['Explique de forma simples', 'Crie 5 exercícios', 'Me faça perguntas', 'Mostre analogia', 'Aumente a dificuldade', 'Gere flashcards', 'Revise meu código', 'Monte plano diário'].map((p) => <button key={p}>{p}</button>)}</div></div></section>;
+function CareerMode() {
+  return (
+    <section className="stack">
+      <div className="section-title">
+        <div>
+          <span className="eyebrow"><BriefcaseBusiness size={15} /> Carreira simulada</span>
+          <h2>Do primeiro ticket a lideranca tecnica</h2>
+        </div>
+        <strong>Rank atual: Junior Avancado</strong>
+      </div>
+      <div className="career-track">
+        {careerLadder.map((rank, index) => (
+          <article className={`rank-step ${index < 3 ? 'done' : index === 3 ? 'active' : ''}`} key={rank.title}>
+            <div>{index < 3 ? <CheckCircle2 /> : index === 3 ? <Crown /> : <Lock />}</div>
+            <strong>{rank.title}</strong>
+            <span>Lv {rank.level}</span>
+            <p>{rank.responsibility}</p>
+            <small>Libera: {rank.unlock}</small>
+          </article>
+        ))}
+      </div>
+      <Panel title="Tickets de empresa" icon={<BriefcaseBusiness size={20} />}>
+        <div className="ticket-grid">
+          {['Corrigir queda no checkout', 'Reduzir tempo inicial de carregamento', 'Criar endpoint de relatorio', 'Documentar decisao de arquitetura'].map((ticket, index) => (
+            <article className="ticket-card" key={ticket}>
+              <span>TICKET-{204 + index}</span>
+              <h3>{ticket}</h3>
+              <p>Objetivo, contexto, criterios de aceite e avaliacao automatica.</p>
+            </article>
+          ))}
+        </div>
+      </Panel>
+    </section>
+  );
 }
 
-function Stats() {
-  return <section className="page-stack"><div className="stats-grid">{[['Horas estudadas','128h'],['Exercícios','1.842'],['Acertos','86%'],['Boss fights','12'],['Projetos','9'],['Revisões','340']].map(([k,v]) => <div className="stat-card" key={k}><span>{k}</span><b>{v}</b><div className="fake-chart"><i /><i /><i /><i /><i /></div></div>)}</div><Panel title="Conquistas épicas" icon={<Award size={20} />}><div className="achievement-grid">{achievements.map(([a,b], i) => <div className={`achievement ${i < 4 ? 'unlocked' : ''}`} key={a}><Medal size={22} /><b>{a}</b><span>{b}</span></div>)}</div></Panel></section>;
+function ReviewCenter() {
+  const [revealed, setRevealed] = useState<string | null>(null);
+
+  return (
+    <section className="review-layout">
+      <div className="stack">
+        <div className="section-title">
+          <div>
+            <span className="eyebrow"><ShieldCheck size={15} /> Revisao inteligente</span>
+            <h2>Lembrar antes de consultar</h2>
+          </div>
+          <strong>{reviewQueue.length} itens na fila</strong>
+        </div>
+        <div className="review-grid">
+          {reviewQueue.map((item) => (
+            <article className="review-card" key={item.id}>
+              <div className="split">
+                <span>{item.topic}</span>
+                <strong>{item.due}</strong>
+              </div>
+              <h3>{item.prompt}</h3>
+              <div className="meter mini"><i style={{ width: `${item.strength}%` }} /></div>
+              {revealed === item.id ? <p>{item.answer}</p> : <button className="ghost-btn" onClick={() => setRevealed(item.id)}>Mostrar resposta</button>}
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <aside className="command-card sticky">
+        <span className="eyebrow"><Gem size={15} /> Sistema de memoria</span>
+        <h2>Como o app decide o que revisar</h2>
+        <p>Erros recentes, forca de lembranca, dias desde o ultimo acerto e importancia para projetos elevam a prioridade.</p>
+        <div className="checklist">
+          <div><CheckCircle2 size={18} /><span>Perguntar antes de explicar</span></div>
+          <div><CheckCircle2 size={18} /><span>Mostrar resposta curta</span></div>
+          <div><CheckCircle2 size={18} /><span>Gerar exercicio parecido</span></div>
+          <div><CheckCircle2 size={18} /><span>Reagendar automaticamente</span></div>
+        </div>
+      </aside>
+    </section>
+  );
+}
+
+function MentorHub({ module, lesson }: { module: Module; lesson: LessonBlock | undefined }) {
+  return (
+    <section className="stack">
+      <article className="mentor-panel">
+        <span className="eyebrow"><Bot size={15} /> Mentor IA contextual</span>
+        <h1>Ajuda no ponto exato da jornada.</h1>
+        <p>
+          Contexto atual: <strong>{module.title}</strong>
+          {lesson ? `, aula "${lesson.heading}".` : '.'} A IA deixa de ser um chat solto e vira uma camada de explicacao,
+          treino, revisao e feedback.
+        </p>
+        <div className="prompt-grid">
+          {mentorActions.map((action) => <button key={action}>{action}</button>)}
+        </div>
+      </article>
+
+      <div className="dashboard-grid">
+        <Panel title="Prompt sugerido" icon={<Bot size={20} />}>
+          <div className="terminal-card">
+            <span>Explique {module.title} usando um problema real, depois crie 5 perguntas de revisao e um desafio pratico com criterio de aceite.</span>
+          </div>
+        </Panel>
+        <Panel title="Acoes automaticas" icon={<Sparkles size={20} />}>
+          <div className="checklist">
+            <div><CheckCircle2 size={18} /><span>Gerar analogia curta</span></div>
+            <div><CheckCircle2 size={18} /><span>Criar exercicio no mesmo nivel</span></div>
+            <div><CheckCircle2 size={18} /><span>Subir dificuldade gradualmente</span></div>
+            <div><CheckCircle2 size={18} /><span>Avaliar resposta do aluno</span></div>
+          </div>
+        </Panel>
+      </div>
+    </section>
+  );
+}
+
+function AnalyticsCenter({ metrics }: { metrics: ReturnType<typeof createMetricsShape> }) {
+  return (
+    <section className="stack">
+      <div className="section-title">
+        <div>
+          <span className="eyebrow"><BarChart3 size={15} /> Analytics de evolucao</span>
+          <h2>Dados para estudar melhor</h2>
+        </div>
+        <strong>{metrics.xp.toLocaleString('pt-BR')} XP acumulado</strong>
+      </div>
+      <StatStrip stats={productStats.map((stat) => [stat.label, stat.value])} />
+      <div className="skill-grid">
+        {skillTree.map((cluster) => (
+          <article className="skill-card" key={cluster.title}>
+            <div className="split">
+              <strong>{cluster.title}</strong>
+              <span>{cluster.mastery}%</span>
+            </div>
+            <div className="meter mini"><i style={{ width: `${cluster.mastery}%` }} /></div>
+            {cluster.skills.map((skill) => (
+              <div className="skill-row" key={skill.label}>
+                <span>{skill.label}</span>
+                <strong>{'★'.repeat(skill.level)}{'☆'.repeat(5 - skill.level)}</strong>
+                <small>{skill.evidence}</small>
+              </div>
+            ))}
+          </article>
+        ))}
+      </div>
+      <Panel title="Conquistas" icon={<Award size={20} />}>
+        <div className="achievement-grid">
+          {achievementCatalog.map((achievement, index) => (
+            <article className={`achievement-card ${index < 3 ? 'unlocked' : ''}`} key={achievement.title}>
+              <Trophy size={22} />
+              <h3>{achievement.title}</h3>
+              <p>{achievement.description}</p>
+              <strong>{achievement.points} pts</strong>
+            </article>
+          ))}
+        </div>
+      </Panel>
+    </section>
+  );
+}
+
+function Marketplace() {
+  return (
+    <section className="stack">
+      <div className="section-title">
+        <div>
+          <span className="eyebrow"><Coins size={15} /> Loja e recompensas</span>
+          <h2>Desbloqueios sem atrapalhar o estudo</h2>
+        </div>
+        <strong>3.280 moedas</strong>
+      </div>
+      <div className="market-grid">
+        {marketplace.map((item) => (
+          <article className="market-card" key={item.id}>
+            <span>{item.type} - {item.rarity}</span>
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+            <footer>
+              <strong>{item.price} moedas</strong>
+              <button className="ghost-btn">Desbloquear</button>
+            </footer>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StatStrip({ stats }: { stats: Array<[string, string | number]> }) {
+  return (
+    <div className="stat-strip">
+      {stats.map(([label, value]) => (
+        <article key={label}>
+          <span>{label}</span>
+          <strong>{value}</strong>
+        </article>
+      ))}
+    </div>
+  );
 }
 
 function Panel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return <section className="panel"><div className="panel-head"><div>{icon}<h2>{title}</h2></div><button>Ver tudo</button></div>{children}</section>;
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <div>{icon}<h2>{title}</h2></div>
+        <button>Ver tudo</button>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function createMetricsShape() {
+  return {
+    modules: 0,
+    lessons: 0,
+    exercises: 0,
+    checklist: 0,
+    games: 0,
+    projects: 0,
+    progress: 0,
+    xp: 0,
+    level: 0,
+    coins: 0,
+    streak: 0,
+  };
 }

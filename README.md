@@ -4,6 +4,24 @@ Um app pessoal, gamificado, de estudos — construído a partir do seu plano de 
 
 Funciona como **web app** (qualquer navegador) e como **app instalável no celular** (PWA — sem precisar de loja de aplicativos).
 
+## DevQuest 2.0 completa
+
+Esta versão foi reformulada como uma plataforma de aprendizado em formato RPG profissional. A interface principal agora inclui:
+
+- Command Center com plano diário, XP, moedas, temporadas e inteligência de estudo
+- Mundos de conhecimento com trilhas, capstones e módulos conectados ao conteúdo real
+- Sala de Aula com navegação por lições, projeto do módulo e ações de estudo
+- Modo História com escolhas, consequências e descoberta pedagógica
+- Laboratório estilo IDE com explorer, editor, terminal e sprints
+- Arcade técnico com modos rápidos de fixação
+- Carreira simulada por ranks, responsabilidades e desbloqueios
+- Revisão inteligente por força de memória
+- Mentor IA contextual por módulo e aula
+- Analytics de habilidades, conquistas e estatísticas de produto
+- Loja de recompensas, temas e desbloqueios
+
+O build de produção foi validado com `npm run build`.
+
 ## ✨ O que tem aqui
 
 - **22 módulos** em 4 fases: Fundamentos → Especialização → Integração Full Stack → **Extras de Mercado** (Segurança/Hacking Ético, Python, Go, MongoDB e Redis) — cobrindo Lógica → HTML/CSS → JavaScript → Git/SQL → Node.js → React/TS → Java/Spring → Docker → Next.js → APIs avançadas → AWS → Microsserviços → Kubernetes → CI/CD → System Design → Liderança/Inglês → Projeto Final → Segurança → Python → Go → MongoDB/Redis
