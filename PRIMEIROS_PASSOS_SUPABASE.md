@@ -86,3 +86,13 @@ Leia `COMMERCIAL_DEPLOY.md` e `SECURITY_AUDIT.md`. Principais pontos:
    reais para checkout automatico.
 3. Nunca exponha a `SUPABASE_SERVICE_ROLE_KEY` no frontend, em builds
    publicos ou em repositorios publicos do GitHub.
+
+## Protecao automatica contra segredo vazado no GitHub
+
+O projeto ja roda `node scripts/check-secrets.mjs` sozinho antes de
+`npm run dev` e `npm run build`, e de novo no GitHub a cada push/PR (veja
+`.github/workflows/check-secrets.yml`). Se algum dia voce (ou alguem do
+time) commitar sem querer o `.env`, a pasta `.data/` ou colar uma chave real
+direto num arquivo, esse commit trava com um erro explicando o que fazer -
+antes de virar um problema no ar. Nao precisa configurar nada, ja vem
+pronto.

@@ -1,5 +1,35 @@
 # DevQuest - Analise de Seguranca
 
+## Protecao contra segredos vazados no codigo/GitHub (04/07/2026)
+
+Reforco adicional pedido explicitamente: garantir que nenhuma chave (Supabase,
+Mercado Pago, tokens locais) acabe exposta no repositorio.
+
+- **Arquitetura ja impede o vazamento mais grave por padrao.** O frontend
+  (`src/`) nunca importa nada do Supabase - ele so fala com a API do
+  DevQuest (`src/services/commercialApi.ts`). A `SUPABASE_SERVICE_ROLE_KEY`
+  existe apenas em `server/db/supabase.mjs`, roda somente no servidor, e
+  nunca entra no bundle enviado ao navegador. Isso foi verificado na pratica:
+  buildei o projeto com uma chave falsa nas variaveis de ambiente e conferi
+  que o texto dela nao aparece em nenhum arquivo gerado em `dist/`.
+- **`node scripts/check-secrets.mjs`** (novo): varre os arquivos rastreados
+  pelo Git e falha (saida 1) se encontrar: o arquivo `.env` versionado, a
+  pasta `.data/` (onde ficam os segredos locais gerados automaticamente)
+  versionada, ou qualquer string com formato de chave real (JWT do Supabase,
+  token do Mercado Pago) em vez de um placeholder de exemplo.
+- Esse script roda **automaticamente antes de `npm run dev` e `npm run
+  build`** (hooks `predev`/`prebuild`), e tambem existe como GitHub Action
+  em `.github/workflows/check-secrets.yml`, que roda em todo push/PR - uma
+  segunda camada de protecao mesmo se alguem esquecer de rodar localmente
+  ou usar outro computador.
+- Testado com casos reais simulados (nao so lido): commit com `.env`
+  versionado, commit com `.data/secrets.json` versionado e commit com uma
+  string no formato de JWT dentro de um arquivo `.mjs` - os tres foram
+  detectados e bloqueados (saida 1). Um repositorio limpo com apenas
+  `.env.example` continua passando normalmente (sem falso positivo).
+- `package.json` tambem tinha uma dependencia duplicada (`@fontsource/cinzel`
+  listada duas vezes) de uma edicao anterior - corrigido.
+
 ## Migracao para Supabase (04/07/2026)
 
 Todos os dados do app (usuarios, licencas, pedidos, progresso e eventos)

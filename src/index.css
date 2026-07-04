@@ -1557,6 +1557,7 @@ button:disabled {
 .field-input {
   width: 100%;
   min-height: 44px;
+  margin-bottom: 14px;
   border: 1px solid var(--line);
   border-radius: 14px;
   outline: 0;

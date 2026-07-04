@@ -4,17 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "check-secrets": "node scripts/check-secrets.mjs",
+    "predev": "npm run check-secrets",
+    "prebuild": "npm run check-secrets",
     "dev": "node scripts/dev.mjs",
     "dev:vite": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "server": "node server/server.mjs",
-    "start": "npm run build && node server/server.mjs",
+    "start": "npm run check-secrets && npm run build && node server/server.mjs",
     "api:dev": "HOST=127.0.0.1 PORT=8787 node server/server.mjs"
   },
   "dependencies": {
-    "@fontsource/cinzel": "^5.2.8",
     "@fontsource/cinzel": "^5.2.8",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
