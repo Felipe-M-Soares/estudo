@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import {
   Activity,
   Award,
@@ -38,6 +38,19 @@ import { gameRegistry } from './components/games/registry';
 import { GameIcon } from './components/ui/GameIcon';
 import { ExerciseRouter } from './components/ui/ExerciseRouter';
 import {
+  activateCommercialLicense,
+  getCommercialMe,
+  healthCheck,
+  loadCloudProgress,
+  loginCommercialAccount,
+  readLocalCommercialProgress,
+  registerCommercialAccount,
+  saveCloudProgress,
+  storeToken,
+  writeLocalCommercialProgress,
+  type CommercialUser,
+} from './services/commercialApi';
+import {
   achievementCatalog,
   careerLadder,
   dailyPlan,
@@ -65,7 +78,17 @@ type Screen =
   | 'review'
   | 'mentor'
   | 'analytics'
-  | 'market';
+  | 'market'
+  | 'account';
+
+type CommercialState = {
+  checked: boolean;
+  online: boolean;
+  mode: string;
+  user: CommercialUser | null;
+  access: boolean;
+  error: string | null;
+};
 
 const navItems = [
   { id: 'command', label: 'Command Center', icon: Home },
@@ -79,6 +102,7 @@ const navItems = [
   { id: 'mentor', label: 'Mentor IA', icon: Bot },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'market', label: 'Loja', icon: Coins },
+  { id: 'account', label: 'Conta', icon: ShieldCheck },
 ] as const;
 
 function clampPercent(value: number) {
@@ -101,6 +125,14 @@ export default function App() {
   const [activeModuleId, setActiveModuleId] = useState(modules[3]?.id ?? modules[0]?.id);
   const [activeLessonId, setActiveLessonId] = useState(modules[3]?.lessons[0]?.id ?? modules[0]?.lessons[0]?.id);
   const [gameScores, setGameScores] = useState<Record<string, number>>({});
+  const [commercial, setCommercial] = useState<CommercialState>({
+    checked: false,
+    online: false,
+    mode: 'offline',
+    user: null,
+    access: false,
+    error: null,
+  });
 
   const activeModule = useMemo(
     () => modules.find((module) => module.id === activeModuleId) ?? modules[0],
@@ -146,11 +178,57 @@ export default function App() {
     };
   }, []);
 
+  const commercialProgress = useMemo(() => ({
+    activeModuleId,
+    activeLessonId,
+    gameScores,
+    theme,
+    lastScreen: screen,
+    updatedAt: new Date().toISOString(),
+  }), [activeModuleId, activeLessonId, gameScores, theme, screen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function bootCommercialMode() {
+      try {
+        const health = await healthCheck();
+        if (cancelled) return;
+        setCommercial((current) => ({ ...current, checked: true, online: true, mode: health.mode, error: null }));
+        try {
+          const me = await getCommercialMe();
+          if (!cancelled) setCommercial((current) => ({ ...current, user: me.user, access: me.access }));
+        } catch {
+          if (!cancelled) setCommercial((current) => ({ ...current, user: null, access: false }));
+        }
+      } catch {
+        if (!cancelled) setCommercial((current) => ({ ...current, checked: true, online: false, mode: 'offline', error: null }));
+      }
+    }
+    bootCommercialMode();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    writeLocalCommercialProgress(commercialProgress);
+  }, [commercialProgress]);
+
   function selectModule(module: Module, nextScreen: Screen = 'learn') {
     setActiveModuleId(module.id);
     setActiveLessonId(module.lessons[0]?.id);
     setScreen(nextScreen);
     setNavOpen(false);
+  }
+
+  async function refreshCommercialAccount() {
+    const me = await getCommercialMe();
+    setCommercial((current) => ({ ...current, user: me.user, access: me.access, error: null }));
+  }
+
+  function logoutCommercialAccount() {
+    storeToken(null);
+    setCommercial((current) => ({ ...current, user: null, access: false, error: null }));
   }
 
   return (
@@ -228,6 +306,9 @@ export default function App() {
             <span><Flame size={16} />{metrics.streak} dias</span>
             <span><Star size={16} />{metrics.xp.toLocaleString('pt-BR')} XP</span>
             <span><Coins size={16} />{metrics.coins.toLocaleString('pt-BR')}</span>
+            <button className="hud-account" onClick={() => setScreen('account')}>
+              <ShieldCheck size={16} />{commercial.user ? 'Conta ativa' : commercial.online ? 'Entrar' : 'Offline'}
+            </button>
           </div>
           <button
             className="theme-switch"
@@ -262,6 +343,21 @@ export default function App() {
           {screen === 'mentor' && <MentorHub module={activeModule} lesson={activeLesson} />}
           {screen === 'analytics' && <AnalyticsCenter metrics={metrics} />}
           {screen === 'market' && <Marketplace />}
+          {screen === 'account' && (
+            <CommercialAccount
+              commercial={commercial}
+              setCommercial={setCommercial}
+              refreshCommercialAccount={refreshCommercialAccount}
+              logoutCommercialAccount={logoutCommercialAccount}
+              progress={commercialProgress}
+              applyCloudProgress={(progress) => {
+                if (typeof progress.activeModuleId === 'string') setActiveModuleId(progress.activeModuleId);
+                if (typeof progress.activeLessonId === 'string') setActiveLessonId(progress.activeLessonId);
+                if (progress.gameScores && typeof progress.gameScores === 'object') setGameScores(progress.gameScores as Record<string, number>);
+                if (progress.theme === 'obsidian' || progress.theme === 'nexus' || progress.theme === 'daybreak') setTheme(progress.theme);
+              }}
+            />
+          )}
         </main>
       </div>
     </div>
@@ -912,6 +1008,191 @@ function Marketplace() {
           </article>
         ))}
       </div>
+    </section>
+  );
+}
+
+function CommercialAccount({
+  commercial,
+  setCommercial,
+  refreshCommercialAccount,
+  logoutCommercialAccount,
+  progress,
+  applyCloudProgress,
+}: {
+  commercial: CommercialState;
+  setCommercial: Dispatch<SetStateAction<CommercialState>>;
+  refreshCommercialAccount: () => Promise<void>;
+  logoutCommercialAccount: () => void;
+  progress: Record<string, unknown>;
+  applyCloudProgress: (progress: Record<string, unknown>) => void;
+}) {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [licenseKey, setLicenseKey] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function submitAccount() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const session = mode === 'login'
+        ? await loginCommercialAccount({ email, password })
+        : await registerCommercialAccount({ name, email, password });
+      setCommercial((current) => ({
+        ...current,
+        online: true,
+        user: session.user,
+        access: session.access,
+        error: null,
+      }));
+      setMessage(mode === 'login' ? 'Login realizado com sucesso.' : 'Conta criada com sucesso.');
+    } catch (error) {
+      setCommercial((current) => ({ ...current, error: error instanceof Error ? error.message : 'Erro inesperado.' }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function activateLicense() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await activateCommercialLicense(licenseKey);
+      setCommercial((current) => ({ ...current, user: result.user, access: result.access, error: null }));
+      setMessage('Licenca ativada. Sincronizacao em nuvem liberada.');
+    } catch (error) {
+      setCommercial((current) => ({ ...current, error: error instanceof Error ? error.message : 'Erro ao ativar licenca.' }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function syncUp() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const saved = await saveCloudProgress({ ...readLocalCommercialProgress(), ...progress });
+      setMessage(`Progresso enviado para nuvem. Checksum: ${saved.progress.checksum.slice(0, 10)}...`);
+    } catch (error) {
+      setCommercial((current) => ({ ...current, error: error instanceof Error ? error.message : 'Erro ao sincronizar.' }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function syncDown() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const loaded = await loadCloudProgress();
+      if (!loaded.progress?.data) {
+        setMessage('Nenhum progresso salvo na nuvem ainda.');
+      } else {
+        applyCloudProgress(loaded.progress.data);
+        writeLocalCommercialProgress(loaded.progress.data);
+        setMessage(`Progresso restaurado de ${new Date(loaded.progress.updatedAt).toLocaleString('pt-BR')}.`);
+      }
+    } catch (error) {
+      setCommercial((current) => ({ ...current, error: error instanceof Error ? error.message : 'Erro ao baixar progresso.' }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="account-layout">
+      <div className="stack">
+        <article className="mentor-panel account-hero">
+          <span className="eyebrow"><ShieldCheck size={15} /> Produto comercial</span>
+          <h1>Conta, licenca e progresso em nuvem.</h1>
+          <p>
+            Esta camada transforma o app em uma base vendavel: usuario com senha protegida,
+            token de sessao, ativacao de licenca e sincronizacao no servidor.
+          </p>
+          <div className="account-status-grid">
+            <div>
+              <span>API</span>
+              <strong>{commercial.online ? 'Online' : 'Offline'}</strong>
+            </div>
+            <div>
+              <span>Modo</span>
+              <strong>{commercial.mode}</strong>
+            </div>
+            <div>
+              <span>Acesso</span>
+              <strong>{commercial.access ? 'Liberado' : 'Pendente'}</strong>
+            </div>
+          </div>
+        </article>
+
+        {commercial.user && (
+          <Panel title="Sincronizacao" icon={<ShieldCheck size={20} />}>
+            <div className="sync-grid">
+              <button className="primary-btn" disabled={busy || !commercial.access} onClick={syncUp}>Enviar progresso</button>
+              <button className="ghost-btn" disabled={busy || !commercial.access} onClick={syncDown}>Baixar progresso</button>
+              <button className="ghost-btn" disabled={busy} onClick={refreshCommercialAccount}>Atualizar conta</button>
+              <button className="danger-btn" disabled={busy} onClick={logoutCommercialAccount}>Sair</button>
+            </div>
+            {!commercial.access && (
+              <div className="qa-warning">Ative uma licenca para liberar sincronizacao quando REQUIRE_LICENSE=true.</div>
+            )}
+          </Panel>
+        )}
+      </div>
+
+      <aside className="command-card sticky">
+        {commercial.user ? (
+          <>
+            <span className="eyebrow"><Crown size={15} /> Conta ativa</span>
+            <h2>{commercial.user.name}</h2>
+            <p>{commercial.user.email}</p>
+            <div className="account-facts">
+              <span><strong>{commercial.user.role}</strong> Papel</span>
+              <span><strong>{commercial.user.license?.plan ?? 'sem licenca'}</strong> Plano</span>
+              <span><strong>{commercial.user.license?.status ?? 'pendente'}</strong> Status</span>
+            </div>
+            <label className="field-label">Chave de licenca</label>
+            <input
+              className="field-input"
+              value={licenseKey}
+              onChange={(event) => setLicenseKey(event.target.value)}
+              placeholder="DEVQUEST-XXXX-XXXX"
+            />
+            <button className="primary-btn full" disabled={busy || !licenseKey.trim()} onClick={activateLicense}>
+              Ativar licenca
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="eyebrow"><ShieldCheck size={15} /> Entrar</span>
+            <h2>{mode === 'login' ? 'Acessar conta' : 'Criar conta'}</h2>
+            {!commercial.online && <p>Servidor comercial offline. Rode `npm run api:dev` ou `npm start` para ativar API.</p>}
+            <div className="mode-tabs">
+              <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Login</button>
+              <button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Cadastro</button>
+            </div>
+            {mode === 'register' && (
+              <>
+                <label className="field-label">Nome</label>
+                <input className="field-input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nome do aluno" />
+              </>
+            )}
+            <label className="field-label">Email</label>
+            <input className="field-input" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="aluno@email.com" />
+            <label className="field-label">Senha</label>
+            <input className="field-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="minimo 8 caracteres" />
+            <button className="primary-btn full" disabled={busy || !commercial.online || !email.trim() || !password.trim()} onClick={submitAccount}>
+              {mode === 'login' ? 'Entrar' : 'Criar conta'}
+            </button>
+          </>
+        )}
+        {message && <div className="success-note">{message}</div>}
+        {commercial.error && <div className="error-note">{commercial.error}</div>}
+      </aside>
     </section>
   );
 }

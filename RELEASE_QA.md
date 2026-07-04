@@ -12,6 +12,9 @@
 - Script inline removido do `index.html`; registro do service worker movido para `src/main.tsx`.
 - CSP adicionada no HTML para reduzir superficie de XSS em deploy estatico.
 - Pastas parciais de instalacao corrompida removidas do projeto ativo.
+- Backend comercial adicionado em `server/server.mjs`.
+- Autenticacao com hash `scrypt`, token HMAC, licencas e progresso em servidor.
+- Tela `Conta` adicionada ao frontend com login, cadastro, ativacao de licenca e sincronizacao.
 
 ## Pontos corrigidos nesta revisao
 
@@ -23,18 +26,16 @@
 
 ## Seguranca
 
-Este app ainda e um PWA estatico/client-side. Isso e adequado para uma versao pessoal, demo comercial ou venda sem dados sensiveis em servidor, mas nao substitui uma plataforma SaaS com backend.
+Este app agora possui backend Node para venda inicial com conta, licenca e progresso em servidor.
 
-Para vender com login, pagamento, licencas, turmas ou progresso em nuvem, ainda falta:
+Para escala SaaS maior, ainda recomendo evoluir:
 
-- backend com autenticacao real;
-- banco de dados;
-- controle de assinatura/licenca;
-- autorizacao por usuario;
+- trocar persistencia JSON por PostgreSQL;
+- integrar pagamentos reais (Stripe, Mercado Pago ou similar);
+- recuperar senha por email;
 - politicas de privacidade e termos;
-- rate limiting no backend;
-- logs/auditoria;
-- pipeline de deploy com headers de seguranca no servidor/CDN;
+- painel admin visual;
+- backups automatizados;
 - testes automatizados E2E.
 
 As chaves de IA continuam sendo fornecidas pelo usuario e salvas no navegador. Para produto comercial, o ideal e proxy backend com cotas, auditoria e protecao de chave.

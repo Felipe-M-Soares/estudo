@@ -20,6 +20,30 @@ Esta versão foi reformulada como uma plataforma de aprendizado em formato RPG p
 - Analytics de habilidades, conquistas e estatísticas de produto
 - Loja de recompensas, temas e desbloqueios
 
+## Modo comercial
+
+Esta entrega tambem inclui backend comercial em `server/server.mjs`, sem dependencias extras:
+
+- cadastro e login de usuarios;
+- senha com hash `scrypt` e salt;
+- token de sessao assinado;
+- ativacao de licencas;
+- progresso salvo no servidor;
+- endpoints admin para gerar licencas;
+- headers de seguranca e rate limit basico.
+
+Para rodar a versao completa:
+
+```bash
+npm install
+npm run build
+npm run api:dev
+```
+
+Depois acesse `http://127.0.0.1:8787`.
+
+Veja `COMMERCIAL_DEPLOY.md` para deploy e criacao de licencas.
+
 O build de produção foi validado com `npm run build`.
 
 ## ✨ O que tem aqui
