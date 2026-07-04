@@ -5,7 +5,6 @@ import {
   BarChart3,
   BookOpen,
   Bot,
-  Boxes,
   BriefcaseBusiness,
   CheckCircle2,
   ChevronRight,
@@ -18,9 +17,8 @@ import {
   Gem,
   GraduationCap,
   Home,
-  Layers3,
   Lock,
-  Map,
+  Map as MapIcon,
   Menu,
   Moon,
   Play,
@@ -28,7 +26,6 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
-  Swords,
   Target,
   Trophy,
   X,
@@ -36,6 +33,10 @@ import {
 } from 'lucide-react';
 import { modules, totalChecklistCount, totalExerciseCount } from './data';
 import type { LessonBlock, Module } from './data/types';
+import { diagramRegistry } from './components/diagrams/registry';
+import { gameRegistry } from './components/games/registry';
+import { GameIcon } from './components/ui/GameIcon';
+import { ExerciseRouter } from './components/ui/ExerciseRouter';
 import {
   achievementCatalog,
   careerLadder,
@@ -68,7 +69,7 @@ type Screen =
 
 const navItems = [
   { id: 'command', label: 'Command Center', icon: Home },
-  { id: 'worlds', label: 'Mundos', icon: Map },
+  { id: 'worlds', label: 'Mundos', icon: MapIcon },
   { id: 'learn', label: 'Sala de Aula', icon: BookOpen },
   { id: 'story', label: 'Modo Historia', icon: Sparkles },
   { id: 'lab', label: 'Laboratorio', icon: Code2 },
@@ -79,15 +80,6 @@ const navItems = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'market', label: 'Loja', icon: Coins },
 ] as const;
-
-const arcadeModes = [
-  { title: 'Quiz Rush', icon: Zap, tag: 'Velocidade', reward: '+120 XP', detail: 'Responda rapido para manter combo.' },
-  { title: 'Debug Arena', icon: Target, tag: 'Investigacao', reward: '+240 XP', detail: 'Analise logs, sintomas e causa raiz.' },
-  { title: 'Memory Code', icon: Boxes, tag: 'Memoria', reward: '+90 XP', detail: 'Combine conceito, exemplo e aplicacao.' },
-  { title: 'SQL Duel', icon: Activity, tag: 'Dados', reward: '+180 XP', detail: 'Monte consultas com objetivo claro.' },
-  { title: 'API Builder', icon: Layers3, tag: 'Backend', reward: '+220 XP', detail: 'Crie contratos, status e validacoes.' },
-  { title: 'Boss Fight', icon: Swords, tag: 'Final', reward: '+900 XP', detail: 'Resolva um desafio de modulo completo.' },
-];
 
 function clampPercent(value: number) {
   return Math.max(0, Math.min(100, value));
@@ -108,6 +100,7 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [activeModuleId, setActiveModuleId] = useState(modules[3]?.id ?? modules[0]?.id);
   const [activeLessonId, setActiveLessonId] = useState(modules[3]?.lessons[0]?.id ?? modules[0]?.lessons[0]?.id);
+  const [gameScores, setGameScores] = useState<Record<string, number>>({});
 
   const activeModule = useMemo(
     () => modules.find((module) => module.id === activeModuleId) ?? modules[0],
@@ -258,7 +251,12 @@ export default function App() {
           )}
           {screen === 'story' && <StoryMode module={activeModule} setScreen={setScreen} />}
           {screen === 'lab' && <LabStudio module={activeModule} />}
-          {screen === 'arcade' && <ArcadeHub />}
+          {screen === 'arcade' && (
+            <ArcadeHub
+              gameScores={gameScores}
+              onGameComplete={(gameId, score) => setGameScores((scores) => ({ ...scores, [gameId]: Math.max(scores[gameId] ?? 0, score) }))}
+            />
+          )}
           {screen === 'career' && <CareerMode />}
           {screen === 'review' && <ReviewCenter />}
           {screen === 'mentor' && <MentorHub module={activeModule} lesson={activeLesson} />}
@@ -385,7 +383,7 @@ function WorldMap({
       <div className="stack">
         <div className="section-title">
           <div>
-            <span className="eyebrow"><Map size={15} /> Mapa de conhecimento</span>
+            <span className="eyebrow"><MapIcon size={15} /> Mapa de conhecimento</span>
             <h2>Mundos e trilhas</h2>
           </div>
           <strong>{modules.length} modulos encontrados</strong>
@@ -455,6 +453,11 @@ function LearningRoom({
   setLessonId: (lessonId: string) => void;
   setScreen: (screen: Screen) => void;
 }) {
+  const [activeExerciseId, setActiveExerciseId] = useState(module.exercises[0]?.id);
+  const [exerciseResults, setExerciseResults] = useState<Record<string, boolean>>({});
+  const activeExercise = module.exercises.find((exercise) => exercise.id === activeExerciseId) ?? module.exercises[0];
+  const diagram = lesson?.diagramId ? diagramRegistry[lesson.diagramId] : null;
+
   if (!lesson) return null;
 
   return (
@@ -487,11 +490,53 @@ function LearningRoom({
             <code>{lesson.codeExample.code}</code>
           </pre>
         )}
+        {diagram && (
+          <div className="diagram-stage">
+            <div className="split">
+              <strong>Diagrama interativo</strong>
+              <span>{lesson.diagramId}</span>
+            </div>
+            {diagram()}
+          </div>
+        )}
         <div className="lesson-actions">
           <button className="primary-btn" onClick={() => setScreen('story')}>Transformar em historia</button>
           <button className="ghost-btn" onClick={() => setScreen('review')}>Criar revisao</button>
           <button className="ghost-btn" onClick={() => setScreen('mentor')}>Pedir ajuda da IA</button>
         </div>
+
+        {activeExercise && (
+          <div className="exercise-stage">
+            <div className="section-title compact">
+              <div>
+                <span className="eyebrow"><Target size={15} /> Treino guiado</span>
+                <h2>Exercicios do modulo</h2>
+              </div>
+              <strong>{Object.values(exerciseResults).filter(Boolean).length}/{module.exercises.length} corretos</strong>
+            </div>
+            <div className="exercise-layout">
+              <aside className="exercise-picker">
+                {module.exercises.slice(0, 12).map((exercise, index) => (
+                  <button
+                    key={exercise.id}
+                    className={exercise.id === activeExercise.id ? 'active' : ''}
+                    onClick={() => setActiveExerciseId(exercise.id)}
+                  >
+                    <span>{index + 1}</span>
+                    <strong>{exercise.type}</strong>
+                    {exerciseResults[exercise.id] === true && <CheckCircle2 size={16} />}
+                  </button>
+                ))}
+              </aside>
+              <div className="exercise-card-shell">
+                <ExerciseRouter
+                  exercise={activeExercise}
+                  onResult={(correct) => setExerciseResults((results) => ({ ...results, [activeExercise.id]: correct }))}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </article>
 
       <aside className="command-card">
@@ -540,7 +585,7 @@ function StoryMode({ module, setScreen }: { module: Module; setScreen: (screen: 
         <button className="primary-btn" onClick={() => setScreen('learn')}>Voltar para aula</button>
       </article>
 
-      <Panel title="Campanhas narrativas" icon={<Map size={20} />}>
+      <Panel title="Campanhas narrativas" icon={<MapIcon size={20} />}>
         <div className="campaign-grid">
           {projectCampaigns.map((campaign) => (
             <article className="campaign-card" key={campaign.id}>
@@ -611,7 +656,47 @@ function LabStudio({ module }: { module: Module }) {
   );
 }
 
-function ArcadeHub() {
+function ArcadeHub({
+  gameScores,
+  onGameComplete,
+}: {
+  gameScores: Record<string, number>;
+  onGameComplete: (gameId: string, score: number) => void;
+}) {
+  const [activeGameId, setActiveGameId] = useState<string | null>(null);
+  const allGames = useMemo(
+    () => modules.flatMap((module) => module.games.map((game) => ({ ...game, moduleTitle: module.title, moduleEmoji: module.emoji, phase: module.phase }))),
+    [],
+  );
+  const uniqueGames = useMemo(() => Array.from(new Map(allGames.map((game) => [game.gameId, game])).values()), [allGames]);
+  const activeGame = activeGameId ? uniqueGames.find((game) => game.gameId === activeGameId) : null;
+  const gameDef = activeGameId ? gameRegistry[activeGameId] : null;
+  const playableGames = uniqueGames.filter((game) => gameRegistry[game.gameId]);
+  const missingGames = uniqueGames.filter((game) => !gameRegistry[game.gameId]);
+
+  if (activeGameId) {
+    return (
+      <section className="stack">
+        <button className="ghost-btn back-button" onClick={() => setActiveGameId(null)}>
+          <ChevronRight size={16} className="rotate-180" />
+          Voltar ao Arcade
+        </button>
+        <div className="section-title">
+          <div>
+            <span className="eyebrow"><Gamepad2 size={15} /> Jogo ativo</span>
+            <h2>{activeGame?.label ?? activeGameId}</h2>
+          </div>
+          <strong>{gameScores[activeGameId] !== undefined ? `Melhor: ${gameScores[activeGameId]}%` : 'Sem pontuacao'}</strong>
+        </div>
+        <div className="game-frame">
+          {gameDef
+            ? gameDef.render((score) => onGameComplete(activeGameId, score))
+            : <div className="empty-state">Este jogo esta cadastrado no modulo, mas nao possui componente no registry.</div>}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="stack">
       <div className="section-title">
@@ -619,20 +704,25 @@ function ArcadeHub() {
           <span className="eyebrow"><Gamepad2 size={15} /> Arcade tecnico</span>
           <h2>Jogos para fixar sem virar aula longa</h2>
         </div>
-        <strong>Combos, tempo, XP e ranking pessoal</strong>
+        <strong>{playableGames.length} jogos funcionais</strong>
       </div>
+      {missingGames.length > 0 && (
+        <div className="qa-warning">
+          {missingGames.length} jogos foram encontrados nos modulos sem componente registrado. Eles ficam ocultos ate receberem implementacao.
+        </div>
+      )}
       <div className="arcade-grid">
-        {arcadeModes.map((game) => {
-          const Icon = game.icon;
+        {playableGames.map((game) => {
+          const best = gameScores[game.gameId];
           return (
-            <article className="game-card" key={game.title}>
-              <div className="game-mark"><Icon size={28} /></div>
-              <span>{game.tag}</span>
-              <h3>{game.title}</h3>
-              <p>{game.detail}</p>
-              <strong>{game.reward}</strong>
-              <button className="ghost-btn full"><Play size={16} /> Jogar</button>
-            </article>
+            <button className="game-card interactive" key={game.gameId} onClick={() => setActiveGameId(game.gameId)}>
+              <GameIcon gameId={game.gameId} className="game-mark" />
+              <span>{game.moduleEmoji} Mundo {game.phase}</span>
+              <h3>{game.label}</h3>
+              <p>{game.description}</p>
+              <strong>{best !== undefined ? `Melhor pontuacao: ${best}%` : game.moduleTitle}</strong>
+              <span className="ghost-btn full"><Play size={16} /> Jogar agora</span>
+            </button>
           );
         })}
       </div>

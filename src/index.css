@@ -1,10 +1,42 @@
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/inter/700.css';
-@import '@fontsource/space-grotesk/600.css';
-@import '@fontsource/space-grotesk/700.css';
-@import '@fontsource/jetbrains-mono/500.css';
+@import 'tailwindcss';
+
+@theme {
+  --font-display: "Space Grotesk", Inter, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-base-50: #f8fbff;
+  --color-base-100: #eaf0fb;
+  --color-base-200: #d5deee;
+  --color-base-300: #b8c4da;
+  --color-base-400: #93a1ba;
+  --color-base-500: #6f7d97;
+  --color-base-600: #536077;
+  --color-base-700: #354055;
+  --color-base-800: #1f293d;
+  --color-base-850: #172033;
+  --color-base-900: #111827;
+  --color-base-950: #070913;
+  --color-mint-100: #d8ffef;
+  --color-mint-200: #a9ffd9;
+  --color-mint-300: #72f5be;
+  --color-mint-400: #56f0a8;
+  --color-mint-900: #063722;
+  --color-cyan-300: #7ee7ff;
+  --color-cyan-400: #58e6ff;
+  --color-violet-100: #eee7ff;
+  --color-violet-200: #d8c7ff;
+  --color-violet-300: #b99cff;
+  --color-violet-400: #8f7cff;
+  --color-violet-500: #7658f2;
+  --color-violet-900: #23124c;
+  --color-amber-100: #fff1c4;
+  --color-amber-200: #ffe39a;
+  --color-amber-300: #ffd166;
+  --color-amber-400: #ffc857;
+  --color-amber-500: #f59e0b;
+  --color-ember-300: #ff9ab1;
+  --color-ember-400: #ff6b93;
+  --color-ember-500: #ff4f7f;
+}
 
 :root {
   font-family: Inter, system-ui, sans-serif;
@@ -1072,6 +1104,184 @@ button {
   overflow: hidden;
 }
 
+.compact {
+  margin-bottom: 14px;
+}
+
+.diagram-stage,
+.exercise-stage,
+.game-frame {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface-3);
+}
+
+.diagram-stage > .split {
+  margin-bottom: 14px;
+}
+
+.diagram-stage > .split span {
+  color: var(--muted);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.exercise-layout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.exercise-picker {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.exercise-picker button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 13px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.055);
+  text-align: left;
+}
+
+.exercise-picker button.active,
+.exercise-picker button:hover {
+  color: var(--text);
+  background: rgba(88, 230, 255, 0.11);
+}
+
+.exercise-picker button > span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 900;
+}
+
+.exercise-card-shell {
+  min-width: 0;
+}
+
+.game-frame {
+  margin-top: 0;
+  overflow: hidden;
+}
+
+.empty-state,
+.qa-warning {
+  padding: 16px;
+  border: 1px solid rgba(255, 200, 87, 0.28);
+  border-radius: 16px;
+  color: var(--warning);
+  background: rgba(255, 200, 87, 0.08);
+}
+
+.back-button {
+  justify-self: start;
+}
+
+.interactive {
+  color: var(--text);
+  text-align: left;
+}
+
+.card-surface,
+.hud-card,
+.game-frame,
+.arcade-card {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 70%, transparent));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
+}
+
+.hud-card-hover:hover,
+.arcade-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+}
+
+.game-icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border-radius: 16px;
+  color: #061018;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.game-card .game-mark.game-icon {
+  width: 54px;
+  height: 54px;
+}
+
+.mission-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  color: #061018;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  font-weight: 900;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quest-map {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(88, 230, 255, 0.13), transparent 34%),
+    radial-gradient(circle at 92% 0%, rgba(143, 124, 255, 0.13), transparent 34%),
+    var(--surface);
+}
+
+.mono-num {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.fade-scroll-x {
+  mask-image: linear-gradient(90deg, transparent, black 14px, black calc(100% - 14px), transparent);
+}
+
+.animate-rise-in {
+  animation: rise-in 0.28s ease both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 1280px) {
   .mission-grid,
   .worlds-grid,
@@ -1170,5 +1380,13 @@ button {
   .command-card,
   .lesson-nav {
     border-radius: 20px;
+  }
+
+  .exercise-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .exercise-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

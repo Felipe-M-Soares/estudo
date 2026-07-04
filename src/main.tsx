@@ -24,3 +24,11 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>
 );
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // O app continua funcionando mesmo quando o navegador bloqueia PWA/SW.
+    });
+  });
+}
