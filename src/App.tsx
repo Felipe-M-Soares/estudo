@@ -159,8 +159,9 @@ const copy: Record<Language, Record<string, string>> = {
     'learn.exerciseLockedTitle': 'Exercicios liberados depois da aula',
     'learn.exerciseLockedBody': 'Leia o conteudo, veja o exemplo e marque a aula como concluida. Depois disso o treino aparece.',
     'learn.exercises': 'Treino guiado',
-    'account.heroTitle': 'Conta, plano e acesso em nuvem.',
-    'account.heroBody': 'Para vender corretamente, o aluno precisa estar logado e ter plano ativo antes de acessar a plataforma.',
+    'account.heroTitle': 'Escolha sua classe. Comece a jornada.',
+    'account.heroBody': 'Da logica ao deploy: suba de nivel modulo a modulo, desbloqueie laboratorio, arcade e projetos reais, e leve seu progresso para qualquer dispositivo.',
+    'account.heroKicker': 'Sua jornada de dev, gamificada',
     'account.plans': 'Planos de acesso',
     'account.login': 'Login',
     'account.register': 'Cadastro',
@@ -175,6 +176,9 @@ const copy: Record<Language, Record<string, string>> = {
     'account.sync': 'Sincronizacao',
     'account.billingLifetime': 'Vitalicio',
     'account.billingMonthly': 'Mensal',
+    'account.rarityCommon': 'Aventureiro',
+    'account.rarityRare': 'Heroico',
+    'account.rarityLegendary': 'Lendario',
   },
   en: {
     'nav.command': 'Start',
@@ -219,8 +223,9 @@ const copy: Record<Language, Record<string, string>> = {
     'learn.exerciseLockedTitle': 'Exercises unlock after the lesson',
     'learn.exerciseLockedBody': 'Read the content, inspect the example and mark the lesson as completed. Then practice appears.',
     'learn.exercises': 'Guided practice',
-    'account.heroTitle': 'Account, plan and cloud access.',
-    'account.heroBody': 'For a proper paid product, students must be signed in with an active plan before using the platform.',
+    'account.heroTitle': 'Pick your class. Begin the quest.',
+    'account.heroBody': 'From logic to deploy: level up module by module, unlock the lab, the arcade and real projects, and carry your progress to any device.',
+    'account.heroKicker': 'Your dev journey, gamified',
     'account.plans': 'Access plans',
     'account.login': 'Login',
     'account.register': 'Register',
@@ -235,6 +240,9 @@ const copy: Record<Language, Record<string, string>> = {
     'account.sync': 'Sync',
     'account.billingLifetime': 'Lifetime',
     'account.billingMonthly': 'Monthly',
+    'account.rarityCommon': 'Adventurer',
+    'account.rarityRare': 'Heroic',
+    'account.rarityLegendary': 'Legendary',
   },
   es: {
     'nav.command': 'Inicio',
@@ -279,8 +287,9 @@ const copy: Record<Language, Record<string, string>> = {
     'learn.exerciseLockedTitle': 'Ejercicios liberados despues de la clase',
     'learn.exerciseLockedBody': 'Lee el contenido, mira el ejemplo y marca la clase como completada. Despues aparece la practica.',
     'learn.exercises': 'Practica guiada',
-    'account.heroTitle': 'Cuenta, plan y acceso en la nube.',
-    'account.heroBody': 'Para vender correctamente, el alumno debe iniciar sesion y tener un plan activo antes de usar la plataforma.',
+    'account.heroTitle': 'Elige tu clase. Comienza la aventura.',
+    'account.heroBody': 'De la logica al deploy: sube de nivel modulo a modulo, desbloquea el laboratorio, el arcade y proyectos reales, y lleva tu progreso a cualquier dispositivo.',
+    'account.heroKicker': 'Tu viaje como developer, gamificado',
     'account.plans': 'Planes de acceso',
     'account.login': 'Login',
     'account.register': 'Registro',
@@ -295,6 +304,9 @@ const copy: Record<Language, Record<string, string>> = {
     'account.sync': 'Sincronizacion',
     'account.billingLifetime': 'Vitalicio',
     'account.billingMonthly': 'Mensual',
+    'account.rarityCommon': 'Aventurero',
+    'account.rarityRare': 'Heroico',
+    'account.rarityLegendary': 'Legendario',
   },
 };
 
@@ -1863,17 +1875,27 @@ function CommercialAccount({
     <section className="account-layout">
       <div className="stack">
         <article className="feature-panel account-hero">
-          <span className="eyebrow"><ShieldCheck size={15} /> {t('nav.account')}</span>
+          <span className="eyebrow"><ShieldCheck size={15} /> {t('account.heroKicker')}</span>
           <h1>{t('account.heroTitle')}</h1>
           <p>{t('account.heroBody')}</p>
+          <div className="quest-strip">
+            <span><BookOpen size={15} /> 22 {t('nav.worlds')}</span>
+            <span><Code2 size={15} /> {t('nav.lab')}</span>
+            <span><Gamepad2 size={15} /> {t('nav.arcade')}</span>
+            <span><Trophy size={15} /> {t('nav.career')}</span>
+          </div>
         </article>
 
         <Panel title={t('account.plans')} icon={<CreditCard size={22} weight="duotone" />}>
           <div className="pricing-grid">
             {(plans.length ? plans : fallbackPlans(language)).map((plan) => {
               const current = commercial.user?.license?.plan === plan.id;
+              const rarity = plan.id === 'lifetime' ? 'legendary' : plan.id === 'pro' ? 'rare' : 'common';
+              const rarityLabel =
+                plan.id === 'lifetime' ? t('account.rarityLegendary') : plan.id === 'pro' ? t('account.rarityRare') : t('account.rarityCommon');
               return (
-                <article className={`price-card ${current ? 'current' : ''}`} key={plan.id}>
+                <article className={`price-card rarity-${rarity} ${current ? 'current' : ''}`} key={plan.id}>
+                  <span className="rarity-tag">{rarityLabel}</span>
                   <div className="price-icon">
                     {plan.id === 'starter' && <PhosphorGraduationCap size={28} weight="duotone" />}
                     {plan.id === 'pro' && <ChartLineUp size={28} weight="duotone" />}

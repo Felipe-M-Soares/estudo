@@ -1,6 +1,17 @@
 # DevQuest Comercial - Deploy e Operacao
 
-Esta versao inclui frontend React/Vite e backend Node nativo no arquivo `server/server.mjs`.
+Esta versao inclui frontend React/Vite e backend Node nativo no arquivo `server/server.mjs`. Todos os dados do app (usuarios, licencas, pedidos, progresso e eventos de auditoria) ficam armazenados no **Supabase** (Postgres gerenciado).
+
+## 1. Configurar o Supabase (fazer uma vez)
+
+1. Crie um projeto em [supabase.com](https://supabase.com) (ja tem conta e o GitHub linkado, entao so falta criar/selecionar o projeto).
+2. No projeto, abra **SQL Editor > New query**, cole todo o conteudo de `supabase/schema.sql` e clique em **Run**. Isso cria as 5 tabelas (`devquest_users`, `devquest_licenses`, `devquest_orders`, `devquest_progress`, `devquest_events`) com RLS ligado.
+3. Em **Project Settings > API**, copie:
+   - **Project URL** → variavel `SUPABASE_URL`
+   - **service_role key** (a secreta, NAO a `anon public`) → variavel `SUPABASE_SERVICE_ROLE_KEY`
+4. Cole esses dois valores no seu `.env` (veja `.env.example`).
+
+**Importante:** a `service_role key` da acesso total ao banco, ignorando RLS. Ela deve existir **somente no servidor** (nas variaveis de ambiente do host onde `server/server.mjs` roda), nunca no frontend, nunca em um repositorio publico. Quem tiver essa chave tem acesso total aos dados de todos os usuarios.
 
 ## Rodar localmente
 
@@ -9,13 +20,15 @@ npm install
 npm run dev
 ```
 
-Acesse o endereco do Vite mostrado no terminal. O comando sobe a API em `127.0.0.1:8787` e o frontend com proxy para `/api`.
+Acesse o endereco do Vite mostrado no terminal. O comando sobe a API em `127.0.0.1:8787` e o frontend com proxy para `/api`. Sem `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` definidos, o servidor recusa iniciar e explica o que falta.
 
 ## Variaveis de ambiente em producao
 
 Copie `.env.example` para o ambiente do servidor.
 
 ```bash
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=sua-service-role-key
 PORT=8787
 HOST=0.0.0.0
 DATA_DIR=./.data
@@ -32,10 +45,14 @@ MERCADO_PAGO_ACCESS_TOKEN=APP_USR-xxxxxxxxxxxxxxxx
 MERCADO_PAGO_WEBHOOK_SECRET=gere-um-segredo-de-webhook
 ```
 
-`TOKEN_SECRET` e `ADMIN_TOKEN` nao sao mais obrigatorios tecnicamente (o
-servidor gera valores aleatorios fortes sozinho se faltarem), mas defini-los
-explicitamente em producao e mais previsivel para operar entre reinicios e
-multiplas instancias.
+`SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` sao obrigatorios (o servidor
+recusa iniciar sem eles). `TOKEN_SECRET` e `ADMIN_TOKEN` nao sao obrigatorios
+tecnicamente (o servidor gera valores aleatorios fortes sozinho se
+faltarem), mas defini-los explicitamente em producao e mais previsivel para
+operar entre reinicios e multiplas instancias — **especialmente se o host
+nao mantiver disco persistente entre execucoes** (ex.: funcoes serverless),
+caso em que o arquivo `.data/secrets.json` gerado automaticamente nao
+sobreviveria e cada reinicio invalidaria as sessoes de todo mundo.
 
 ## Planos definidos
 
@@ -127,15 +144,26 @@ Sem usuario logado e plano ativo, o frontend redireciona qualquer tentativa de a
 - Bloqueio temporario apos tentativas repetidas de login.
 - Planos e licencas liberados apenas no servidor.
 
+## Onde os dados ficam armazenados
+
+Tudo vive no Postgres do seu projeto Supabase, nas tabelas criadas por `supabase/schema.sql`:
+
+- `devquest_users` - contas, senha (hash + salt, nunca em texto puro), papel, licenca vinculada.
+- `devquest_licenses` - chaves de licenca (guardadas por hash), plano, assentos usados, validade.
+- `devquest_orders` - pedidos de pagamento (Mercado Pago), status, valor.
+- `devquest_progress` - progresso do aluno sincronizado na nuvem (JSON + checksum).
+- `devquest_events` - log de auditoria (registro, login, ativacao de licenca, pagamentos etc.).
+
+Voce pode inspecionar e editar esses dados a qualquer momento pelo **Table Editor** do painel do Supabase. `DATA_DIR`/`.data/` no servidor guarda apenas os segredos locais (`secrets.json`), nao dados de usuarios.
+
 ## O que ainda falta para escala SaaS grande
 
 Esta base e vendavel para uma primeira versao hospedada, venda direta ou acesso licenciado. Para escala maior, recomendo evoluir:
 
-- trocar JSON por PostgreSQL;
 - emails transacionais;
-- recuperacao de senha;
-- painel admin visual;
+- recuperacao de senha por e-mail (hoje o reset e manual, via admin);
+- painel admin visual (hoje e por endpoint/curl);
 - testes E2E com Playwright;
 - logs estruturados e monitoramento;
-- backups automatizados;
+- backups automatizados (o Supabase ja faz backup gerenciado no plano pago);
 - termos de uso, privacidade e LGPD.

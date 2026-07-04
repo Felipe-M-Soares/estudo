@@ -32,9 +32,10 @@ Esta entrega tambem inclui backend comercial em `server/server.mjs`:
 - checkout Mercado Pago por plano;
 - webhook que libera licenca apos pagamento aprovado;
 - ativacao manual de licencas;
-- progresso salvo no servidor;
+- progresso salvo na nuvem;
 - endpoints admin para gerar licencas e confirmar venda direta;
-- headers de seguranca, validacao de entrada, bloqueio de login e rate limit basico.
+- headers de seguranca, validacao de entrada, bloqueio de login e rate limit basico;
+- **todos os dados (usuarios, licencas, pedidos, progresso e eventos) ficam no Supabase (Postgres gerenciado)**, nao em arquivo local.
 
 Para rodar a versao completa:
 
@@ -42,6 +43,12 @@ Para rodar a versao completa:
 npm install
 npm run dev
 ```
+
+Antes do primeiro `npm run dev`, configure o Supabase (crie o projeto, rode
+`supabase/schema.sql` e preencha `.env` com `SUPABASE_URL` e
+`SUPABASE_SERVICE_ROLE_KEY`) — veja o passo a passo em
+`PRIMEIROS_PASSOS_SUPABASE.md`. Sem isso o servidor recusa iniciar e explica
+o que falta.
 
 Depois acesse o endereço do Vite mostrado no terminal. O comando sobe frontend e backend juntos; o login deixa de ficar offline no ambiente local.
 

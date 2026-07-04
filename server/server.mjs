@@ -4,21 +4,31 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'no
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+import * as store from './db/store.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const rootDir = resolve(__dirname, '..');
 const distDir = resolve(rootDir, 'dist');
+// DATA_DIR agora so guarda os segredos locais do servidor (TOKEN_SECRET /
+// ADMIN_TOKEN quando gerados automaticamente). Todos os DADOS DO APP -
+// usuarios, licencas, pedidos, progresso e eventos - moraram no Supabase
+// (Postgres), configurado em SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY.
+// Veja supabase/schema.sql para criar as tabelas no seu projeto.
 const dataDir = resolve(process.env.DATA_DIR ?? join(rootDir, '.data'));
-const dbPath = resolve(dataDir, 'devquest-db.json');
 const secretsPath = resolve(dataDir, 'secrets.json');
 
 const NODE_ENV = process.env.NODE_ENV ?? 'development';
 
-// Segredos fortes por padrao: nunca usamos mais um valor fixo hardcoded
-// como fallback (isso permitia forjar tokens de sessao/admin em qualquer
+// Segredos fortes por padrao: nunca usamos um valor fixo hardcoded como
+// fallback (isso permitia forjar tokens de sessao/admin em qualquer
 // instalacao que nao configurasse as variaveis de ambiente). Se as
 // variaveis nao estiverem definidas, geramos segredos aleatorios uma unica
 // vez e persistimos em `.data/secrets.json` para sobreviver a reinicios.
+//
+// Atencao se for hospedar em plataforma serverless (funcoes que nao mantem
+// disco entre execucoes): nesse caso defina TOKEN_SECRET e ADMIN_TOKEN como
+// variaveis de ambiente reais no painel do host, pois o arquivo local nao
+// sobrevive entre "cold starts" e cada execucao geraria segredos diferentes.
 function loadOrCreateAutoSecrets() {
   mkdirSync(dataDir, { recursive: true });
   if (existsSync(secretsPath)) {
@@ -247,55 +257,18 @@ function verifyToken(token) {
   }
 }
 
-function emptyDb() {
-  return {
-    version: 2,
-    createdAt: nowIso(),
-    users: [],
-    licenses: [],
-    orders: [],
-    progress: {},
-    events: [],
-  };
+async function seedDb() {
+  if (!SEED_DEMO_LICENSE) return;
+  await store.ensureSeedLicense({
+    keyHash: sha256('DEVQUEST-DEMO-2026'),
+    plan: 'lifetime',
+    seats: 25,
+    note: 'Seed de teste. Desative com SEED_DEMO_LICENSE=false em producao.',
+  });
 }
 
-function loadDb() {
-  mkdirSync(dataDir, { recursive: true });
-  try {
-    const parsed = JSON.parse(readFileSync(dbPath, 'utf8'));
-    return { ...emptyDb(), ...parsed };
-  } catch {
-    const db = emptyDb();
-    saveDb(db);
-    return db;
-  }
-}
-
-function saveDb(db) {
-  mkdirSync(dataDir, { recursive: true });
-  writeFileSync(dbPath, JSON.stringify(db, null, 2));
-}
-
-function seedDb() {
-  const db = loadDb();
-  if (SEED_DEMO_LICENSE && !db.licenses.some((license) => license.keyHash === sha256('DEVQUEST-DEMO-2026'))) {
-    db.licenses.push({
-      id: createId('lic'),
-      keyHash: sha256('DEVQUEST-DEMO-2026'),
-      plan: 'lifetime',
-      seats: 25,
-      usedBy: [],
-      status: 'active',
-      expiresAt: null,
-      createdAt: nowIso(),
-      note: 'Seed de teste. Desative com SEED_DEMO_LICENSE=false em producao.',
-    });
-    saveDb(db);
-  }
-}
-
-function publicUser(user, db) {
-  const license = user.licenseId ? db.licenses.find((item) => item.id === user.licenseId) : null;
+async function publicUser(user) {
+  const license = user.licenseId ? await store.getLicenseById(user.licenseId) : null;
   const plan = license ? plans[license.plan] : null;
   return {
     id: user.id,
@@ -323,16 +296,16 @@ function isLicenseValid(license) {
   return true;
 }
 
-function hasAccess(user, db) {
+async function hasAccess(user) {
   if (!REQUIRE_LICENSE) return true;
-  const license = user.licenseId ? db.licenses.find((item) => item.id === user.licenseId) : null;
+  const license = user.licenseId ? await store.getLicenseById(user.licenseId) : null;
   return isLicenseValid(license);
 }
 
-function requireAccess(req, res, db) {
-  const user = requireUser(req, res, db);
+async function requireAccess(req, res) {
+  const user = await requireUser(req, res);
   if (!user) return null;
-  if (!hasAccess(user, db)) {
+  if (!(await hasAccess(user))) {
     sendError(res, 402, 'Escolha um plano ou ative uma licenca para liberar este recurso.', 'license_required');
     return null;
   }
@@ -364,10 +337,10 @@ function licenseExpiryForPlan(plan) {
   return new Date(Date.now() + plan.durationDays * 24 * 60 * 60 * 1000).toISOString();
 }
 
-function createLicenseForOrder(db, order, paymentMeta = {}) {
+async function createLicenseForOrder(order, paymentMeta = {}) {
   const plan = plans[order.planId];
   if (!plan) throw new Error('invalid_plan');
-  const existing = db.licenses.find((license) => license.orderId === order.id);
+  const existing = await store.getLicenseByOrderId(order.id);
   if (existing) return existing;
   const rawKey = `DEVQUEST-${randomBytes(4).toString('hex').toUpperCase()}-${randomBytes(4).toString('hex').toUpperCase()}`;
   const license = {
@@ -383,17 +356,22 @@ function createLicenseForOrder(db, order, paymentMeta = {}) {
     source: order.provider,
     note: `Liberada por pagamento ${order.id}`,
   };
-  db.licenses.push(license);
-  const user = db.users.find((item) => item.id === order.userId);
+  await store.insertLicense(license);
+
+  const user = await store.getUserById(order.userId);
   if (user) {
     user.licenseId = license.id;
     user.updatedAt = nowIso();
+    await store.updateUser(user);
   }
+
   order.status = 'paid';
   order.paidAt = nowIso();
   order.licenseId = license.id;
+  order.updatedAt = nowIso();
   order.paymentMeta = { ...(order.paymentMeta ?? {}), ...paymentMeta };
-  addEvent(db, 'payment.approved', order.userId, { orderId: order.id, planId: plan.id });
+  await store.updateOrder(order);
+  await store.insertEvent('payment.approved', order.userId, { orderId: order.id, planId: plan.id });
   return { ...license, rawKey };
 }
 
@@ -404,11 +382,6 @@ function validateParsed(schema, body, res) {
     return null;
   }
   return parsed.data;
-}
-
-function addEvent(db, type, userId, meta = {}) {
-  db.events.unshift({ id: createId('evt'), type, userId, meta, createdAt: nowIso() });
-  db.events = db.events.slice(0, 1000);
 }
 
 function setHeaders(res, status, extra = {}) {
@@ -522,15 +495,15 @@ function getBearer(req) {
   return header.slice('Bearer '.length).trim();
 }
 
-function requireUser(req, res, db) {
+async function requireUser(req, res) {
   const token = getBearer(req);
   const payload = verifyToken(token);
   if (!payload?.sub) {
     sendError(res, 401, 'Sessao invalida ou expirada.', 'unauthorized');
     return null;
   }
-  const user = db.users.find((item) => item.id === payload.sub && item.status !== 'disabled');
-  if (!user) {
+  const user = await store.getUserById(payload.sub);
+  if (!user || user.status === 'disabled') {
     sendError(res, 401, 'Usuario nao encontrado.', 'unauthorized');
     return null;
   }
@@ -545,7 +518,6 @@ async function handleApi(req, res, pathname) {
   // por cima disso.
   const rateOk = isAuthRoute ? rateLimit(req, res, 'auth', 20, 60_000) : rateLimit(req, res, 'api', 100, 60_000);
   if (!rateOk) return;
-  const db = loadDb();
 
   if (req.method === 'GET' && pathname === '/api/health') {
     sendJson(res, 200, {
@@ -553,6 +525,7 @@ async function handleApi(req, res, pathname) {
       app: 'DevQuest',
       mode: REQUIRE_LICENSE ? 'licensed' : 'open',
       payments: MERCADO_PAGO_ACCESS_TOKEN ? 'mercadopago' : 'not_configured',
+      storage: 'supabase',
       time: nowIso(),
     });
     return;
@@ -569,14 +542,14 @@ async function handleApi(req, res, pathname) {
     const body = validateParsed(registerSchema, await parseBody(req), res);
     if (!body) return;
     const { name, email, password } = body;
-    if (db.users.some((user) => user.email === email)) return sendError(res, 409, 'Email ja cadastrado.', 'email_exists');
+    if (await store.getUserByEmail(email)) return sendError(res, 409, 'Email ja cadastrado.', 'email_exists');
 
     // O primeiro usuario vira "owner" (admin do produto). Se OWNER_SETUP_TOKEN
     // estiver configurado no ambiente, exigimos que ele seja enviado para
     // conceder o papel de owner - evita que, em producao, qualquer pessoa que
     // chegue primeiro no formulario de cadastro (ex: apos um reset de banco)
     // vire administradora da plataforma.
-    const isFirstUser = db.users.length === 0;
+    const isFirstUser = (await store.countUsers()) === 0;
     let role = 'student';
     if (isFirstUser) {
       if (OWNER_SETUP_TOKEN) {
@@ -587,7 +560,7 @@ async function handleApi(req, res, pathname) {
     }
 
     const passwordHash = hashPassword(password);
-    const user = {
+    const user = await store.insertUser({
       id: createId('usr'),
       name,
       email,
@@ -599,13 +572,11 @@ async function handleApi(req, res, pathname) {
       lockedUntil: null,
       createdAt: nowIso(),
       updatedAt: nowIso(),
-    };
-    db.users.push(user);
-    addEvent(db, 'user.registered', user.id);
-    saveDb(db);
+    });
+    await store.insertEvent('user.registered', user.id);
 
     const token = signToken({ sub: user.id, role: user.role });
-    sendJson(res, 201, { ok: true, token, user: publicUser(user, db), access: hasAccess(user, db) });
+    sendJson(res, 201, { ok: true, token, user: await publicUser(user), access: await hasAccess(user) });
     return;
   }
 
@@ -613,7 +584,8 @@ async function handleApi(req, res, pathname) {
     const body = validateParsed(loginSchema, await parseBody(req), res);
     if (!body) return;
     const { email, password } = body;
-    const user = db.users.find((item) => item.email === email && item.status !== 'disabled');
+    const rawUser = await store.getUserByEmail(email);
+    const user = rawUser && rawUser.status !== 'disabled' ? rawUser : null;
     if (user?.lockedUntil && new Date(user.lockedUntil).getTime() > Date.now()) {
       return sendError(res, 423, 'Muitas tentativas. Aguarde alguns minutos e tente novamente.', 'account_locked');
     }
@@ -622,8 +594,8 @@ async function handleApi(req, res, pathname) {
         user.failedLoginCount = Number(user.failedLoginCount ?? 0) + 1;
         if (user.failedLoginCount >= 6) user.lockedUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
         user.updatedAt = nowIso();
-        addEvent(db, 'user.login_failed', user.id);
-        saveDb(db);
+        await store.updateUser(user);
+        await store.insertEvent('user.login_failed', user.id);
       }
       return sendError(res, 401, 'Email ou senha invalidos.', 'invalid_credentials');
     }
@@ -631,22 +603,22 @@ async function handleApi(req, res, pathname) {
     user.lockedUntil = null;
     user.lastLoginAt = nowIso();
     user.updatedAt = nowIso();
-    addEvent(db, 'user.login', user.id);
-    saveDb(db);
+    await store.updateUser(user);
+    await store.insertEvent('user.login', user.id);
     const token = signToken({ sub: user.id, role: user.role });
-    sendJson(res, 200, { ok: true, token, user: publicUser(user, db), access: hasAccess(user, db) });
+    sendJson(res, 200, { ok: true, token, user: await publicUser(user), access: await hasAccess(user) });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/me') {
-    const user = requireUser(req, res, db);
+    const user = await requireUser(req, res);
     if (!user) return;
-    sendJson(res, 200, { ok: true, user: publicUser(user, db), access: hasAccess(user, db) });
+    sendJson(res, 200, { ok: true, user: await publicUser(user), access: await hasAccess(user) });
     return;
   }
 
   if (req.method === 'POST' && pathname === '/api/auth/change-password') {
-    const user = requireUser(req, res, db);
+    const user = await requireUser(req, res);
     if (!user) return;
     const body = validateParsed(changePasswordSchema, await parseBody(req), res);
     if (!body) return;
@@ -655,34 +627,35 @@ async function handleApi(req, res, pathname) {
     }
     user.passwordHash = hashPassword(body.newPassword);
     user.updatedAt = nowIso();
-    addEvent(db, 'user.password_changed', user.id);
-    saveDb(db);
+    await store.updateUser(user);
+    await store.insertEvent('user.password_changed', user.id);
     sendJson(res, 200, { ok: true });
     return;
   }
 
   if (req.method === 'POST' && pathname === '/api/license/activate') {
-    const user = requireUser(req, res, db);
+    const user = await requireUser(req, res);
     if (!user) return;
     const body = validateParsed(licenseSchema, await parseBody(req), res);
     if (!body) return;
     const key = body.licenseKey;
-    const license = db.licenses.find((item) => item.keyHash === sha256(key));
+    const license = await store.getLicenseByKeyHash(sha256(key));
     if (!isLicenseValid(license)) return sendError(res, 404, 'Licenca invalida, expirada ou inativa.', 'invalid_license');
     if (!license.usedBy.includes(user.id) && license.usedBy.length >= license.seats) {
       return sendError(res, 409, 'Esta licenca atingiu o limite de assentos.', 'seat_limit');
     }
-    if (!license.usedBy.includes(user.id)) license.usedBy.push(user.id);
+    if (!license.usedBy.includes(user.id)) license.usedBy = [...license.usedBy, user.id];
+    await store.updateLicense(license);
     user.licenseId = license.id;
     user.updatedAt = nowIso();
-    addEvent(db, 'license.activated', user.id, { licenseId: license.id });
-    saveDb(db);
-    sendJson(res, 200, { ok: true, user: publicUser(user, db), access: hasAccess(user, db) });
+    await store.updateUser(user);
+    await store.insertEvent('license.activated', user.id, { licenseId: license.id });
+    sendJson(res, 200, { ok: true, user: await publicUser(user), access: await hasAccess(user) });
     return;
   }
 
   if (req.method === 'POST' && pathname === '/api/checkout') {
-    const user = requireUser(req, res, db);
+    const user = await requireUser(req, res);
     if (!user) return;
     const body = validateParsed(checkoutSchema, await parseBody(req), res);
     if (!body) return;
@@ -703,9 +676,8 @@ async function handleApi(req, res, pathname) {
     };
 
     if (!MERCADO_PAGO_ACCESS_TOKEN) {
-      db.orders.push({ ...order, status: 'configuration_required' });
-      addEvent(db, 'checkout.configuration_required', user.id, { orderId: order.id, planId: plan.id });
-      saveDb(db);
+      await store.insertOrder({ ...order, status: 'configuration_required' });
+      await store.insertEvent('checkout.configuration_required', user.id, { orderId: order.id, planId: plan.id });
       return sendError(res, 503, 'Configure MERCADO_PAGO_ACCESS_TOKEN no servidor para gerar checkout real.', 'payments_not_configured');
     }
 
@@ -744,9 +716,8 @@ async function handleApi(req, res, pathname) {
 
     order.preferenceId = preference.id;
     order.checkoutUrl = preference.init_point;
-    db.orders.push(order);
-    addEvent(db, 'checkout.created', user.id, { orderId: order.id, planId: plan.id });
-    saveDb(db);
+    await store.insertOrder(order);
+    await store.insertEvent('checkout.created', user.id, { orderId: order.id, planId: plan.id });
     sendJson(res, 201, { ok: true, order, plan: planPublic(plan), checkoutUrl: order.checkoutUrl });
     return;
   }
@@ -794,50 +765,46 @@ async function handleApi(req, res, pathname) {
     });
     const payment = await paymentResponse.json().catch(() => null);
     if (!paymentResponse.ok || !payment) return sendError(res, 502, 'Falha ao consultar pagamento.', 'payment_lookup_failed');
-    const order = db.orders.find((item) => item.id === payment.external_reference);
+    const order = await store.getOrderById(payment.external_reference);
     if (!order) {
       sendJson(res, 200, { ok: true, ignored: true });
       return;
     }
-    order.updatedAt = nowIso();
-    order.paymentMeta = {
+    const paymentMeta = {
       providerPaymentId: String(payment.id),
       status: payment.status,
       statusDetail: payment.status_detail,
       paymentMethodId: payment.payment_method_id,
     };
     if (payment.status === 'approved') {
-      createLicenseForOrder(db, order, order.paymentMeta);
+      await createLicenseForOrder(order, paymentMeta);
     } else {
       order.status = payment.status === 'rejected' || payment.status === 'cancelled' ? 'failed' : 'pending';
-      addEvent(db, 'payment.updated', order.userId, { orderId: order.id, status: payment.status });
+      order.updatedAt = nowIso();
+      order.paymentMeta = { ...(order.paymentMeta ?? {}), ...paymentMeta };
+      await store.updateOrder(order);
+      await store.insertEvent('payment.updated', order.userId, { orderId: order.id, status: payment.status });
     }
-    saveDb(db);
     sendJson(res, 200, { ok: true });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/progress') {
-    const user = requireAccess(req, res, db);
+    const user = await requireAccess(req, res);
     if (!user) return;
-    sendJson(res, 200, { ok: true, progress: db.progress[user.id] ?? null });
+    sendJson(res, 200, { ok: true, progress: await store.getProgress(user.id) });
     return;
   }
 
   if (req.method === 'PUT' && pathname === '/api/progress') {
-    const user = requireAccess(req, res, db);
+    const user = await requireAccess(req, res);
     if (!user) return;
     const body = validateParsed(progressSchema, await parseBody(req), res);
     if (!body) return;
     const progress = body.progress;
-    db.progress[user.id] = {
-      data: progress,
-      updatedAt: nowIso(),
-      checksum: sha256(JSON.stringify(progress)),
-    };
-    addEvent(db, 'progress.synced', user.id);
-    saveDb(db);
-    sendJson(res, 200, { ok: true, progress: db.progress[user.id] });
+    const saved = await store.upsertProgress(user.id, progress, sha256(JSON.stringify(progress)));
+    await store.insertEvent('progress.synced', user.id);
+    sendJson(res, 200, { ok: true, progress: saved });
     return;
   }
 
@@ -848,7 +815,7 @@ async function handleApi(req, res, pathname) {
     const seats = Math.max(1, Math.min(10000, Number(body.seats ?? 1)));
     const expiresAt = body.expiresAt ? new Date(body.expiresAt).toISOString() : licenseExpiryForPlan(plan);
     const rawKey = `DEVQUEST-${randomBytes(4).toString('hex').toUpperCase()}-${randomBytes(4).toString('hex').toUpperCase()}`;
-    const license = {
+    const license = await store.insertLicense({
       id: createId('lic'),
       keyHash: sha256(rawKey),
       plan: plan.id,
@@ -857,11 +824,11 @@ async function handleApi(req, res, pathname) {
       status: 'active',
       expiresAt,
       createdAt: nowIso(),
+      orderId: null,
+      source: 'admin',
       note: String(body.note ?? '').slice(0, 300),
-    };
-    db.licenses.push(license);
-    addEvent(db, 'license.created', 'admin', { licenseId: license.id, plan: plan.id, seats });
-    saveDb(db);
+    });
+    await store.insertEvent('license.created', 'admin', { licenseId: license.id, plan: plan.id, seats });
     sendJson(res, 201, { ok: true, licenseKey: rawKey, license: { ...license, keyHash: undefined } });
     return;
   }
@@ -869,11 +836,10 @@ async function handleApi(req, res, pathname) {
   if (req.method === 'POST' && pathname === '/api/admin/payments/confirm') {
     if (!isAdminAuthorized(req)) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
     const body = await parseBody(req);
-    const order = db.orders.find((item) => item.id === String(body.orderId ?? ''));
+    const order = await store.getOrderById(String(body.orderId ?? ''));
     if (!order) return sendError(res, 404, 'Pedido nao encontrado.', 'order_not_found');
     if (!plans[order.planId]) return sendError(res, 400, 'Plano do pedido invalido.', 'invalid_plan');
-    const license = createLicenseForOrder(db, order, { manuallyConfirmed: true, note: String(body.note ?? '').slice(0, 300) });
-    saveDb(db);
+    const license = await createLicenseForOrder(order, { manuallyConfirmed: true, note: String(body.note ?? '').slice(0, 300) });
     sendJson(res, 200, {
       ok: true,
       order,
@@ -887,7 +853,7 @@ async function handleApi(req, res, pathname) {
     if (!isAdminAuthorized(req)) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
     const body = await parseBody(req);
     const email = String(body.email ?? '').trim().toLowerCase();
-    const user = db.users.find((item) => item.email === email);
+    const user = await store.getUserByEmail(email);
     if (!user) return sendError(res, 404, 'Usuario nao encontrado.', 'user_not_found');
     // Sem servico de e-mail configurado, o admin gera uma senha temporaria
     // aqui e repassa manualmente para a pessoa (canal seguro, fora do app).
@@ -896,23 +862,31 @@ async function handleApi(req, res, pathname) {
     user.failedLoginCount = 0;
     user.lockedUntil = null;
     user.updatedAt = nowIso();
-    addEvent(db, 'user.password_reset_by_admin', user.id);
-    saveDb(db);
+    await store.updateUser(user);
+    await store.insertEvent('user.password_reset_by_admin', user.id);
     sendJson(res, 200, { ok: true, email: user.email, temporaryPassword: tempPassword });
     return;
   }
 
   if (req.method === 'GET' && pathname === '/api/admin/summary') {
     if (!isAdminAuthorized(req)) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
+    const [users, licenses, orders, revenueCents, activeLicenses, events] = await Promise.all([
+      store.countUsers(),
+      store.countLicenses(),
+      store.countOrders(),
+      store.sumPaidRevenueCents(),
+      store.countActiveLicenses(),
+      store.recentEvents(50),
+    ]);
     sendJson(res, 200, {
       ok: true,
-      users: db.users.length,
-      licenses: db.licenses.length,
-      orders: db.orders.length,
-      revenueCents: db.orders.filter((order) => order.status === 'paid').reduce((sum, order) => sum + Number(order.amountCents ?? 0), 0),
-      activeLicenses: db.licenses.filter(isLicenseValid).length,
+      users,
+      licenses,
+      orders,
+      revenueCents,
+      activeLicenses,
       plans: planList.map((plan) => planPublic(plan)),
-      events: db.events.slice(0, 50),
+      events,
     });
     return;
   }
@@ -948,7 +922,7 @@ function serveStatic(req, res, pathname) {
   }
 }
 
-seedDb();
+await seedDb();
 
 createServer(async (req, res) => {
   if (withCors(req, res)) return;

@@ -1,47 +1,43 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-display: "Space Grotesk", Inter, sans-serif;
+  --font-display: "Cinzel", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --color-base-50: #f8fbff;
-  --color-base-100: #eaf0fb;
-  --color-base-200: #d5deee;
-  --color-base-300: #b8c4da;
-  --color-base-400: #93a1ba;
-  --color-base-500: #6f7d97;
-  --color-base-600: #536077;
-  --color-base-700: #354055;
-  --color-base-800: #1f293d;
-  --color-base-850: #172033;
-  --color-base-900: #111827;
-  --color-base-950: #070913;
-  --color-mint-100: #d8ffef;
-  --color-mint-200: #a9ffd9;
-  --color-mint-300: #72f5be;
-  --color-mint-400: #56f0a8;
-  --color-mint-900: #063722;
-  --color-cyan-300: #7ee7ff;
-  --color-cyan-400: #58e6ff;
-  --color-violet-100: #eee7ff;
-  --color-violet-200: #d8c7ff;
-  --color-violet-300: #b99cff;
-  --color-violet-400: #8f7cff;
-  --color-violet-500: #7658f2;
-  --color-violet-900: #23124c;
-  --color-amber-100: #fff1c4;
-  --color-amber-200: #ffe39a;
-  --color-amber-300: #ffd166;
-  --color-amber-400: #ffc857;
-  --color-amber-500: #f59e0b;
-  --color-ember-300: #ff9ab1;
-  --color-ember-400: #ff6b93;
-  --color-ember-500: #ff4f7f;
+  --color-base-50: #faf3e4;
+  --color-base-100: #f0e2c4;
+  --color-base-200: #dcc79a;
+  --color-base-300: #b39b76;
+  --color-base-400: #8c754f;
+  --color-base-500: #6b5836;
+  --color-base-600: #4a3c25;
+  --color-base-700: #34281a;
+  --color-base-800: #241a10;
+  --color-base-850: #1c130b;
+  --color-base-900: #150e08;
+  --color-base-950: #0c0805;
+  --color-gold-100: #fbecc8;
+  --color-gold-200: #f3d488;
+  --color-gold-300: #e8b856;
+  --color-gold-400: #e3a63d;
+  --color-gold-900: #4a350f;
+  --color-ember-300: #e58666;
+  --color-ember-400: #c9452c;
+  --color-ember-500: #a3341f;
+  --color-emerald-100: #d3f3e2;
+  --color-emerald-200: #97dfb8;
+  --color-emerald-300: #5fc98e;
+  --color-emerald-400: #3f9d6b;
+  --color-emerald-900: #163a26;
+  --color-arcane-300: #d3bfff;
+  --color-arcane-400: #b48cff;
+  --color-arcane-500: #9161f2;
+  --color-arcane-900: #2a1a4c;
 }
 
 :root {
   font-family: Inter, system-ui, sans-serif;
-  color: #f8fbff;
-  background: #070913;
+  color: #f4e8ce;
+  background: #150e08;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -54,7 +50,7 @@
 html {
   min-width: 320px;
   min-height: 100%;
-  background: #070913;
+  background: #150e08;
   overflow-x: hidden;
 }
 
@@ -75,61 +71,71 @@ button {
   cursor: pointer;
 }
 
+/* Tema padrao "Torchlight": masmorra/taverna a luz de tocha - dourado
+   quente como cor primaria (em vez do ciano tecnologico generico), rubi
+   como acento secundario e esmeralda para sucesso/XP. */
 .platform {
-  --bg: #070913;
-  --bg-2: #0d1222;
-  --surface: rgba(17, 24, 43, 0.88);
-  --surface-2: rgba(27, 37, 64, 0.82);
-  --surface-3: rgba(255, 255, 255, 0.055);
-  --line: rgba(157, 184, 255, 0.16);
-  --text: #f8fbff;
-  --muted: #96a5c1;
-  --soft: #c7d4ee;
-  --accent: #58e6ff;
-  --accent-2: #8f7cff;
-  --accent-3: #56f0a8;
-  --warning: #ffc857;
-  --danger: #ff6b93;
+  --bg: #150e08;
+  --bg-2: #1e140b;
+  --surface: rgba(41, 29, 18, 0.92);
+  --surface-2: rgba(58, 41, 24, 0.85);
+  --surface-3: rgba(232, 178, 61, 0.07);
+  --line: rgba(201, 149, 74, 0.28);
+  --text: #f4e8ce;
+  --muted: #b39b76;
+  --soft: #ddc9a0;
+  --accent: #e3a63d;
+  --accent-2: #c9452c;
+  --accent-3: #3f9d6b;
+  --warning: #e3a63d;
+  --danger: #c9452c;
   display: grid;
   grid-template-columns: 286px minmax(0, 1fr);
   min-height: 100vh;
   color: var(--text);
   background:
-    radial-gradient(circle at 16% -8%, rgba(88, 230, 255, 0.16), transparent 30%),
-    radial-gradient(circle at 92% 0%, rgba(143, 124, 255, 0.16), transparent 34%),
-    linear-gradient(135deg, var(--bg), #090a16 55%, #050813);
+    radial-gradient(circle at 14% -6%, rgba(227, 166, 61, 0.18), transparent 32%),
+    radial-gradient(circle at 92% 2%, rgba(201, 69, 44, 0.14), transparent 34%),
+    linear-gradient(135deg, var(--bg), #120b06 55%, #0e0904);
 }
 
+/* Tema "Arcano": masmorra magica em violeta, para quem prefere um visual
+   mais mistico/feiticaria do que taverna classica. */
 .theme-nexus {
-  --bg: #070716;
-  --bg-2: #111029;
-  --surface: rgba(20, 19, 45, 0.9);
-  --surface-2: rgba(35, 30, 72, 0.82);
-  --accent: #a8ff78;
-  --accent-2: #22d3ee;
-  --accent-3: #ff7ad9;
-  --warning: #fff36d;
+  --bg: #0f0a1a;
+  --bg-2: #180f2b;
+  --surface: rgba(35, 24, 56, 0.92);
+  --surface-2: rgba(51, 34, 79, 0.85);
+  --surface-3: rgba(180, 140, 255, 0.07);
+  --line: rgba(180, 140, 255, 0.26);
+  --accent: #b48cff;
+  --accent-2: #46d9c1;
+  --accent-3: #ff8fd0;
+  --warning: #f3d488;
 }
 
+/* Tema "Pergaminho": modo claro, como um mapa do tesouro/pergaminho antigo
+   a luz do dia, para quem prefere fundo claro. */
 .theme-daybreak {
-  --bg: #f5f7fb;
-  --bg-2: #edf2fb;
-  --surface: rgba(255, 255, 255, 0.9);
-  --surface-2: rgba(237, 243, 255, 0.86);
-  --surface-3: rgba(19, 34, 67, 0.055);
-  --line: rgba(41, 68, 122, 0.14);
-  --text: #111827;
-  --muted: #5d6c85;
-  --soft: #334155;
-  --accent: #006dff;
-  --accent-2: #7c3aed;
-  --accent-3: #079669;
-  --warning: #b7791f;
+  --bg: #f1e6c9;
+  --bg-2: #e9dab3;
+  --surface: rgba(255, 250, 237, 0.92);
+  --surface-2: rgba(240, 226, 192, 0.88);
+  --surface-3: rgba(90, 62, 20, 0.06);
+  --line: rgba(120, 82, 30, 0.24);
+  --text: #2c1d0e;
+  --muted: #7a6238;
+  --soft: #4a3620;
+  --accent: #a5620f;
+  --accent-2: #7c3a1d;
+  --accent-3: #3d7a45;
+  --warning: #a5620f;
+  --danger: #7c3a1d;
   color: var(--text);
   background:
-    radial-gradient(circle at 12% -8%, rgba(0, 109, 255, 0.14), transparent 34%),
-    radial-gradient(circle at 96% 2%, rgba(124, 58, 237, 0.12), transparent 34%),
-    linear-gradient(135deg, var(--bg), #eef3ff);
+    radial-gradient(circle at 12% -8%, rgba(165, 98, 15, 0.14), transparent 34%),
+    radial-gradient(circle at 96% 2%, rgba(124, 58, 29, 0.12), transparent 34%),
+    linear-gradient(135deg, var(--bg), #f6ecd6);
 }
 
 .sidebar {
@@ -169,7 +175,7 @@ button {
 .skill-card {
   border: 1px solid var(--line);
   background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 72%, transparent));
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22), 0 24px 80px rgba(0, 0, 0, 0.28);
 }
 
 .brand,
@@ -189,15 +195,16 @@ button {
   width: 46px;
   height: 46px;
   flex: 0 0 auto;
-  border-radius: 15px;
-  color: #061018;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-radius: 50%;
+  color: #241505;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--accent-2)));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .brand strong,
 .player-card strong {
   display: block;
-  font-family: "Space Grotesk", Inter, sans-serif;
+  font-family: "Cinzel", Georgia, serif;
   font-size: 18px;
 }
 
@@ -471,7 +478,7 @@ button {
 .feature-panel h1 {
   max-width: 900px;
   margin: 16px 0;
-  font-family: "Space Grotesk", Inter, sans-serif;
+  font-family: "Cinzel", Georgia, serif;
   font-size: clamp(34px, 5vw, 64px);
   line-height: 1;
 }
@@ -503,10 +510,23 @@ button {
   gap: 8px;
   min-height: 44px;
   padding: 12px 16px;
-  border-radius: 14px;
-  color: #061018;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  font-weight: 900;
+  border-radius: 10px;
+  font-weight: 800;
+  font-family: "Cinzel", Georgia, serif;
+  letter-spacing: 0.02em;
+}
+
+.primary-btn {
+  color: #241505;
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, black);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, white 8%), var(--accent) 55%, color-mix(in srgb, var(--accent) 78%, black 22%));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.18), 0 8px 18px -6px color-mix(in srgb, var(--accent) 55%, transparent);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 4px rgba(0, 0, 0, 0.18), 0 12px 22px -6px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 
 .ghost-btn,
@@ -523,11 +543,12 @@ button {
   gap: 8px;
   min-height: 40px;
   padding: 10px 14px;
-  border: 1px solid rgba(86, 240, 168, 0.35);
+  border: 1px solid color-mix(in srgb, var(--accent-3) 45%, transparent);
   border-radius: 999px;
-  color: #d7ffe9;
-  background: rgba(86, 240, 168, 0.13);
+  color: color-mix(in srgb, var(--accent-3) 55%, white 45%);
+  background: color-mix(in srgb, var(--accent-3) 16%, transparent);
   font-weight: 900;
+  font-family: "Cinzel", Georgia, serif;
 }
 
 button:disabled {
@@ -540,6 +561,7 @@ button:disabled {
   background: var(--surface-2);
   color: var(--muted);
   border: 1px solid var(--line);
+  box-shadow: none;
 }
 
 .ghost-btn:disabled,
@@ -576,7 +598,7 @@ button:disabled {
 }
 
 .rank-ring span {
-  font-family: "Space Grotesk", Inter, sans-serif;
+  font-family: "Cinzel", Georgia, serif;
   font-size: 36px;
   font-weight: 900;
 }
@@ -584,7 +606,7 @@ button:disabled {
 .rank-panel strong {
   display: block;
   color: var(--accent);
-  font-family: "Space Grotesk", Inter, sans-serif;
+  font-family: "Cinzel", Georgia, serif;
   font-size: 28px;
 }
 
@@ -611,7 +633,7 @@ button:disabled {
 .stat-strip strong {
   display: block;
   margin-top: 6px;
-  font-family: "Space Grotesk", Inter, sans-serif;
+  font-family: "Cinzel", Georgia, serif;
   font-size: 28px;
 }
 
@@ -622,7 +644,7 @@ button:disabled {
 .section-title h2,
 .panel-head h2 {
   margin: 5px 0 0;
-  font-family: "Space Grotesk", Inter, sans-serif;
+  font-family: "Cinzel", Georgia, serif;
   font-size: 30px;
 }
 
@@ -848,7 +870,7 @@ button:disabled {
   width: 30px;
   height: 30px;
   border-radius: 10px;
-  color: #061018;
+  color: #241505;
   background: var(--accent);
   font-weight: 900;
 }
@@ -882,10 +904,10 @@ button:disabled {
   place-items: center;
   width: 58px;
   height: 58px;
-  border-radius: 18px;
-  color: #061018;
-  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 35%, white));
-  box-shadow: 0 16px 40px color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 50%;
+  color: #1a1206;
+  background: linear-gradient(135deg, var(--rarity, var(--accent)), color-mix(in srgb, var(--rarity, var(--accent)) 45%, white));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity, var(--accent)) 22%, transparent), 0 16px 32px color-mix(in srgb, var(--rarity, var(--accent)) 28%, transparent);
 }
 
 .chip-row small {
@@ -1249,7 +1271,7 @@ button:disabled {
 }
 
 .game-mark {
-  color: #061018;
+  color: #241505;
 }
 
 .game-card strong {
@@ -1369,6 +1391,30 @@ button:disabled {
   min-height: 0;
 }
 
+.quest-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.quest-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quest-strip svg {
+  color: var(--accent);
+}
+
 .account-facts,
 .sync-grid {
   display: grid;
@@ -1383,25 +1429,68 @@ button:disabled {
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 18px;
 }
 
 .price-card {
+  position: relative;
   display: grid;
   gap: 10px;
-  padding: 18px;
+  padding: 22px 18px 18px;
   border: 1px solid var(--line);
-  border-radius: 22px;
-  background: var(--surface-3);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rarity, var(--accent)) 10%, transparent), transparent 40%),
+    var(--surface-2);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  overflow: visible;
+}
+
+/* Borda superior colorida por raridade - a assinatura visual dos cards,
+   como a barra de cor de raridade de um item em um RPG. */
+.price-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--rarity, var(--accent));
+  box-shadow: 0 0 14px 1px color-mix(in srgb, var(--rarity, var(--accent)) 70%, transparent);
+}
+
+.price-card.rarity-common { --rarity: #b3792f; }
+.price-card.rarity-rare { --rarity: #2f9bb0; }
+.price-card.rarity-legendary {
+  --rarity: #e8b856;
+  border-color: color-mix(in srgb, var(--rarity) 55%, var(--line));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25), 0 0 0 1px color-mix(in srgb, var(--rarity) 30%, transparent), 0 18px 40px -22px color-mix(in srgb, var(--rarity) 70%, transparent);
 }
 
 .price-card.current {
   border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
-  box-shadow: 0 0 0 5px rgba(88, 230, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25), 0 0 0 5px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.price-card > span.rarity-tag {
+  position: absolute;
+  top: -11px;
+  left: 14px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--rarity, var(--accent));
+  color: #1a1206;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .price-card > span {
-  color: var(--accent);
+  color: var(--rarity, var(--accent));
   font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
@@ -1409,12 +1498,13 @@ button:disabled {
 
 .price-card h3 {
   margin: 0;
+  font-family: "Cinzel", Georgia, serif;
   font-size: 24px;
 }
 
 .price-card > strong {
   color: var(--text);
-  font-family: "Space Grotesk", Inter, sans-serif;
+  font-family: "Cinzel", Georgia, serif;
   font-size: 32px;
 }
 
@@ -1496,7 +1586,7 @@ button:disabled {
 }
 
 .mode-tabs button.active {
-  color: #061018;
+  color: #241505;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
@@ -1671,7 +1761,7 @@ button:disabled {
   height: 48px;
   flex: 0 0 auto;
   border-radius: 16px;
-  color: #061018;
+  color: #241505;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
@@ -1685,7 +1775,7 @@ button:disabled {
   align-items: center;
   gap: 6px;
   border-radius: 999px;
-  color: #061018;
+  color: #241505;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   font-weight: 900;
 }

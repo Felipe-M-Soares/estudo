@@ -1,6 +1,34 @@
 # DevQuest - Analise de Seguranca
 
-## Correcoes aplicadas nesta revisao (04/07/2026)
+## Migracao para Supabase (04/07/2026)
+
+Todos os dados do app (usuarios, licencas, pedidos, progresso e eventos)
+saíram do arquivo JSON local (`.data/devquest-db.json`) e passaram a viver
+no Postgres gerenciado do Supabase. Pontos de seguranca dessa migracao:
+
+- **Sem alteracao no modelo de senha**: continua `scrypt` com salt por
+  usuario, guardado nas colunas `password_salt`/`password_hash` - a senha em
+  texto puro nunca chega perto do banco.
+- **Chaves de licenca continuam guardadas por hash** (`key_hash`), nunca em
+  texto puro, igual a versao anterior.
+- **RLS (Row Level Security) ligado em todas as 5 tabelas, sem nenhuma
+  policy.** Isso bloqueia por padrao qualquer acesso vindo da chave publica
+  (`anon key`) do Supabase - só a `service_role key`, usada exclusivamente
+  pelo backend Node, consegue ler ou escrever. O frontend nunca fala com o
+  Supabase diretamente, sempre passa pela API do DevQuest.
+- **A `service_role key` e o dado mais sensivel de toda a aplicacao**: quem
+  a possui tem acesso total ao banco, ignorando RLS. Ela só deve existir nas
+  variaveis de ambiente do servidor, nunca em codigo versionado, build do
+  frontend ou logs.
+- Toda a logica de negocio (bloqueio de conta apos tentativas de login,
+  validacao de assentos de licenca, verificacao de assinatura do webhook do
+  Mercado Pago, rate limit) permanece identica - so a camada de
+  armazenamento mudou.
+- Antes de ir para producao, rode `supabase/schema.sql` no projeto real e
+  confirme em **Authentication > Policies** que as tabelas `devquest_*`
+  aparecem com RLS ativo e zero policies (acesso restrito por padrao).
+
+## Correcoes aplicadas na revisao anterior (04/07/2026)
 
 - **Segredos hardcoded removidos.** `TOKEN_SECRET` e `ADMIN_TOKEN` nao tem mais
   fallback fixo no codigo. Se nao forem definidos por variavel de ambiente,
@@ -68,7 +96,7 @@ Esta versao recebeu reforcos para uma primeira operacao comercial:
 
 ## Riscos que ainda existem
 
-- O banco em JSON e suficiente para venda inicial, mas nao para alto volume. Para escala, migrar para PostgreSQL com transacoes.
+- O banco agora e Postgres gerenciado (Supabase), com backups automaticos no plano pago do Supabase. Ainda vale revisar indices conforme o volume de usuarios crescer.
 - O token fica em `localStorage`; isso e simples para PWA, mas cookies `HttpOnly`, `Secure` e `SameSite=Lax` reduzem impacto de XSS.
 - Ainda nao existe recuperacao de senha por e-mail nem 2FA (o reset agora e feito manualmente pelo admin via `/api/admin/users/reset-password`, ja que nao ha servico de e-mail configurado).
 - O painel admin e por endpoint. Para equipe maior, separar roles, auditoria detalhada e permissoes granulares.
