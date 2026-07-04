@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
   Activity,
   Award,
@@ -1755,6 +1755,13 @@ function CommercialAccount({
   const [plans, setPlans] = useState<CommercialPlan[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const loginCardRef = useRef<HTMLElement | null>(null);
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
+
+  function goToLogin() {
+    loginCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    emailInputRef.current?.focus({ preventScroll: true });
+  }
 
   useEffect(() => {
     if (!commercial.online) return;
@@ -1883,8 +1890,8 @@ function CommercialAccount({
                   </div>
                   <button
                     className={current ? 'success-pill full' : 'primary-btn full'}
-                    disabled={busy || !commercial.user || current}
-                    onClick={() => startCheckout(plan.id)}
+                    disabled={current || (commercial.user ? busy : false)}
+                    onClick={() => (commercial.user ? startCheckout(plan.id) : goToLogin())}
                   >
                     {current ? t('account.current') : commercial.user ? t('account.buy') : t('account.enterToBuy')}
                   </button>
@@ -1909,7 +1916,7 @@ function CommercialAccount({
         )}
       </div>
 
-      <aside className="command-card sticky">
+      <aside className="command-card sticky" ref={loginCardRef}>
         {commercial.user ? (
           <>
             <span className="eyebrow"><Crown size={15} /> {t('status.active')}</span>
@@ -1947,7 +1954,7 @@ function CommercialAccount({
               </>
             )}
             <label className="field-label">{t('account.email')}</label>
-            <input className="field-input" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="aluno@email.com" />
+            <input className="field-input" ref={emailInputRef} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="aluno@email.com" />
             <label className="field-label">{t('account.password')}</label>
             <input className="field-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="minimo 8 caracteres" />
             <button className="primary-btn full" disabled={busy || !commercial.online || !email.trim() || !password.trim()} onClick={submitAccount}>

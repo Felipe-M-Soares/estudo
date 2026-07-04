@@ -55,12 +55,14 @@ html {
   min-width: 320px;
   min-height: 100%;
   background: #070913;
+  overflow-x: hidden;
 }
 
 body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  overflow-x: hidden;
 }
 
 button,
@@ -327,6 +329,8 @@ button {
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg) 78%, transparent);
   backdrop-filter: blur(20px);
+  flex-wrap: wrap;
+  row-gap: 10px;
 }
 
 .menu-btn {
@@ -1799,7 +1803,26 @@ button:disabled {
     padding: 12px;
   }
 
+  /* Em telas pequenas a busca vai para a linha inteira e os controles
+     (menu, idioma, tema) ficam juntos na linha de baixo, em vez de
+     espremer tudo numa unica linha e estourar a largura da tela. */
+  .search {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .menu-btn {
+    order: 1;
+  }
+
+  .language-switch {
+    order: 2;
+    margin-left: auto;
+  }
+
   .theme-switch {
+    order: 2;
     width: 42px;
     padding: 0;
     font-size: 0;
