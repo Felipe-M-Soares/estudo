@@ -208,6 +208,37 @@ const progressSchema = z.object({
   progress: z.record(z.string(), z.unknown()),
 });
 
+// HTML do "runner" do sandbox de codigo (Laboratorio). Recebe codigo via
+// postMessage, executa isolado com um console proprio, e devolve o
+// resultado (logs/erro) tambem via postMessage. Ver rota /api/sandbox-frame.
+const SANDBOX_IFRAME_HTML = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body><script>
+window.addEventListener('message', function (event) {
+  var code = event.data && event.data.code;
+  if (typeof code !== 'string') return;
+  var logs = [];
+  function fmt(args) {
+    return Array.prototype.map.call(args, function (a) {
+      if (typeof a === 'string') return a;
+      try { return JSON.stringify(a, null, 2); } catch (e) { return String(a); }
+    }).join(' ');
+  }
+  var fakeConsole = {
+    log: function () { logs.push(fmt(arguments)); },
+    error: function () { logs.push('Erro: ' + fmt(arguments)); },
+    warn: function () { logs.push('Aviso: ' + fmt(arguments)); },
+  };
+  try {
+    var fn = new Function('console', code);
+    fn(fakeConsole);
+    parent.postMessage({ type: 'devquest-sandbox-result', logs: logs, error: null }, '*');
+  } catch (err) {
+    parent.postMessage({ type: 'devquest-sandbox-result', logs: logs, error: (err && err.message) || String(err) }, '*');
+  }
+});
+</script></body></html>`;
+
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -564,6 +595,25 @@ async function handleApi(req, res, pathname) {
       storage: 'supabase',
       time: nowIso(),
     });
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/sandbox-frame') {
+    // HTML do "runner" do sandbox de codigo do Laboratorio. Precisa rodar
+    // codigo arbitrario do aluno (new Function), o que exige 'unsafe-eval'
+    // no script-src - por isso essa UNICA resposta tem seu proprio CSP mais
+    // permissivo, em vez de afrouxar a politica do site inteiro. A pagina
+    // que embute isso usa <iframe sandbox="allow-scripts"> (sem
+    // allow-same-origin), entao mesmo sendo o mesmo dominio, o navegador
+    // forca esse iframe para uma origem opaca sem acesso a cookies,
+    // localStorage ou ao DOM do app principal.
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'",
+    });
+    res.end(SANDBOX_IFRAME_HTML);
     return;
   }
 

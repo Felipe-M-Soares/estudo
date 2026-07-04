@@ -5,6 +5,7 @@ import {
   BarChart3,
   BookOpen,
   BriefcaseBusiness,
+  Castle,
   CheckCircle2,
   ChevronRight,
   CircleDot,
@@ -25,7 +26,9 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Swords,
   Target,
+  Terminal,
   Trophy,
   X,
   Zap,
@@ -75,6 +78,7 @@ import {
   marketplace,
   projectCampaigns,
   reviewQueue,
+  type MarketplaceItem,
   type PlatformTheme,
 } from './data/platform';
 
@@ -139,6 +143,10 @@ const copy: Record<Language, Record<string, string>> = {
     'progress.next': 'Proximo passo: concluir a aula atual',
     'gate.title': 'Entre e escolha um plano para acessar a trilha.',
     'gate.body': 'O conteudo, os exercicios, o laboratorio e o progresso em nuvem ficam bloqueados ate o login e a assinatura.',
+    'lock.needAccount': 'Entre na sua conta, escolha um plano e aproveite o ensino.',
+    'lock.step1': 'Entre ou crie sua conta',
+    'lock.step2': 'Escolha um plano de acesso',
+    'lock.step3': 'Aproveite o ensino completo',
     'hero.eyebrow': 'Caminho guiado',
     'hero.title': 'Aprenda programacao na ordem certa, sem pular fundamento.',
     'hero.body': 'O app agora orienta do primeiro modulo ate projetos avancados: aula primeiro, pratica depois, revisao no fim.',
@@ -203,6 +211,10 @@ const copy: Record<Language, Record<string, string>> = {
     'progress.next': 'Next step: finish the current lesson',
     'gate.title': 'Sign in and choose a plan to access the path.',
     'gate.body': 'Content, exercises, lab and cloud progress stay locked until login and subscription.',
+    'lock.needAccount': 'Sign in, choose a plan, and enjoy the learning.',
+    'lock.step1': 'Sign in or create your account',
+    'lock.step2': 'Choose an access plan',
+    'lock.step3': 'Enjoy the full learning path',
     'hero.eyebrow': 'Guided path',
     'hero.title': 'Learn programming in the right order, without skipping foundations.',
     'hero.body': 'The app now guides you from the first module to advanced projects: lesson first, practice after, review at the end.',
@@ -267,6 +279,10 @@ const copy: Record<Language, Record<string, string>> = {
     'progress.next': 'Siguiente paso: terminar la clase actual',
     'gate.title': 'Entra y elige un plan para acceder a la ruta.',
     'gate.body': 'Contenido, ejercicios, laboratorio y progreso en la nube quedan bloqueados hasta iniciar sesion y suscribirse.',
+    'lock.needAccount': 'Inicia sesion, elige un plan y aprovecha el aprendizaje.',
+    'lock.step1': 'Inicia sesion o crea tu cuenta',
+    'lock.step2': 'Elige un plan de acceso',
+    'lock.step3': 'Aprovecha el aprendizaje completo',
     'hero.eyebrow': 'Ruta guiada',
     'hero.title': 'Aprende programacion en el orden correcto, sin saltarte la base.',
     'hero.body': 'La app ahora guia desde el primer modulo hasta proyectos avanzados: clase primero, practica despues, repaso al final.',
@@ -493,6 +509,7 @@ CREATE INDEX idx_progress_events_module ON progress_events(module_id);`;
 }
 
 export default function App() {
+  const [showLanding, setShowLanding] = useState(true);
   const [screen, setScreen] = useState<Screen>('account');
   const [theme, setTheme] = useState<PlatformTheme>('obsidian');
   const [language, setLanguage] = useState<Language>('pt');
@@ -506,6 +523,8 @@ export default function App() {
   const [completedMissions, setCompletedMissions] = useState<Record<string, boolean>>({});
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, boolean>>({});
   const [unlockedRewards, setUnlockedRewards] = useState<Record<string, boolean>>({});
+  const [equippedAvatarId, setEquippedAvatarId] = useState<string | null>(null);
+  const [equippedWallpaperId, setEquippedWallpaperId] = useState<string | null>(null);
   const [commercial, setCommercial] = useState<CommercialState>({
     checked: false,
     online: false,
@@ -586,11 +605,13 @@ export default function App() {
     completedMissions,
     reviewAnswers,
     unlockedRewards,
+    equippedAvatarId,
+    equippedWallpaperId,
     theme,
     language,
     lastScreen: screen,
     updatedAt: new Date().toISOString(),
-  }), [activeModuleId, activeLessonId, gameScores, completedLessons, completedExercises, completedMissions, reviewAnswers, unlockedRewards, theme, language, screen]);
+  }), [activeModuleId, activeLessonId, gameScores, completedLessons, completedExercises, completedMissions, reviewAnswers, unlockedRewards, equippedAvatarId, equippedWallpaperId, theme, language, screen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -625,6 +646,8 @@ export default function App() {
     if (saved.completedMissions && typeof saved.completedMissions === 'object') setCompletedMissions(saved.completedMissions as Record<string, boolean>);
     if (saved.reviewAnswers && typeof saved.reviewAnswers === 'object') setReviewAnswers(saved.reviewAnswers as Record<string, boolean>);
     if (saved.unlockedRewards && typeof saved.unlockedRewards === 'object') setUnlockedRewards(saved.unlockedRewards as Record<string, boolean>);
+    if (typeof saved.equippedAvatarId === 'string') setEquippedAvatarId(saved.equippedAvatarId);
+    if (typeof saved.equippedWallpaperId === 'string') setEquippedWallpaperId(saved.equippedWallpaperId);
     if (saved.theme === 'obsidian' || saved.theme === 'nexus' || saved.theme === 'daybreak') setTheme(saved.theme);
     if (saved.language === 'pt' || saved.language === 'en' || saved.language === 'es') setLanguage(saved.language);
   }, []);
@@ -691,8 +714,12 @@ export default function App() {
   const currentRank = rankForLevel(metrics.level);
   const playerName = commercial.user?.name ?? 'Visitante';
 
+  if (showLanding) {
+    return <LandingPage onEnter={() => setShowLanding(false)} />;
+  }
+
   return (
-    <div className={`platform theme-${theme}`}>
+    <div className={`platform theme-${theme} ${equippedWallpaperId ? WALLPAPER_ITEM_CLASS[equippedWallpaperId] ?? '' : ''}`}>
       <aside className={`sidebar ${navOpen ? 'open' : ''}`}>
         <div className="brand">
           <div className="brand-mark">
@@ -709,7 +736,10 @@ export default function App() {
 
         <div className="player-card">
           <div className="player-avatar">
-            <Crown size={22} />
+            {(() => {
+              const AvatarIcon = equippedAvatarId ? AVATAR_ITEM_ICONS[equippedAvatarId] : null;
+              return AvatarIcon ? <AvatarIcon size={22} /> : <Crown size={22} />;
+            })()}
           </div>
           <div>
             <strong>{playerName}</strong>
@@ -785,6 +815,10 @@ export default function App() {
         </header>
 
         <main className="main-shell">
+          {screen !== 'account' && !canUseScreen(screen) ? (
+            <ScreenLocked screen={screen} setScreen={goToScreen} t={t} hasAccount={Boolean(commercial.user)} />
+          ) : (
+          <>
           {screen === 'command' && (
             <CommandCenter
               metrics={metrics}
@@ -815,7 +849,7 @@ export default function App() {
               module={activeModule}
               lesson={activeLesson}
               setLessonId={setActiveLessonId}
-              setScreen={setScreen}
+              setScreen={goToScreen}
               completedLessons={completedLessons}
               completedExercises={completedExercises}
               onMarkLessonDone={(lessonId) => setCompletedLessons((lessons) => ({ ...lessons, [lessonId]: true }))}
@@ -823,7 +857,7 @@ export default function App() {
               t={t}
             />
           )}
-          {screen === 'story' && <StoryMode module={activeModule} setScreen={setScreen} />}
+          {screen === 'story' && <StoryMode module={activeModule} setScreen={goToScreen} />}
           {screen === 'lab' && <LabStudio module={activeModule} />}
           {screen === 'arcade' && (
             <ArcadeHub
@@ -836,6 +870,17 @@ export default function App() {
             <ReviewCenter
               reviewAnswers={reviewAnswers}
               onReviewAnswer={(reviewId, remembered) => setReviewAnswers((answers) => ({ ...answers, [reviewId]: remembered }))}
+              onReviewContent={(topic) => {
+                const keyword = topic.toLowerCase().split(/\s+/)[0];
+                const match = modules.find((module) =>
+                  `${module.title} ${module.tagline} ${module.intro}`.toLowerCase().includes(keyword),
+                );
+                if (match && canUseModule(match)) {
+                  selectModule(match, 'learn');
+                } else {
+                  goToScreen('worlds');
+                }
+              }}
             />
           )}
           {screen === 'analytics' && <AnalyticsCenter metrics={metrics} />}
@@ -844,6 +889,12 @@ export default function App() {
               metrics={metrics}
               unlockedRewards={unlockedRewards}
               onUnlock={(itemId) => setUnlockedRewards((rewards) => ({ ...rewards, [itemId]: true }))}
+              theme={theme}
+              setTheme={setTheme}
+              equippedAvatarId={equippedAvatarId}
+              setEquippedAvatarId={setEquippedAvatarId}
+              equippedWallpaperId={equippedWallpaperId}
+              setEquippedWallpaperId={setEquippedWallpaperId}
             />
           )}
           {screen === 'account' && (
@@ -864,10 +915,14 @@ export default function App() {
                 if (progress.completedMissions && typeof progress.completedMissions === 'object') setCompletedMissions(progress.completedMissions as Record<string, boolean>);
                 if (progress.reviewAnswers && typeof progress.reviewAnswers === 'object') setReviewAnswers(progress.reviewAnswers as Record<string, boolean>);
                 if (progress.unlockedRewards && typeof progress.unlockedRewards === 'object') setUnlockedRewards(progress.unlockedRewards as Record<string, boolean>);
+                if (typeof progress.equippedAvatarId === 'string') setEquippedAvatarId(progress.equippedAvatarId);
+                if (typeof progress.equippedWallpaperId === 'string') setEquippedWallpaperId(progress.equippedWallpaperId);
                 if (progress.theme === 'obsidian' || progress.theme === 'nexus' || progress.theme === 'daybreak') setTheme(progress.theme);
                 if (progress.language === 'pt' || progress.language === 'en' || progress.language === 'es') setLanguage(progress.language);
               }}
             />
+          )}
+          </>
           )}
         </main>
       </div>
@@ -1185,6 +1240,8 @@ function LearningRoom({
   const [activeExerciseId, setActiveExerciseId] = useState(module.exercises[0]?.id);
   const activeExercise = module.exercises.find((exercise) => exercise.id === activeExerciseId) ?? module.exercises[0];
   const diagram = lesson?.diagramId ? diagramRegistry[lesson.diagramId] : null;
+  const lessonsDoneCount = module.lessons.filter((item) => completedLessons[item.id]).length;
+  const allLessonsDone = lessonsDoneCount === module.lessons.length;
 
   useEffect(() => {
     setActiveExerciseId(module.exercises[0]?.id);
@@ -1209,6 +1266,9 @@ function LearningRoom({
               {completedLessons[item.id] && <CheckCircle2 size={16} />}
             </button>
           ))}
+        </div>
+        <div className="lesson-progress-note">
+          <strong>{lessonsDoneCount}/{module.lessons.length}</strong> aulas concluidas
         </div>
       </aside>
 
@@ -1241,15 +1301,22 @@ function LearningRoom({
           <button className="ghost-btn" onClick={() => setScreen('lab')}>{t('learn.lab')}</button>
         </div>
 
-        {!completedLessons[lesson.id] && (
+        {!allLessonsDone && (
           <div className="exercise-stage locked-stage">
             <Lock size={24} />
             <h2>{t('learn.exerciseLockedTitle')}</h2>
-            <p>{t('learn.exerciseLockedBody')}</p>
+            <p>
+              {completedLessons[lesson.id]
+                ? `Falta concluir ${module.lessons.length - lessonsDoneCount} aula(s) deste modulo para liberar os exercicios.`
+                : t('learn.exerciseLockedBody')}
+            </p>
+            <div className="lesson-progress-bar">
+              <i style={{ width: `${Math.round((lessonsDoneCount / module.lessons.length) * 100)}%` }} />
+            </div>
           </div>
         )}
 
-        {activeExercise && completedLessons[lesson.id] && (
+        {activeExercise && allLessonsDone && (
           <div className="exercise-stage">
             <div className="section-title compact">
               <div>
@@ -1354,6 +1421,93 @@ function StoryMode({ module, setScreen }: { module: Module; setScreen: (screen: 
   );
 }
 
+const LAB_STARTER_SNIPPET = `// Escreva JavaScript aqui e clique em Rodar.
+// Use console.log(...) para ver os resultados.
+
+function somaPares(lista) {
+  // complete: retorne a soma dos numeros pares de "lista"
+  return lista.filter((n) => n % 2 === 0).reduce((total, n) => total + n, 0);
+}
+
+console.log(somaPares([1, 2, 3, 4, 5, 6]));
+console.log(somaPares([7, 9, 11]));
+`;
+
+function CodeSandbox({ module }: { module: Module }) {
+  const [code, setCode] = useState(LAB_STARTER_SNIPPET);
+  const [result, setResult] = useState<{ logs: string[]; error: string | null } | null>(null);
+  const [running, setRunning] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (event.data?.type !== 'devquest-sandbox-result') return;
+      setResult({ logs: event.data.logs ?? [], error: event.data.error ?? null });
+      setRunning(false);
+    }
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  function handleRun() {
+    setRunning(true);
+    iframeRef.current?.contentWindow?.postMessage({ code }, '*');
+  }
+
+  function handleReset() {
+    setCode(LAB_STARTER_SNIPPET);
+    setResult(null);
+  }
+
+  return (
+    <article className="sandbox-panel">
+      <iframe
+        ref={iframeRef}
+        title="sandbox-runner"
+        sandbox="allow-scripts"
+        src="/api/sandbox-frame"
+        style={{ display: 'none' }}
+      />
+      <div className="section-title compact">
+        <div>
+          <span className="eyebrow"><Terminal size={15} /> Sandbox de codigo</span>
+          <h2>Teste o que aprendeu em {module.title}</h2>
+        </div>
+        <div className="sandbox-actions">
+          <button className="ghost-btn" onClick={handleReset}>Reiniciar</button>
+          <button className="primary-btn" onClick={handleRun} disabled={running}>
+            <Play size={16} /> {running ? 'Rodando...' : 'Rodar codigo'}
+          </button>
+        </div>
+      </div>
+      <p className="sandbox-hint">
+        Isso executa JavaScript de verdade no seu navegador (nao e uma simulacao), isolado num
+        ambiente proprio por seguranca. Escreva qualquer codigo, use <code>console.log(...)</code>{' '}
+        para ver o resultado, e experimente os exemplos das aulas aqui antes de ir para os exercicios.
+      </p>
+      <div className="sandbox-grid">
+        <textarea
+          className="sandbox-editor"
+          spellCheck={false}
+          value={code}
+          onChange={(event) => setCode(event.target.value)}
+        />
+        <div className="sandbox-output">
+          <strong>Saida</strong>
+          {result === null && <p className="sandbox-placeholder">Clique em "Rodar codigo" para ver o resultado aqui.</p>}
+          {result && result.logs.length === 0 && !result.error && (
+            <p className="sandbox-placeholder">Codigo rodou sem erros, mas nao imprimiu nada. Use console.log(...) para ver valores.</p>
+          )}
+          {result?.logs.map((line, index) => (
+            <pre key={index} className="sandbox-log">{line}</pre>
+          ))}
+          {result?.error && <pre className="sandbox-error">{result.error}</pre>}
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function LabStudio({ module }: { module: Module }) {
   const lab = module.sprintLab;
   const files = useMemo(() => filesForModule(module), [module]);
@@ -1377,6 +1531,7 @@ function LabStudio({ module }: { module: Module }) {
 
   return (
     <section className="stack">
+      <CodeSandbox module={module} />
       <div className="section-title">
         <div>
           <span className="eyebrow"><Code2 size={15} /> Laboratorio profissional</span>
@@ -1517,35 +1672,84 @@ function ArcadeHub({
 
 function CareerMode({ metrics }: { metrics: ReturnType<typeof createMetricsShape> }) {
   const currentRank = rankForLevel(metrics.level);
+  const nextRank = careerLadder.find((rank) => rank.level > metrics.level) ?? null;
+  const levelsToNext = nextRank ? nextRank.level - metrics.level : 0;
+  const [doneTickets, setDoneTickets] = useState<Record<number, boolean>>({});
+  const tickets = [
+    { title: 'Corrigir queda no checkout', context: 'Um bug em producao esta cancelando pedidos aleatoriamente.', skill: 'Debug e leitura de logs' },
+    { title: 'Reduzir tempo inicial de carregamento', context: 'O time de produto pediu uma pagina inicial mais rapida.', skill: 'Performance e otimizacao' },
+    { title: 'Criar endpoint de relatorio', context: 'O financeiro precisa exportar vendas do mes em CSV.', skill: 'Design de API' },
+    { title: 'Documentar decisao de arquitetura', context: 'Um novo desenvolvedor entrou no time e precisa de contexto.', skill: 'Comunicacao tecnica' },
+  ];
+  const doneCount = Object.values(doneTickets).filter(Boolean).length;
+
   return (
     <section className="stack">
-      <div className="section-title">
-        <div>
-          <span className="eyebrow"><BriefcaseBusiness size={15} /> Carreira simulada</span>
-          <h2>Do primeiro ticket a lideranca tecnica</h2>
+      <article className="feature-panel career-hero">
+        <span className="eyebrow"><BriefcaseBusiness size={15} /> Carreira simulada</span>
+        <h1>Do primeiro ticket a lideranca tecnica</h1>
+        <p>
+          Esta pagina simula sua evolucao profissional como developer. Seu nivel (XP acumulado
+          nas aulas, exercicios e jogos) te posiciona num rank de carreira - de Aprendiz a Staff -
+          e cada rank libera um novo tipo de desafio, imitando responsabilidades reais de cada
+          etapa de carreira. Os "tickets de empresa" abaixo sao treino de tarefas do dia a dia de
+          um time de engenharia.
+        </p>
+        <div className="career-current">
+          <div>
+            <span>Rank atual</span>
+            <strong>{currentRank.title}</strong>
+          </div>
+          <div>
+            <span>Responsabilidade</span>
+            <strong>{currentRank.responsibility}</strong>
+          </div>
+          <div>
+            <span>Proximo rank</span>
+            <strong>{nextRank ? `${nextRank.title} em ${levelsToNext} niveis` : 'Rank maximo alcancado'}</strong>
+          </div>
         </div>
-        <strong>Rank atual: {currentRank.title}</strong>
-      </div>
-      <div className="career-track">
-        {careerLadder.map((rank) => (
-          <article className={`rank-step ${rank.title === currentRank.title ? 'active' : metrics.level >= rank.level ? 'done' : ''}`} key={rank.title}>
-            <div>{rank.title === currentRank.title ? <Crown /> : metrics.level >= rank.level ? <CheckCircle2 /> : <Lock />}</div>
-            <strong>{rank.title}</strong>
-            <span>Lv {rank.level}</span>
-            <p>{rank.responsibility}</p>
-            <small>Libera: {rank.unlock}</small>
-          </article>
-        ))}
-      </div>
-      <Panel title="Tickets de empresa" icon={<BriefcaseBusiness size={20} />}>
-        <div className="ticket-grid">
-          {['Corrigir queda no checkout', 'Reduzir tempo inicial de carregamento', 'Criar endpoint de relatorio', 'Documentar decisao de arquitetura'].map((ticket, index) => (
-            <article className="ticket-card" key={ticket}>
-              <span>TICKET-{204 + index}</span>
-              <h3>{ticket}</h3>
-              <p>Objetivo, contexto, criterios de aceite e avaliacao automatica.</p>
+      </article>
+
+      <Panel title="Trilha de carreira" icon={<Trophy size={20} />}>
+        <div className="career-track">
+          {careerLadder.map((rank) => (
+            <article className={`rank-step ${rank.title === currentRank.title ? 'active' : metrics.level >= rank.level ? 'done' : ''}`} key={rank.title}>
+              <div>{rank.title === currentRank.title ? <Crown /> : metrics.level >= rank.level ? <CheckCircle2 /> : <Lock />}</div>
+              <strong>{rank.title}</strong>
+              <span>Lv {rank.level}</span>
+              <p>{rank.responsibility}</p>
+              <small>Libera: {rank.unlock}</small>
             </article>
           ))}
+        </div>
+      </Panel>
+
+      <Panel title="Tickets de empresa" icon={<BriefcaseBusiness size={20} />}>
+        <p className="panel-intro">
+          Cada ticket imita uma tarefa real de um time de engenharia: um contexto vago, um
+          objetivo e a necessidade de tomar decisoes tecnicas sozinho. Marque como resolvido
+          depois de pensar em como voce abordaria o problema.
+        </p>
+        <div className="ticket-grid">
+          {tickets.map((ticket, index) => (
+            <article className={`ticket-card ${doneTickets[index] ? 'done' : ''}`} key={ticket.title}>
+              <span>TICKET-{204 + index}</span>
+              <h3>{ticket.title}</h3>
+              <p>{ticket.context}</p>
+              <small>Habilidade treinada: {ticket.skill}</small>
+              <button
+                className={doneTickets[index] ? 'success-pill full' : 'ghost-btn full'}
+                onClick={() => setDoneTickets((current) => ({ ...current, [index]: !current[index] }))}
+              >
+                {doneTickets[index] ? <CheckCircle2 size={16} /> : null}
+                {doneTickets[index] ? 'Resolvido' : 'Marcar como resolvido'}
+              </button>
+            </article>
+          ))}
+        </div>
+        <div className="career-tickets-progress">
+          <strong>{doneCount}/{tickets.length}</strong> tickets resolvidos nesta sessao
         </div>
       </Panel>
     </section>
@@ -1555,11 +1759,14 @@ function CareerMode({ metrics }: { metrics: ReturnType<typeof createMetricsShape
 function ReviewCenter({
   reviewAnswers,
   onReviewAnswer,
+  onReviewContent,
 }: {
   reviewAnswers: Record<string, boolean>;
   onReviewAnswer: (reviewId: string, remembered: boolean) => void;
+  onReviewContent: (topic: string) => void;
 }) {
   const [revealed, setRevealed] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   return (
     <section className="review-layout">
@@ -1580,19 +1787,51 @@ function ReviewCenter({
               </div>
               <h3>{item.prompt}</h3>
               <div className="meter mini"><i style={{ width: `${reviewAnswers[item.id] ? 100 : item.strength}%` }} /></div>
-              {revealed === item.id ? (
+
+              {revealed !== item.id && !(item.id in reviewAnswers) && (
                 <>
-                  <p>{item.answer}</p>
+                  <textarea
+                    className="review-answer-input"
+                    placeholder="Escreva sua resposta com suas palavras antes de ver o gabarito..."
+                    value={drafts[item.id] ?? ''}
+                    onChange={(event) => setDrafts((current) => ({ ...current, [item.id]: event.target.value }))}
+                  />
+                  <button
+                    className="ghost-btn"
+                    disabled={!(drafts[item.id] ?? '').trim()}
+                    onClick={() => setRevealed(item.id)}
+                  >
+                    Ver gabarito e comparar
+                  </button>
+                </>
+              )}
+
+              {revealed === item.id && !(item.id in reviewAnswers) && (
+                <>
+                  <div className="review-your-answer">
+                    <strong>Sua resposta:</strong>
+                    <p>{drafts[item.id]}</p>
+                  </div>
+                  <div className="review-answer-key">
+                    <strong>Gabarito:</strong>
+                    <p>{item.answer}</p>
+                  </div>
                   <div className="hero-actions">
-                    <button className="primary-btn" onClick={() => onReviewAnswer(item.id, true)}>Lembrei</button>
+                    <button className="primary-btn" onClick={() => onReviewAnswer(item.id, true)}>Acertei / lembrei</button>
                     <button className="ghost-btn" onClick={() => onReviewAnswer(item.id, false)}>Nao lembrei</button>
                   </div>
                 </>
-              ) : (
-                <button className="ghost-btn" onClick={() => setRevealed(item.id)}>Mostrar resposta</button>
               )}
+
               {item.id in reviewAnswers && (
-                <small>{reviewAnswers[item.id] ? 'Registrado como lembrado.' : 'Registrado para reforco futuro.'}</small>
+                <>
+                  <small>{reviewAnswers[item.id] ? 'Registrado como lembrado.' : 'Registrado para reforco futuro.'}</small>
+                  {!reviewAnswers[item.id] && (
+                    <button className="primary-btn full" onClick={() => onReviewContent(item.topic)}>
+                      <BookOpen size={16} /> Voltar ao conteudo sobre isso
+                    </button>
+                  )}
+                </>
               )}
             </article>
           ))}
@@ -1604,9 +1843,9 @@ function ReviewCenter({
         <h2>Como o app decide o que revisar</h2>
         <p>Erros recentes, forca de lembranca, dias desde o ultimo acerto e importancia para projetos elevam a prioridade.</p>
         <div className="checklist">
-          <div><CheckCircle2 size={18} /><span>Perguntar antes de explicar</span></div>
-          <div><CheckCircle2 size={18} /><span>Mostrar resposta curta</span></div>
-          <div><CheckCircle2 size={18} /><span>Gerar exercicio parecido</span></div>
+          <div><CheckCircle2 size={18} /><span>Escrever a resposta antes do gabarito</span></div>
+          <div><CheckCircle2 size={18} /><span>Comparar com o gabarito real</span></div>
+          <div><CheckCircle2 size={18} /><span>Voltar ao conteudo se nao lembrou</span></div>
           <div><CheckCircle2 size={18} /><span>Reagendar automaticamente</span></div>
         </div>
       </aside>
@@ -1684,28 +1923,79 @@ function AnalyticsCenter({ metrics }: { metrics: ReturnType<typeof createMetrics
   );
 }
 
+const THEME_ITEM_MAP: Record<string, PlatformTheme> = {
+  'theme-torchlight': 'obsidian',
+  'theme-arcane': 'nexus',
+  'theme-parchment': 'daybreak',
+};
+
+const AVATAR_ITEM_ICONS: Record<string, typeof Crown> = {
+  'avatar-scholar': GraduationCap,
+  'avatar-warrior': Swords,
+  'avatar-explorer': MapIcon,
+  'avatar-architect': Castle,
+};
+
+const WALLPAPER_ITEM_CLASS: Record<string, string> = {
+  'wallpaper-ember': 'wallpaper-ember',
+  'wallpaper-aurora': 'wallpaper-aurora',
+  'wallpaper-nebula': 'wallpaper-nebula',
+};
+
 function Marketplace({
   metrics,
   unlockedRewards,
   onUnlock,
+  theme,
+  setTheme,
+  equippedAvatarId,
+  setEquippedAvatarId,
+  equippedWallpaperId,
+  setEquippedWallpaperId,
 }: {
   metrics: ReturnType<typeof createMetricsShape>;
   unlockedRewards: Record<string, boolean>;
   onUnlock: (itemId: string) => void;
+  theme: PlatformTheme;
+  setTheme: (theme: PlatformTheme) => void;
+  equippedAvatarId: string | null;
+  setEquippedAvatarId: (id: string | null) => void;
+  equippedWallpaperId: string | null;
+  setEquippedWallpaperId: (id: string | null) => void;
 }) {
   const [message, setMessage] = useState<string | null>(null);
 
-  function unlock(itemId: string, price: number) {
-    if (unlockedRewards[itemId]) {
-      setMessage('Este item ja foi desbloqueado.');
-      return;
+  function isOwned(item: MarketplaceItem) {
+    return item.price === 0 || unlockedRewards[item.id];
+  }
+
+  function isEquipped(item: MarketplaceItem) {
+    if (item.type === 'Tema') return THEME_ITEM_MAP[item.id] === theme;
+    if (item.type === 'Avatar') return equippedAvatarId === item.id;
+    if (item.type === 'Wallpaper') return equippedWallpaperId === item.id;
+    return false;
+  }
+
+  function unlock(item: MarketplaceItem) {
+    if (!isOwned(item)) {
+      if (metrics.coins < item.price) {
+        setMessage(`Saldo insuficiente. Faltam ${item.price - metrics.coins} moedas.`);
+        return;
+      }
+      onUnlock(item.id);
     }
-    if (metrics.coins < price) {
-      setMessage(`Saldo insuficiente. Faltam ${price - metrics.coins} moedas.`);
-      return;
+    if (item.type === 'Tema' && THEME_ITEM_MAP[item.id]) {
+      setTheme(THEME_ITEM_MAP[item.id]);
+      setMessage(`Tema "${item.title}" aplicado.`);
+    } else if (item.type === 'Avatar') {
+      setEquippedAvatarId(item.id);
+      setMessage(`Avatar "${item.title}" equipado.`);
+    } else if (item.type === 'Wallpaper') {
+      setEquippedWallpaperId(equippedWallpaperId === item.id ? null : item.id);
+      setMessage(equippedWallpaperId === item.id ? 'Wallpaper removido.' : `Wallpaper "${item.title}" aplicado.`);
+    } else {
+      setMessage('Item desbloqueado e salvo no progresso local.');
     }
-    onUnlock(itemId);
-    setMessage('Item desbloqueado e salvo no progresso local.');
   }
 
   return (
@@ -1719,23 +2009,30 @@ function Marketplace({
       </div>
       {message && <div className="success-note">{message}</div>}
       <div className="market-grid">
-        {marketplace.map((item) => (
-          <article className="market-card" key={item.id}>
-            <span>{item.type} - {item.rarity}</span>
-            <h3>{item.title}</h3>
-            <p>{item.description}</p>
-            <footer>
-              <strong>{item.price} moedas</strong>
-              <button
-                className={unlockedRewards[item.id] ? 'success-pill' : 'ghost-btn'}
-                disabled={!unlockedRewards[item.id] && metrics.coins < item.price}
-                onClick={() => unlock(item.id, item.price)}
-              >
-                {unlockedRewards[item.id] ? 'Desbloqueado' : metrics.coins < item.price ? 'Sem saldo' : 'Desbloquear'}
-              </button>
-            </footer>
-          </article>
-        ))}
+        {marketplace.map((item) => {
+          const owned = isOwned(item);
+          const equipped = isEquipped(item);
+          const AvatarIcon = AVATAR_ITEM_ICONS[item.id];
+          return (
+            <article className={`market-card rarity-${item.rarity.toLowerCase()} ${equipped ? 'equipped' : ''}`} key={item.id}>
+              {item.type === 'Wallpaper' && <div className={`wallpaper-swatch ${WALLPAPER_ITEM_CLASS[item.id] ?? ''}`} />}
+              {AvatarIcon && <div className="market-avatar-icon"><AvatarIcon size={26} /></div>}
+              <span>{item.type} - {item.rarity}</span>
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+              <footer>
+                <strong>{item.price === 0 ? 'Gratis' : `${item.price} moedas`}</strong>
+                <button
+                  className={equipped ? 'success-pill' : 'ghost-btn'}
+                  disabled={!owned && metrics.coins < item.price}
+                  onClick={() => unlock(item)}
+                >
+                  {equipped ? 'Equipado' : owned ? (item.type === 'Boost' || item.type === 'Badge' ? 'Desbloqueado' : 'Equipar') : metrics.coins < item.price ? 'Sem saldo' : 'Desbloquear'}
+                </button>
+              </footer>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
@@ -2035,6 +2332,264 @@ function StatStrip({ stats }: { stats: Array<[string, string | number]> }) {
           <strong>{value}</strong>
         </article>
       ))}
+    </div>
+  );
+}
+
+function ScreenLocked({
+  screen,
+  setScreen,
+  t,
+  hasAccount,
+}: {
+  screen: Screen;
+  setScreen: (screen: Screen) => void;
+  t: (key: string) => string;
+  hasAccount: boolean;
+}) {
+  const screenLabel = navItems.find((item) => item.id === screen)?.labelKey;
+  const label = screenLabel ? t(screenLabel) : '';
+  return (
+    <section className="feature-panel locked-screen">
+      <span className="eyebrow"><Lock size={15} /> {t('nav.account')}</span>
+      <h1>{label ? `${label}: acesso bloqueado` : 'Acesso bloqueado'}</h1>
+      <p>
+        {hasAccount
+          ? 'Sua conta ainda nao tem um plano que libera esta area. Escolha um plano na tela Conta para desbloquear.'
+          : t('lock.needAccount')}
+      </p>
+      <div className="lock-steps">
+        <div><span>1</span> {t('lock.step1')}</div>
+        <div><span>2</span> {t('lock.step2')}</div>
+        <div><span>3</span> {t('lock.step3')}</div>
+      </div>
+      <button className="primary-btn" onClick={() => setScreen('account')}>
+        {t('nav.account')}
+      </button>
+    </section>
+  );
+}
+
+function useScrollReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, visible };
+}
+
+function Reveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const { ref, visible } = useScrollReveal();
+  return (
+    <div ref={ref} className={`reveal ${visible ? 'in' : ''} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  );
+}
+
+function LandingPage({ onEnter }: { onEnter: () => void }) {
+  const steps = [
+    { n: '1', title: 'Crie sua conta e escolha um plano', body: 'Sem enrolação: cadastro rapido, escolhe Starter, Pro ou Vitalicio, e ja libera acesso.' },
+    { n: '2', title: 'Siga a trilha mes a mes', body: 'Logica, web, backend, dados e devops, na ordem certa - sem pular fundamento pra ir direto na fama.' },
+    { n: '3', title: 'Teste de verdade o que aprendeu', body: 'Sandbox de codigo real no laboratorio, arcade pra fixar sem virar aula chata, e revisao pra nao esquecer.' },
+  ];
+
+  const features = [
+    { icon: MapIcon, title: 'Trilha guiada', body: '22 meses do zero ao fullstack, sem voce ter que adivinhar o que estudar depois.' },
+    { icon: Code2, title: 'Laboratorio de verdade', body: 'Escreve codigo, roda de verdade no navegador, ve o resultado. Sem "confie em mim".' },
+    { icon: Gamepad2, title: 'Arcade tecnico', body: '34 jogos pra fixar conceito sem parecer aula. SQL, Git, algoritmos, seguranca.' },
+    { icon: BriefcaseBusiness, title: 'Carreira simulada', body: 'Sobe de rank de Aprendiz a Staff, com tickets que imitam o dia a dia de um time de verdade.' },
+    { icon: ShieldCheck, title: 'Revisao inteligente', body: 'Sistema de memoria que te cobra a resposta antes de mostrar o gabarito.' },
+    { icon: Sparkles, title: 'Progresso na nuvem', body: 'Estuda no celular de manha e continua no note a noite. Tudo sincronizado.' },
+  ];
+
+  const trust = [
+    { icon: ShieldCheck, title: 'Senha nunca em texto puro', body: 'Hash com salt (scrypt) - nem a gente consegue ver sua senha real.' },
+    { icon: BookOpen, title: 'Seus dados, seu controle', body: 'Progresso guardado com voce, exportavel a qualquer momento em .json.' },
+    { icon: Crown, title: 'Sem letra miuda', body: 'Voce ve exatamente o que cada plano libera antes de pagar qualquer coisa.' },
+  ];
+
+  const faqs = [
+    { q: 'Preciso saber programar antes de comecar?', a: 'Nao. O mes 1 comeca do zero absoluto: logica de programacao, antes de qualquer linguagem.' },
+    { q: 'Funciona no celular?', a: 'Sim. O app e responsivo e da pra estudar aulas e revisar pelo celular; o laboratorio funciona melhor num note/desktop.' },
+    { q: 'Posso trocar de plano depois?', a: 'Sim, pode fazer upgrade quando quiser direto na tela Conta.' },
+    { q: 'Meus dados ficam seguros?', a: 'Sim. Senha com hash forte, banco de dados gerenciado, e nada de anuncio ou venda de dados.' },
+  ];
+
+  return (
+    <div className="landing">
+      <header className="landing-nav">
+        <div className="landing-logo">
+          <div className="brand-mark"><Zap size={20} /></div>
+          <strong>DevQuest</strong>
+        </div>
+        <button className="primary-btn" onClick={onEnter}>Entrar <ChevronRight size={16} /></button>
+      </header>
+
+      <section className="landing-hero">
+        <Reveal className="landing-hero-copy">
+          <span className="eyebrow"><Sparkles size={15} /> Academia gamificada pra devs</span>
+          <h1>Aprenda a programar sem se perder no meio do caminho.</h1>
+          <p>
+            Uma trilha guiada do zero ao fullstack, laboratorio de codigo que roda de verdade,
+            arcade pra fixar sem virar aula chata, e sua carreira evoluindo tipo um RPG - de
+            Aprendiz a Staff.
+          </p>
+          <div className="landing-hero-cta">
+            <button className="primary-btn lg" onClick={onEnter}>
+              <Play size={18} /> Comecar minha jornada
+            </button>
+            <span className="landing-hero-note">Cadastro gratis. Sem cartao pra testar.</span>
+          </div>
+        </Reveal>
+
+        <Reveal className="landing-hero-mock" delay={150}>
+          <div className="mock-window">
+            <div className="mock-titlebar">
+              <span /><span /><span />
+            </div>
+            <div className="mock-body">
+              <div className="mock-sidebar">
+                <div className="mock-avatar" />
+                <div className="mock-nav-line active" />
+                <div className="mock-nav-line" />
+                <div className="mock-nav-line" />
+                <div className="mock-nav-line" />
+              </div>
+              <div className="mock-main">
+                <div className="mock-card price-card rarity-legendary">
+                  <span className="rarity-tag">Lendario</span>
+                  <div className="price-icon"><Certificate size={20} weight="duotone" /></div>
+                  <strong>Vitalicio</strong>
+                </div>
+                <div className="mock-lines">
+                  <div className="mock-line w80" />
+                  <div className="mock-line w60" />
+                  <div className="mock-line w70" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      <section className="landing-section">
+        <Reveal>
+          <span className="eyebrow"><Target size={15} /> Como funciona</span>
+          <h2>Sem dashboard chato, sem enrolacao</h2>
+        </Reveal>
+        <div className="landing-steps">
+          {steps.map((step, index) => (
+            <Reveal key={step.n} delay={index * 100}>
+              <article className="landing-step-card">
+                <span className="landing-step-number">{step.n}</span>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <Reveal>
+          <span className="eyebrow"><Sparkles size={15} /> O que voce ganha</span>
+          <h2>Tudo pra aprender e nao esquecer</h2>
+        </Reveal>
+        <div className="landing-feature-grid">
+          {features.map((feature, index) => (
+            <Reveal key={feature.title} delay={(index % 3) * 90}>
+              <article className="landing-feature-card">
+                <div className="landing-feature-icon"><feature.icon size={22} /></div>
+                <h3>{feature.title}</h3>
+                <p>{feature.body}</p>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <Reveal>
+          <span className="eyebrow"><Trophy size={15} /> Carreira simulada</span>
+          <h2>De Aprendiz a Staff, um rank de cada vez</h2>
+        </Reveal>
+        <Reveal delay={100}>
+          <div className="landing-journey">
+            {careerLadder.map((rank, index) => (
+              <div className="landing-journey-item" key={rank.title}>
+                <div className="landing-journey-badge">
+                  <span>Lv {rank.level}</span>
+                  <strong>{rank.title}</strong>
+                </div>
+                {index < careerLadder.length - 1 && <ChevronRight size={18} className="landing-journey-arrow" />}
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      </section>
+
+      <section className="landing-section">
+        <Reveal>
+          <span className="eyebrow"><ShieldCheck size={15} /> Seguranca</span>
+          <h2>Seus dados, tratados a serio</h2>
+        </Reveal>
+        <div className="landing-trust-grid">
+          {trust.map((item, index) => (
+            <Reveal key={item.title} delay={index * 90}>
+              <article className="landing-trust-card">
+                <div className="landing-feature-icon"><item.icon size={22} /></div>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <Reveal>
+          <span className="eyebrow"><BookOpen size={15} /> Perguntas</span>
+          <h2>Bom saber antes de comecar</h2>
+        </Reveal>
+        <div className="landing-faq">
+          {faqs.map((item, index) => (
+            <Reveal key={item.q} delay={index * 70}>
+              <details className="landing-faq-item">
+                <summary>{item.q}</summary>
+                <p>{item.a}</p>
+              </details>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-final-cta">
+        <Reveal>
+          <h2>Bora comecar?</h2>
+          <p>Sua conta demora menos de um minuto pra criar.</p>
+          <button className="primary-btn lg" onClick={onEnter}>
+            <Play size={18} /> Comecar agora
+          </button>
+        </Reveal>
+      </section>
+
+      <footer className="landing-footer">
+        <span>DevQuest - academia gamificada pra devs.</span>
+      </footer>
     </div>
   );
 }

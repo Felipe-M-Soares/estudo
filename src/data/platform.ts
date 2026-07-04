@@ -57,7 +57,7 @@ export interface SkillCluster {
 export interface MarketplaceItem {
   id: string;
   title: string;
-  type: 'Tema' | 'Avatar' | 'Boost' | 'Badge';
+  type: 'Tema' | 'Avatar' | 'Boost' | 'Badge' | 'Wallpaper';
   price: number;
   rarity: 'Comum' | 'Raro' | 'Epico' | 'Lendario';
   description: string;
@@ -299,8 +299,16 @@ export const achievementCatalog = [
 ];
 
 export const marketplace: MarketplaceItem[] = [
-  { id: 'theme-neon', title: 'Tema Neon Focus', type: 'Tema', price: 1200, rarity: 'Epico', description: 'Visual escuro com destaque eletrico para sessoes longas.' },
-  { id: 'theme-calm', title: 'Tema Daybreak', type: 'Tema', price: 900, rarity: 'Raro', description: 'Visual claro para leitura e aulas escritas.' },
-  { id: 'avatar-architect', title: 'Avatar Arquiteto', type: 'Avatar', price: 1500, rarity: 'Lendario', description: 'Liberado para quem conclui campanhas de sistema.' },
+  { id: 'theme-torchlight', title: 'Tema Torchlight', type: 'Tema', price: 0, rarity: 'Comum', description: 'O tema padrao: masmorra escura a luz de tocha, dourado e rubi.' },
+  { id: 'theme-arcane', title: 'Tema Arcano', price: 900, type: 'Tema', rarity: 'Raro', description: 'Masmorra magica em tons de violeta e teal, para quem prefere feiticaria.' },
+  { id: 'theme-parchment', title: 'Tema Pergaminho', type: 'Tema', price: 900, rarity: 'Raro', description: 'Modo claro: mapa do tesouro a luz do dia, para leitura confortavel.' },
+  { id: 'wallpaper-ember', title: 'Wallpaper Brasas', type: 'Wallpaper', price: 500, rarity: 'Comum', description: 'Fundo com brasas suaves atras do menu lateral.' },
+  { id: 'wallpaper-aurora', title: 'Wallpaper Aurora', type: 'Wallpaper', price: 1100, rarity: 'Epico', description: 'Fundo com um brilho de aurora esverdeada, sutil e elegante.' },
+  { id: 'wallpaper-nebula', title: 'Wallpaper Nebulosa', type: 'Wallpaper', price: 1400, rarity: 'Lendario', description: 'Fundo com nebulosa arroxeada, para quem quer um visual unico.' },
+  { id: 'avatar-scholar', title: 'Avatar Estudioso', type: 'Avatar', price: 300, rarity: 'Comum', description: 'Icone de formatura, para quem esta comecando a jornada.' },
+  { id: 'avatar-warrior', title: 'Avatar Guerreiro', type: 'Avatar', price: 800, rarity: 'Raro', description: 'Icone de espadas cruzadas, para quem enfrenta boss fights.' },
+  { id: 'avatar-explorer', title: 'Avatar Explorador', type: 'Avatar', price: 800, rarity: 'Raro', description: 'Icone de mapa, para quem completa a trilha inteira.' },
+  { id: 'avatar-architect', title: 'Avatar Arquiteto', type: 'Avatar', price: 1500, rarity: 'Lendario', description: 'Icone de castelo, liberado para quem conclui campanhas de sistema.' },
   { id: 'boost-review', title: 'Boost de Revisao', type: 'Boost', price: 400, rarity: 'Comum', description: 'Duplica XP de revisao ativa por um dia.' },
+  { id: 'boost-streak-shield', title: 'Escudo de Sequencia', type: 'Boost', price: 600, rarity: 'Raro', description: 'Protege sua sequencia de dias caso perca um dia de estudo.' },
 ];
