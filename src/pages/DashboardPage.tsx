@@ -53,7 +53,7 @@ export function DashboardPage({ progress, overallPercent, onReviewResult }: Dash
       <div className="mb-5 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <Link
           to={`/modulo/${currentModule.id}`}
-          className="card-surface card-surface-hover group relative overflow-hidden rounded-2xl p-5 sm:p-7"
+          className="hero-panel group relative overflow-hidden rounded-3xl p-5 sm:p-7"
         >
           <div className="absolute -right-6 -top-6 text-7xl opacity-[0.07] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 sm:text-9xl">
             {currentModule.emoji}
@@ -186,7 +186,7 @@ function StatCard({ icon, label, value, accent }: { icon: ReactNode; label: stri
     violet: 'text-violet-400 bg-violet-500/15',
   }[accent];
   return (
-    <div className="card-surface card-surface-hover flex flex-col items-center gap-2 rounded-2xl p-3 text-center sm:flex-row sm:items-center sm:gap-3.5 sm:p-4 sm:text-left">
+    <div className="quest-card flex flex-col items-center gap-2 rounded-2xl p-3 text-center sm:flex-row sm:items-center sm:gap-3.5 sm:p-4 sm:text-left">
       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10 ${colors}`}>{icon}</div>
       <div className="min-w-0">
         <div className="font-display text-base font-bold leading-tight text-base-50 sm:text-xl">{value}</div>

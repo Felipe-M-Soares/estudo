@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
-import { Eye, EyeOff, ExternalLink, Trash2, ShieldCheck, AlertTriangle, Download, Upload, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, ExternalLink, Trash2, ShieldCheck, AlertTriangle, Download, Upload, CheckCircle2, Palette } from 'lucide-react';
 import type { UserProgress } from '../data/types';
+import { useDesignTheme, type DesignThemeId } from '../hooks/useDesignTheme';
 
 interface SettingsPageProps {
   apiKey: string;
@@ -26,6 +27,7 @@ export function SettingsPage({
   const [saved, setSaved] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const { theme, setTheme, themes } = useDesignTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleSave() {
@@ -78,6 +80,35 @@ export function SettingsPage({
         <p className="font-mono text-xs uppercase tracking-widest text-base-400">Preferências</p>
         <h1 className="mt-1 font-display text-3xl font-bold text-base-50">Configurações</h1>
       </div>
+
+
+      <section className="mb-6 rounded-2xl glass-panel p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-mint-300 to-cyan-400 text-base-950">
+            <Palette size={18} />
+          </span>
+          <div>
+            <h2 className="font-display text-base font-bold text-base-50">Temas visuais</h2>
+            <p className="text-sm text-base-400">Escolha a identidade do app: gamer neon, premium ou foco leitura.</p>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {(Object.keys(themes) as DesignThemeId[]).map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTheme(id)}
+              className={`rounded-2xl border p-3 text-left transition-all ${
+                theme === id ? 'border-mint-400 bg-mint-400/10 shadow-[0_0_28px_-18px_theme(colors.mint.400)]' : 'border-base-700 bg-base-900/55 hover:border-base-500'
+              }`}
+            >
+              <span className={`mb-3 block h-10 rounded-xl bg-gradient-to-r ${themes[id].preview}`} />
+              <span className="block font-display text-sm font-bold text-base-50">{themes[id].name}</span>
+              <span className="mt-1 block text-xs leading-relaxed text-base-400">{themes[id].tagline}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="mb-6 rounded-2xl card-surface p-5">
         <h2 className="font-display text-base font-bold text-base-50">🤖 Mentor IA — Chave do Google Gemini (gratuita)</h2>

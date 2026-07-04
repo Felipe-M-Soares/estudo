@@ -11,6 +11,7 @@ import { ProfileGate } from './pages/ProfileGate';
 import { useProgress } from './hooks/useProgress';
 import { useSettings } from './hooks/useSettings';
 import { useProfiles } from './hooks/useProfiles';
+import { useDesignTheme } from './hooks/useDesignTheme';
 
 // Páginas pesadas (jogos, diagramas, editor de código) só carregam quando acessadas
 const ModulePage = lazy(() => import('./pages/ModulePage').then((m) => ({ default: m.ModulePage })));
@@ -20,6 +21,7 @@ const MentorPage = lazy(() => import('./pages/MentorPage').then((m) => ({ defaul
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const InterviewModePage = lazy(() => import('./pages/InterviewModePage').then((m) => ({ default: m.InterviewModePage })));
 const LabPage = lazy(() => import('./pages/LabPage').then((m) => ({ default: m.LabPage })));
+const AcademyPage = lazy(() => import('./pages/AcademyPage').then((m) => ({ default: m.AcademyPage })));
 
 export default function App() {
   const { profiles, activeProfile, createProfile, switchToProfile, logout, deleteProfile, avatarOptions } = useProfiles();
@@ -65,9 +67,10 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
   } = useProgress(profileId);
   const { settings, setApiKey, clearApiKey } = useSettings();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useDesignTheme();
 
   return (
-    <div className="flex min-h-screen bg-base-950">
+    <div className="app-shell flex min-h-screen">
       <Sidebar
         progress={progress}
         open={sidebarOpen}
@@ -97,6 +100,7 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
                   />
                 }
               />
+              <Route path="/academia" element={<AcademyPage progress={progress} overallPercent={overallPercent} />} />
               <Route path="/conquistas" element={<AchievementsPage progress={progress} />} />
               <Route path="/jogos" element={<GamesPage progress={progress} onGameComplete={recordGameScore} />} />
               <Route

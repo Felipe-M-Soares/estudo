@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Gamepad2, Briefcase, FlaskConical, Menu } from 'lucide-react';
+import { Home, Gamepad2, Briefcase, GraduationCap, Menu } from 'lucide-react';
 
 interface BottomNavProps {
   onMoreClick: () => void;
@@ -10,7 +10,7 @@ const ITEMS = [
   { to: '/', icon: Home, label: 'Painel' },
   { to: '/jogos', icon: Gamepad2, label: 'Jogos' },
   { to: '/entrevista', icon: Briefcase, label: 'Entrevista' },
-  { to: '/laboratorio', icon: FlaskConical, label: 'Lab' },
+  { to: '/academia', icon: GraduationCap, label: 'Academia' },
 ] as const;
 
 /**
@@ -43,7 +43,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
   return (
     <nav
       ref={navRef}
-      className="fixed inset-x-0 bottom-0 z-30 flex border-t border-base-700 bg-base-900/95 backdrop-blur-md lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 flex border-t border-base-700/70 bg-base-950/92 shadow-[0_-18px_55px_-42px_rgba(0,0,0,0.9)] backdrop-blur-xl lg:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       aria-label="Navegação principal"
     >
@@ -56,7 +56,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
             end={item.to === '/'}
             className={({ isActive }) =>
               `flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
-                isActive ? 'text-mint-300' : 'text-base-400'
+                isActive ? 'text-mint-200' : 'text-base-400'
               }`
             }
           >
@@ -64,7 +64,7 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
               <>
                 <span
                   className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
-                    isActive ? 'bg-mint-400/15' : ''
+                    isActive ? 'bg-gradient-to-br from-mint-400/25 to-cyan-400/15 ring-1 ring-mint-400/25' : ''
                   }`}
                 >
                   <Icon size={19} strokeWidth={isActive ? 2.3 : 2} />

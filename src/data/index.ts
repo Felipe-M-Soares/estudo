@@ -1,5 +1,6 @@
 import type { Module } from './types';
 import { buildDebugCases, buildSkillNodes, buildSprintLab, buildStoryLessons } from './interactiveLearning';
+import { enhanceModuleForIdealApp } from './idealAcademy';
 import { mes01, mes02, mes03 } from './modules/phase1-part1';
 import { mes04, mes05, mes06 } from './modules/phase1-part2';
 import { mes07, mes08, mes09 } from './modules/phase2-part1';
@@ -21,13 +22,16 @@ const baseModules: Module[] = [
   mes19, mes20, mes21, mes22,
 ];
 
-export const modules: Module[] = baseModules.map((module) => ({
-  ...module,
-  storyLessons: buildStoryLessons(module),
-  debugCases: buildDebugCases(module),
-  sprintLab: buildSprintLab(module),
-  skillNodes: buildSkillNodes(module),
-}));
+export const modules: Module[] = baseModules.map((baseModule) => {
+  const module = enhanceModuleForIdealApp(baseModule);
+  return {
+    ...module,
+    storyLessons: buildStoryLessons(module),
+    debugCases: buildDebugCases(module),
+    sprintLab: buildSprintLab(module),
+    skillNodes: buildSkillNodes(module),
+  };
+});
 
 export const modulesById: Record<string, Module> = Object.fromEntries(
   modules.map((m) => [m.id, m])

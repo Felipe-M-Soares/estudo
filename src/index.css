@@ -69,6 +69,73 @@
     color-scheme: dark;
   }
 
+  [data-theme="royal"] {
+    --color-base-950: #080511;
+    --color-base-900: #10091f;
+    --color-base-850: #170d2b;
+    --color-base-800: #21133b;
+    --color-base-700: #332052;
+    --color-base-600: #4b3174;
+    --color-base-500: #65459a;
+    --color-base-400: #9172c7;
+    --color-base-300: #baa5e3;
+    --color-base-200: #d2c7ef;
+    --color-base-100: #ebe5fb;
+    --color-base-50: #fbf8ff;
+    --color-mint-900: #2e1a05;
+    --color-mint-700: #8a5a0a;
+    --color-mint-500: #e2a620;
+    --color-mint-400: #ffd166;
+    --color-mint-300: #ffe39b;
+    --color-mint-200: #fff0c3;
+    --color-amber-700: #5b123d;
+    --color-amber-500: #d73495;
+    --color-amber-400: #ff63be;
+    --color-amber-300: #ff9eda;
+    --color-violet-700: #35119b;
+    --color-violet-500: #7c3aed;
+    --color-violet-400: #a855f7;
+    --color-violet-300: #d8b4fe;
+    --color-cyan-700: #164e63;
+    --color-cyan-500: #06b6d4;
+    --color-cyan-400: #22d3ee;
+    --color-cyan-300: #a5f3fc;
+  }
+
+  [data-theme="forest"] {
+    --color-base-950: #04110f;
+    --color-base-900: #071916;
+    --color-base-850: #0a211d;
+    --color-base-800: #0f2d28;
+    --color-base-700: #173d36;
+    --color-base-600: #25564d;
+    --color-base-500: #367368;
+    --color-base-400: #59978b;
+    --color-base-300: #8abbb2;
+    --color-base-200: #b9d8d2;
+    --color-base-100: #d9ebe7;
+    --color-base-50: #f1fbf8;
+    --color-mint-900: #052e1d;
+    --color-mint-700: #047857;
+    --color-mint-500: #10b981;
+    --color-mint-400: #34d399;
+    --color-mint-300: #86efac;
+    --color-mint-200: #bbf7d0;
+    --color-amber-700: #713f12;
+    --color-amber-500: #d97706;
+    --color-amber-400: #fbbf24;
+    --color-amber-300: #fde68a;
+    --color-violet-700: #155e75;
+    --color-violet-500: #0891b2;
+    --color-violet-400: #22d3ee;
+    --color-violet-300: #a5f3fc;
+    --color-cyan-700: #0f766e;
+    --color-cyan-500: #14b8a6;
+    --color-cyan-400: #2dd4bf;
+    --color-cyan-300: #99f6e4;
+  }
+
+
   body {
     margin: 0;
     background: var(--color-base-950);
@@ -243,6 +310,80 @@
     position: relative;
     overflow: hidden;
   }
+
+  .app-shell {
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--color-base-900) 82%, transparent), color-mix(in oklab, var(--color-base-950) 92%, transparent)),
+      radial-gradient(circle at top left, color-mix(in oklab, var(--color-mint-400) 12%, transparent), transparent 34%),
+      radial-gradient(circle at bottom right, color-mix(in oklab, var(--color-violet-400) 10%, transparent), transparent 36%);
+  }
+
+  .glass-panel {
+    background: linear-gradient(145deg, color-mix(in oklab, var(--color-base-850) 84%, transparent), color-mix(in oklab, var(--color-base-950) 68%, transparent));
+    border: 1px solid color-mix(in oklab, var(--color-base-600) 70%, transparent);
+    box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.04);
+    backdrop-filter: blur(18px);
+  }
+
+  .hero-panel {
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--color-mint-500) 18%, var(--color-base-850)), color-mix(in oklab, var(--color-violet-500) 12%, var(--color-base-900)) 58%, var(--color-base-850)),
+      linear-gradient(to bottom right, transparent, rgba(255,255,255,0.04));
+    border: 1px solid color-mix(in oklab, var(--color-mint-400) 22%, var(--color-base-700));
+    box-shadow: 0 26px 80px -38px color-mix(in oklab, var(--color-mint-400) 55%, transparent);
+  }
+
+  .hero-panel::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-mint-300) 35%, transparent), transparent) top/100% 1px no-repeat,
+      radial-gradient(circle at 80% 0%, rgba(255,255,255,0.13), transparent 32%);
+  }
+
+  .quest-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    background: linear-gradient(145deg, color-mix(in oklab, var(--color-base-850) 90%, transparent), color-mix(in oklab, var(--color-base-950) 80%, transparent));
+    border: 1px solid color-mix(in oklab, var(--color-base-600) 72%, transparent);
+    box-shadow: var(--shadow-card);
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  }
+
+  .quest-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--color-mint-400) 42%, var(--color-base-600));
+    box-shadow: var(--shadow-card-hover), 0 0 32px -18px var(--color-mint-400);
+  }
+
+  .game-icon {
+    position: relative;
+    display: inline-flex;
+    height: 2.75rem;
+    width: 2.75rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    color: var(--color-base-950);
+    background: linear-gradient(135deg, var(--color-mint-300), var(--color-cyan-400) 55%, var(--color-violet-400));
+    box-shadow: 0 12px 30px -16px var(--color-cyan-400), inset 0 1px 0 rgba(255,255,255,0.55);
+  }
+
+  .nav-glow-active {
+    background: linear-gradient(135deg, color-mix(in oklab, var(--color-mint-400) 18%, transparent), color-mix(in oklab, var(--color-cyan-400) 12%, transparent));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-mint-400) 24%, transparent), 0 10px 26px -20px var(--color-mint-400);
+  }
+
+  .theme-dot {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 0 18px -5px currentColor;
+  }
+
 }
 
 @keyframes pulse-soft {

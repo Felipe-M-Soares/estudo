@@ -11,6 +11,7 @@ import { StoryLessonCard } from '../components/ui/StoryLessonCard';
 import { DebugCaseCard } from '../components/ui/DebugCaseCard';
 import { ProjectNotesPanel } from '../components/ui/ProjectNotesPanel';
 import type { UserProgress } from '../data/types';
+import { GameIcon } from '../components/ui/GameIcon';
 
 interface ModulePageProps {
   progress: UserProgress;
@@ -49,7 +50,7 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
 
   if (!mod) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-12 text-center">
+      <div className="mx-auto max-w-4xl px-4 py-12 text-center">
         <p className="text-base-300">Módulo não encontrado.</p>
         <Link to="/" className="mt-3 inline-block text-mint-400 hover:underline">Voltar ao painel</Link>
       </div>
@@ -98,7 +99,7 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
         <ArrowLeft size={14} /> Painel
       </Link>
 
-      <div className={`relative mb-6 overflow-hidden rounded-2xl border border-base-700 bg-gradient-to-br ${accent.glow} via-base-850 to-base-850 p-4 animate-rise-in sm:p-6`}>
+      <div className={`hero-panel relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-br ${accent.glow} via-base-850 to-base-850 p-4 animate-rise-in sm:p-6`}>
         <div className="absolute -right-10 -top-10 text-[7rem] opacity-[0.08]">{mod.emoji}</div>
         <div className="flex items-center gap-3 sm:gap-3.5">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-base-900/60 text-2xl ring-1 ring-base-600 sm:h-14 sm:w-14 sm:text-3xl">{mod.emoji}</span>
@@ -260,10 +261,13 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
                   <button
                     key={g.gameId}
                     onClick={() => setActiveGameId(g.gameId)}
-                    className="card-surface card-surface-hover flex flex-col gap-1.5 rounded-2xl p-4 text-left"
+                    className="quest-card group flex gap-4 p-4 text-left"
                   >
-                    <span className="font-display text-sm font-bold text-base-50">{g.label}</span>
-                    <span className="text-xs text-base-400">{g.description}</span>
+                    <GameIcon gameId={g.gameId} className="transition-transform group-hover:scale-105" />
+                    <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <span className="font-display text-sm font-bold text-base-50">{g.label}</span>
+                      <span className="text-xs leading-relaxed text-base-400">{g.description}</span>
+                    </span>
                     {best !== undefined && (
                       <span className="mt-1 inline-flex items-center gap-1 self-start rounded-full bg-mint-900/40 px-2 py-0.5 text-[11px] font-semibold text-mint-300">
                         Melhor: {best}%

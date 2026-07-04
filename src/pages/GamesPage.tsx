@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { modules } from '../data';
 import { gameRegistry } from '../components/games/registry';
 import type { UserProgress } from '../data/types';
+import { GameIcon } from '../components/ui/GameIcon';
 
 interface GamesPageProps {
   progress: UserProgress;
@@ -32,7 +33,7 @@ export function GamesPage({ progress, onGameComplete }: GamesPageProps) {
 
   if (activeGameId) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:py-8 lg:px-8">
         <button onClick={() => setActiveGameId(null)} className="mb-4 inline-flex items-center gap-1.5 text-sm text-base-400 hover:text-base-100">
           <ArrowLeft size={14} /> Todos os jogos
         </button>
@@ -42,10 +43,10 @@ export function GamesPage({ progress, onGameComplete }: GamesPageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:py-8 lg:px-8">
       <div className="mb-6 animate-rise-in">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-400">⟢ Aprenda jogando</p>
-        <h1 className="mt-2 font-display text-4xl font-bold text-base-50">Mini-jogos</h1>
+        <h1 className="mt-2 font-display text-4xl font-bold text-base-50">Arcade de Treino</h1>
         <p className="mt-2 text-base-300">
           {uniqueGames.length} jogos espalhados pela sua jornada, um para cada tema que você estuda.
         </p>
@@ -73,11 +74,14 @@ export function GamesPage({ progress, onGameComplete }: GamesPageProps) {
             <button
               key={g.gameId}
               onClick={() => setActiveGameId(g.gameId)}
-              className="card-surface card-surface-hover flex flex-col gap-1.5 rounded-2xl p-4 text-left"
+              className="quest-card group flex gap-4 p-4 text-left"
             >
-              <span className="font-mono text-[11px] text-base-500">{g.moduleEmoji} {g.moduleTitle}</span>
-              <span className="font-display text-sm font-bold text-base-50">{g.label}</span>
-              <span className="text-xs text-base-400">{g.description}</span>
+              <GameIcon gameId={g.gameId} className="transition-transform group-hover:scale-105" />
+              <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <span className="font-mono text-[11px] text-base-500">{g.moduleEmoji} {g.moduleTitle}</span>
+                <span className="font-display text-sm font-bold text-base-50">{g.label}</span>
+                <span className="text-xs leading-relaxed text-base-400">{g.description}</span>
+              </span>
               {best !== undefined && (
                 <span className="mt-1 inline-flex items-center gap-1 self-start rounded-full bg-mint-900/40 px-2 py-0.5 text-[11px] font-semibold text-mint-300">
                   Melhor: {best}%
