@@ -13,7 +13,6 @@ import { useSettings } from './hooks/useSettings';
 import { useProfiles } from './hooks/useProfiles';
 import { useDesignTheme } from './hooks/useDesignTheme';
 
-// Páginas pesadas (jogos, diagramas, editor de código) só carregam quando acessadas
 const ModulePage = lazy(() => import('./pages/ModulePage').then((m) => ({ default: m.ModulePage })));
 const AchievementsPage = lazy(() => import('./pages/AchievementsPage').then((m) => ({ default: m.AchievementsPage })));
 const GamesPage = lazy(() => import('./pages/GamesPage').then((m) => ({ default: m.GamesPage })));
@@ -70,7 +69,7 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
   useDesignTheme();
 
   return (
-    <div className="app-shell app-shell-v2 flex min-h-screen">
+    <div className="app-shell pro-game-layout min-h-screen">
       <Sidebar
         progress={progress}
         open={sidebarOpen}
@@ -80,10 +79,10 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
         onLogout={onLogout}
       />
 
-      <div className="flex min-h-screen flex-1 flex-col lg:pl-0">
+      <div className="pro-game-main min-w-0">
         <Topbar progress={progress} overallPercent={overallPercent} onMenuClick={() => setSidebarOpen(true)} />
 
-        <main className="flex-1 pb-20 lg:pb-0 lg:pr-4">
+        <main className="pro-content-area">
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<DashboardPage progress={progress} overallPercent={overallPercent} onReviewResult={markReviewDone} />} />
@@ -103,15 +102,9 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
               <Route path="/academia" element={<AcademyPage progress={progress} overallPercent={overallPercent} />} />
               <Route path="/conquistas" element={<AchievementsPage progress={progress} />} />
               <Route path="/jogos" element={<GamesPage progress={progress} onGameComplete={recordGameScore} />} />
-              <Route
-                path="/entrevista"
-                element={<InterviewModePage interviewHistory={progress.interviewHistory} onSaveResult={addInterviewResult} />}
-              />
+              <Route path="/entrevista" element={<InterviewModePage interviewHistory={progress.interviewHistory} onSaveResult={addInterviewResult} />} />
               <Route path="/laboratorio" element={<LabPage />} />
-              <Route
-                path="/mentor"
-                element={<MentorPage apiKey={settings.geminiApiKey} currentModuleId={progress.currentModuleId} progress={progress} />}
-              />
+              <Route path="/mentor" element={<MentorPage apiKey={settings.geminiApiKey} currentModuleId={progress.currentModuleId} progress={progress} />} />
               <Route
                 path="/configuracoes"
                 element={
