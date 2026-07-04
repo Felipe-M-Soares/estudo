@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { ArrowRight, Flame, Trophy, Target, BookOpenCheck, Gamepad2 } from 'lucide-react';
+import { modules } from '../data';
 import { moduleMetas, phases } from '../data/moduleMeta';
 import { XpBar } from '../components/ui/XpBar';
 import { StreakMap } from '../components/ui/StreakMap';
 import { SpacedReviewPanel } from '../components/ui/SpacedReviewPanel';
 import type { UserProgress } from '../data/types';
 import { achievements } from '../data/achievements';
+import { careerStage } from '../data/interactiveLearning';
 
 interface DashboardPageProps {
   progress: UserProgress;
@@ -25,6 +27,8 @@ export function DashboardPage({ progress, overallPercent, onReviewResult }: Dash
   const currentModule = moduleMetas.find((m) => m.id === progress.currentModuleId) ?? moduleMetas[0];
   const unlockedCount = progress.unlockedAchievements.length;
   const completedExerciseCount = Object.values(progress.completedExercises).filter(Boolean).length;
+  const currentFullModule = modules.find((m) => m.id === currentModule.id);
+  const stage = careerStage(overallPercent);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:py-8 lg:px-8">
@@ -69,6 +73,30 @@ export function DashboardPage({ progress, overallPercent, onReviewResult }: Dash
 
       <div className="mb-7">
         <SpacedReviewPanel spacedReview={progress.spacedReview} onReviewResult={onReviewResult} />
+      </div>
+
+
+      <div className="mb-7 grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <div className="card-surface rounded-2xl p-5">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-mint-400">Carreira simulada</p>
+          <h2 className="mt-1 font-display text-xl font-bold text-base-50">{stage.title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-base-300">Próxima evolução: {stage.next}. As novas abas de contexto, debug e sprints transformam cada módulo em treino de trabalho real.</p>
+          <Link to={`/modulo/${currentModule.id}`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-mint-400/10 px-3.5 py-1.5 text-sm font-semibold text-mint-300 ring-1 ring-mint-400/20">Abrir missão atual <ArrowRight size={14} /></Link>
+        </div>
+        <div className="card-surface rounded-2xl p-5">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-violet-300">Árvore de habilidades</p>
+          <div className="mt-3 space-y-2">
+            {currentFullModule?.skillNodes?.slice(0, 4).map((skill) => (
+              <div key={skill.id} className="rounded-xl border border-base-700 bg-base-900/50 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate text-sm font-medium text-base-100">{skill.label}</span>
+                  <span className="font-mono text-xs text-violet-200">{'★'.repeat(skill.level)}{'☆'.repeat(5 - skill.level)}</span>
+                </div>
+                <p className="mt-1 text-xs text-base-400">{skill.evidence}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="mb-7 grid gap-4 lg:grid-cols-[1fr_1fr]">

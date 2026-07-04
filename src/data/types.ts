@@ -102,6 +102,48 @@ export interface DayToDayScenario {
   check?: ScenarioCheck; // checagem rápida opcional de entendimento
 }
 
+export interface StoryChoice {
+  label: string;
+  consequence: string;
+  correct?: boolean;
+}
+
+export interface StoryLesson {
+  id: string;
+  title: string;
+  mission: string;
+  tension: string;
+  choices: StoryChoice[];
+  reveal: string;
+  takeaway: string;
+}
+
+export interface DebugCase {
+  id: string;
+  title: string;
+  context: string;
+  symptom: string;
+  log: string;
+  suspects: string[];
+  answer: string;
+  fix: string;
+}
+
+export interface SprintLab {
+  id: string;
+  title: string;
+  company: string;
+  role: string;
+  sprints: { title: string; objective: string; deliverable: string }[];
+}
+
+export interface SkillNode {
+  id: string;
+  label: string;
+  level: number;
+  evidence: string;
+}
+
 export interface Module {
   id: string; // ex: 'mes-01'
   month: number;
@@ -123,6 +165,10 @@ export interface Module {
     description: string;
     requirements: string[];
   };
+  storyLessons?: StoryLesson[];
+  debugCases?: DebugCase[];
+  sprintLab?: SprintLab;
+  skillNodes?: SkillNode[];
 }
 
 export interface SpacedReviewItem {

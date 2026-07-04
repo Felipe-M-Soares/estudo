@@ -7,6 +7,8 @@ import { ExerciseRouter } from '../components/ui/ExerciseRouter';
 import { gameRegistry } from '../components/games/registry';
 import { diagramRegistry } from '../components/diagrams/registry';
 import { ScenarioCard } from '../components/ui/ScenarioCard';
+import { StoryLessonCard } from '../components/ui/StoryLessonCard';
+import { DebugCaseCard } from '../components/ui/DebugCaseCard';
 import { ProjectNotesPanel } from '../components/ui/ProjectNotesPanel';
 import type { UserProgress } from '../data/types';
 
@@ -19,7 +21,7 @@ interface ModulePageProps {
   onSaveProjectNote: (moduleId: string, text: string, links: { label: string; url: string }[]) => void;
 }
 
-type Tab = 'conteudo' | 'diaadia' | 'exercicios' | 'jogos' | 'checklist' | 'projeto';
+type Tab = 'conteudo' | 'historia' | 'debug' | 'sprints' | 'diaadia' | 'exercicios' | 'jogos' | 'checklist' | 'projeto';
 
 const phaseAccent: Record<number, { bar: string; glow: string; chip: string }> = {
   1: { bar: 'bg-mint-400', glow: 'from-mint-500/15', chip: 'bg-mint-400 text-base-950' },
@@ -65,6 +67,9 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
 
   const tabs: { id: Tab; label: string; show: boolean; badge?: string }[] = [
     { id: 'conteudo', label: '📖 Conteúdo', show: true },
+    { id: 'historia', label: '🎬 Aulas com contexto', show: !!mod.storyLessons?.length, badge: `${mod.storyLessons?.length ?? 0}` },
+    { id: 'debug', label: '🕵️ Debug', show: !!mod.debugCases?.length, badge: `${mod.debugCases?.length ?? 0}` },
+    { id: 'sprints', label: '🏢 Sprints', show: !!mod.sprintLab },
     { id: 'diaadia', label: '🌍 Dia a Dia', show: !!mod.scenarios && mod.scenarios.length > 0 },
     {
       id: 'exercicios',
@@ -170,6 +175,49 @@ export function ModulePage({ progress, onToggleChecklist, onExerciseResult, onGa
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+
+      {tab === 'historia' && mod.storyLessons && (
+        <div className="space-y-5 animate-rise-in">
+          <div className="rounded-xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-100">
+            Cada aula começa com problema, escolha, consequência e descoberta. Isso transforma teoria em decisão prática.
+          </div>
+          {mod.storyLessons.map((story) => (
+            <StoryLessonCard key={story.id} story={story} />
+          ))}
+        </div>
+      )}
+
+      {tab === 'debug' && mod.debugCases && (
+        <div className="space-y-5 animate-rise-in">
+          <div className="rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-3 text-sm leading-relaxed text-cyan-100">
+            Aqui o estudo vira investigação: leia o sintoma, escolha a causa provável e compare com a correção.
+          </div>
+          {mod.debugCases.map((item) => (
+            <DebugCaseCard key={item.id} item={item} />
+          ))}
+        </div>
+      )}
+
+      {tab === 'sprints' && mod.sprintLab && (
+        <div className="space-y-4 animate-rise-in">
+          <div className="card-surface rounded-2xl p-5">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-violet-300">Simulador de empresa</p>
+            <h3 className="mt-1 font-display text-xl font-bold text-base-50">{mod.sprintLab.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-base-300">Você atua como {mod.sprintLab.role} em {mod.sprintLab.company}. Complete as entregas como se fossem tickets reais.</p>
+          </div>
+          {mod.sprintLab.sprints.map((sprint, index) => (
+            <div key={sprint.title} className="rounded-2xl border border-base-700 bg-base-850 p-5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-500/15 font-mono text-xs font-bold text-violet-200 ring-1 ring-violet-400/20">{index + 1}</span>
+                <h3 className="font-display text-base font-bold text-base-50">{sprint.title}</h3>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-base-200">Objetivo: {sprint.objective}</p>
+              <p className="mt-2 rounded-xl border border-base-700 bg-base-950/40 p-3 text-sm text-base-300">Entrega: {sprint.deliverable}</p>
+            </div>
+          ))}
         </div>
       )}
 
