@@ -23,7 +23,9 @@ Esta versão foi reformulada como uma plataforma de aprendizado em formato RPG p
 
 ## Modo comercial
 
-Esta entrega tambem inclui backend comercial em `server/server.mjs`:
+Esta entrega tambem inclui um backend comercial (logica em `server/app.mjs`,
+compartilhada por dois jeitos de hospedar - servidor tradicional ou
+funcoes serverless da Vercel):
 
 - cadastro e login de usuarios;
 - senha com hash `scrypt` e salt;
@@ -37,7 +39,14 @@ Esta entrega tambem inclui backend comercial em `server/server.mjs`:
 - headers de seguranca, validacao de entrada, bloqueio de login e rate limit basico;
 - **todos os dados (usuarios, licencas, pedidos, progresso e eventos) ficam no Supabase (Postgres gerenciado)**, nao em arquivo local.
 
-Para rodar a versao completa:
+**Se voce so sobe o codigo pro GitHub e a Vercel publica sozinha:** nao
+precisa rodar nada local. Configure as variaveis de ambiente no painel da
+Vercel (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TOKEN_SECRET`,
+`ADMIN_TOKEN`) e o proprio deploy ja ativa a API via `api/[...path].mjs`.
+Passo a passo completo em `PRIMEIROS_PASSOS_SUPABASE.md` (secao "Caminho
+Vercel") e `COMMERCIAL_DEPLOY.md`.
+
+**Se voce roda local ou hospeda num VPS/Railway/Render:**
 
 ```bash
 npm install

@@ -151,6 +151,28 @@ button {
   border-right: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg-2) 94%, transparent);
   backdrop-filter: blur(20px);
+  /* Barra de rolagem fina e discreta em vez da barra padrao do sistema -
+     a sidebar continua fixa/sticky, so o conteudo interno rola quando nao
+     cabe na altura da tela (comum em notebooks 1366x768/1440x900). */
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 .brand,
@@ -1569,6 +1591,42 @@ button:disabled {
 .field-input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(88, 230, 255, 0.08);
+}
+
+.offline-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.offline-warning svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--danger);
+}
+
+.offline-warning code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.28);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.offline-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
 }
 
 .mode-tabs {

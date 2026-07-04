@@ -1,5 +1,46 @@
 # DevQuest - Analise de Seguranca
 
+## Suporte nativo a deploy na Vercel (04/07/2026)
+
+O usuario informou que o fluxo real de uso e: subir para o GitHub, com o
+repositorio ja linkado a Vercel, sem rodar nada localmente. Isso exigiu uma
+mudanca de arquitetura, nao so de configuracao:
+
+- **A Vercel nao roda um servidor Node "ligado" (`createServer().listen()`)
+  - ela roda funcoes serverless.** O `server/server.mjs` antigo nunca seria
+  executado em producao na Vercel; por isso a API sempre aparecia offline,
+  nao importava quantas vezes o codigo fosse enviado ao GitHub.
+- A logica de negocio foi extraida para `server/app.mjs` (mesmas rotas,
+  mesmas checagens de seguranca, zero duplicacao). Duas "portas de entrada"
+  agora reaproveitam esse mesmo modulo:
+  - `server/server.mjs`: servidor tradicional (`node:http` + `.listen()`),
+    para quem hospeda em VPS/Railway/Render ou roda `npm run dev` local.
+  - `api/[...path].mjs`: funcao serverless da Vercel (convencao de
+    "catch-all route" - qualquer requisicao a `/api/*` cai aqui).
+- **Geracao automatica de segredos desativada em ambiente serverless.**
+  Antes, se `TOKEN_SECRET`/`ADMIN_TOKEN` faltassem, o servidor gerava
+  valores aleatorios e salvava em `.data/secrets.json` para sobreviver a
+  reinicios. Isso nao funciona em funcoes serverless (sem disco persistente
+  entre execucoes, cada instancia fria geraria um valor diferente,
+  invalidando sessoes de outras instancias). Agora, ao detectar
+  `process.env.VERCEL` (ou `AWS_LAMBDA_FUNCTION_NAME`/`NETLIFY`), o backend
+  exige essas duas variaveis explicitamente e falha com uma mensagem clara
+  se faltarem, em vez de tentar escrever em disco.
+- **Leitura do corpo da requisicao adaptada.** Funcoes Node da Vercel podem
+  entregar o corpo ja parseado em `req.body`; o servidor tradicional le o
+  stream manualmente. `parseBody()` agora suporta os dois formatos.
+- Testado sem acesso a rede real da Vercel/Supabase: simulei localmente o
+  exato modelo de invocacao da Vercel (chamando a funcao exportada
+  diretamente, sem nenhum `.listen()` por baixo, e nos dois formatos
+  possiveis de corpo de requisicao) e confirmei que cadastro, login e as
+  demais rotas respondem identico ao servidor tradicional. Tambem testei
+  que a funcao falha com erro claro quando rodando em modo serverless sem
+  `TOKEN_SECRET`/`ADMIN_TOKEN` definidos, e funciona normalmente quando
+  definidos.
+- `vercel.json` adicionado com `buildCommand`, `outputDirectory` e limite de
+  duracao da funcao; `.vercel/` adicionado ao `.gitignore` (pasta local do
+  CLI da Vercel, especifica de cada maquina).
+
 ## Protecao contra segredos vazados no codigo/GitHub (04/07/2026)
 
 Reforco adicional pedido explicitamente: garantir que nenhuma chave (Supabase,

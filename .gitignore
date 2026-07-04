@@ -17,6 +17,10 @@ dist-ssr
 .data
 .env
 
+# Pasta local criada pelo `vercel` CLI ao linkar o projeto - especifica da
+# sua maquina, nao deve ser versionada.
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

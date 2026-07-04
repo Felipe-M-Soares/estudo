@@ -1964,7 +1964,12 @@ function CommercialAccount({
           <>
             <span className="eyebrow"><ShieldCheck size={15} /> {t('status.login')}</span>
             <h2>{mode === 'login' ? t('account.login') : t('account.register')}</h2>
-            {!commercial.online && <p>Servidor comercial offline. Rode `npm run api:dev` ou `npm start` para ativar API.</p>}
+            {!commercial.online && (
+              <div className="offline-warning">
+                <ShieldCheck size={15} />
+                <span>Servidor comercial offline. Rode <code>npm run api:dev</code> ou <code>npm start</code> para ativar a API antes de entrar ou cadastrar.</span>
+              </div>
+            )}
             <div className="mode-tabs">
               <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>{t('account.login')}</button>
               <button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>{t('account.register')}</button>
@@ -1979,9 +1984,14 @@ function CommercialAccount({
             <input className="field-input" ref={emailInputRef} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="aluno@email.com" />
             <label className="field-label">{t('account.password')}</label>
             <input className="field-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="minimo 8 caracteres" />
-            <button className="primary-btn full" disabled={busy || !commercial.online || !email.trim() || !password.trim()} onClick={submitAccount}>
+            <button
+              className="primary-btn full"
+              disabled={busy || !commercial.online || !email.trim() || !password.trim() || (mode === 'register' && !name.trim())}
+              onClick={submitAccount}
+            >
               {mode === 'login' ? t('account.login') : t('account.register')}
             </button>
+            {!commercial.online && <small className="offline-hint">Botao desabilitado ate a API responder.</small>}
           </>
         )}
         {message && <div className="success-note">{message}</div>}
