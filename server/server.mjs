@@ -16,8 +16,8 @@ const HOST = process.env.HOST ?? '0.0.0.0';
 const TOKEN_SECRET = process.env.TOKEN_SECRET ?? 'devquest-local-change-this-secret';
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? 'devquest-admin-change-me';
 const TOKEN_TTL_SECONDS = Number(process.env.TOKEN_TTL_SECONDS ?? 60 * 60 * 24 * 7);
-const REQUIRE_LICENSE = process.env.REQUIRE_LICENSE === 'true';
-const SEED_DEMO_LICENSE = process.env.SEED_DEMO_LICENSE !== 'false';
+const REQUIRE_LICENSE = process.env.REQUIRE_LICENSE !== 'false';
+const SEED_DEMO_LICENSE = process.env.SEED_DEMO_LICENSE === 'true';
 const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL ?? '').replace(/\/$/, '');
 const MERCADO_PAGO_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN ?? '';
 const MERCADO_PAGO_WEBHOOK_SECRET = process.env.MERCADO_PAGO_WEBHOOK_SECRET ?? '';
@@ -39,11 +39,23 @@ const plans = {
     durationDays: 30,
     seats: 1,
     maxMonth: 6,
-    features: [
-      'Fases 1.1 a 1.6: logica, web, JavaScript, Git, SQL e Node',
-      'Aulas, exercicios, revisao ativa e progresso em nuvem',
-      'Modo carreira em leitura e mapa de sequencia completo',
-    ],
+    features: {
+      pt: [
+        'Fases 1.1 a 1.6: logica, web, JavaScript, Git, SQL e Node',
+        'Aulas, exercicios, revisao ativa e progresso em nuvem',
+        'Mapa de sequencia completo para comecar do zero',
+      ],
+      en: [
+        'Phases 1.1 to 1.6: logic, web, JavaScript, Git, SQL and Node',
+        'Lessons, exercises, active review and cloud progress',
+        'Full guided roadmap for starting from zero',
+      ],
+      es: [
+        'Fases 1.1 a 1.6: logica, web, JavaScript, Git, SQL y Node',
+        'Clases, ejercicios, repaso activo y progreso en la nube',
+        'Mapa guiado completo para empezar desde cero',
+      ],
+    },
   },
   pro: {
     id: 'pro',
@@ -54,11 +66,23 @@ const plans = {
     durationDays: 30,
     seats: 1,
     maxMonth: 22,
-    features: [
-      'Todos os 22 meses da trilha fullstack e extras de mercado',
-      'Laboratorio profissional, arcade, projetos, analytics e revisoes',
-      'Atualizacoes de conteudo durante a assinatura ativa',
-    ],
+    features: {
+      pt: [
+        'Todos os 22 meses da trilha fullstack e extras de mercado',
+        'Laboratorio profissional, arcade, projetos, analytics e revisoes',
+        'Atualizacoes de conteudo durante a assinatura ativa',
+      ],
+      en: [
+        'All 22 months of the fullstack path plus market extras',
+        'Professional lab, arcade, projects, analytics and reviews',
+        'Content updates while the subscription is active',
+      ],
+      es: [
+        'Los 22 meses de la ruta fullstack y extras de mercado',
+        'Laboratorio profesional, arcade, proyectos, analytics y repasos',
+        'Actualizaciones de contenido durante la suscripcion activa',
+      ],
+    },
   },
   lifetime: {
     id: 'lifetime',
@@ -69,11 +93,23 @@ const plans = {
     durationDays: null,
     seats: 1,
     maxMonth: 22,
-    features: [
-      'Acesso vitalicio a todos os conteudos atuais',
-      'Laboratorio, arcade, projetos, carreira, analytics e progresso em nuvem',
-      'Melhor opcao para venda direta sem recorrencia',
-    ],
+    features: {
+      pt: [
+        'Acesso vitalicio a todos os conteudos atuais',
+        'Laboratorio, arcade, projetos, carreira, analytics e progresso em nuvem',
+        'Melhor opcao para venda direta sem recorrencia',
+      ],
+      en: [
+        'Lifetime access to all current content',
+        'Lab, arcade, projects, career mode, analytics and cloud progress',
+        'Best option for one-time sales without recurring billing',
+      ],
+      es: [
+        'Acceso vitalicio a todo el contenido actual',
+        'Laboratorio, arcade, proyectos, carrera, analytics y progreso en la nube',
+        'Mejor opcion para venta directa sin recurrencia',
+      ],
+    },
   },
 };
 
@@ -260,7 +296,12 @@ function requireAccess(req, res, db) {
   return user;
 }
 
-function planPublic(plan) {
+function normalizeLang(value) {
+  return ['pt', 'en', 'es'].includes(value) ? value : 'pt';
+}
+
+function planPublic(plan, lang = 'pt') {
+  const selectedLang = normalizeLang(lang);
   return {
     id: plan.id,
     name: plan.name,
@@ -271,7 +312,7 @@ function planPublic(plan) {
     durationDays: plan.durationDays,
     seats: plan.seats,
     maxMonth: plan.maxMonth,
-    features: plan.features,
+    features: Array.isArray(plan.features) ? plan.features : plan.features[selectedLang] ?? plan.features.pt,
   };
 }
 
@@ -450,7 +491,9 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === 'GET' && pathname === '/api/plans') {
-    sendJson(res, 200, { ok: true, plans: planList.map(planPublic) });
+    const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+    const lang = normalizeLang(url.searchParams.get('lang') ?? 'pt');
+    sendJson(res, 200, { ok: true, plans: planList.map((plan) => planPublic(plan, lang)) });
     return;
   }
 
@@ -729,7 +772,7 @@ async function handleApi(req, res, pathname) {
       orders: db.orders.length,
       revenueCents: db.orders.filter((order) => order.status === 'paid').reduce((sum, order) => sum + Number(order.amountCents ?? 0), 0),
       activeLicenses: db.licenses.filter(isLicenseValid).length,
-      plans: planList.map(planPublic),
+      plans: planList.map((plan) => planPublic(plan)),
       events: db.events.slice(0, 50),
     });
     return;

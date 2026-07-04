@@ -6,11 +6,10 @@ Esta versao inclui frontend React/Vite e backend Node nativo no arquivo `server/
 
 ```bash
 npm install
-npm run build
-npm run api:dev
+npm run dev
 ```
 
-Acesse `http://127.0.0.1:8787`.
+Acesse o endereco do Vite mostrado no terminal. O comando sobe a API em `127.0.0.1:8787` e o frontend com proxy para `/api`.
 
 ## Variaveis obrigatorias em producao
 
@@ -75,14 +74,19 @@ curl -X POST http://localhost:8787/api/admin/payments/confirm \
 ## Fluxo do comprador
 
 1. O aluno cria conta.
-2. Entra na tela Conta.
-3. Ativa a chave de licenca.
-4. Usa "Enviar progresso" e "Baixar progresso" para sincronizar.
+2. Escolhe Starter, Pro ou Vitalicio.
+3. Paga pelo checkout Mercado Pago ou ativa uma chave manual.
+4. Somente depois do plano ativo acessa aulas, laboratorio, arcade, revisoes e progresso.
+5. Usa "Enviar progresso" e "Baixar progresso" para sincronizar.
+
+Sem usuario logado e plano ativo, o frontend redireciona qualquer tentativa de acesso para Conta.
 
 ## Endpoints principais
 
 - `GET /api/health`
 - `GET /api/plans`
+- `GET /api/plans?lang=en`
+- `GET /api/plans?lang=es`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/me`

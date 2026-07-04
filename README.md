@@ -9,8 +9,10 @@ Funciona como **web app** (qualquer navegador) e como **app instalável no celul
 Esta versão foi reformulada como uma plataforma de aprendizado em formato RPG profissional. A interface principal agora inclui:
 
 - Command Center com plano diário, XP, moedas, temporadas e inteligência de estudo
+- Bloqueio comercial: Conta e plano ativo antes de liberar qualquer área de conteúdo
+- Interface principal em português, inglês e espanhol
 - Mundos de conhecimento com trilhas, capstones e módulos conectados ao conteúdo real
-- Sala de Aula com navegação por lições, projeto do módulo e ações de estudo
+- Sala de Aula com conteúdo primeiro e exercícios liberados depois da aula concluída
 - Modo História com escolhas, consequências e descoberta pedagógica
 - Laboratório estilo IDE com explorer, editor, terminal e sprints
 - Arcade técnico com modos rápidos de fixação
@@ -38,11 +40,10 @@ Para rodar a versao completa:
 
 ```bash
 npm install
-npm run build
-npm run api:dev
+npm run dev
 ```
 
-Depois acesse `http://127.0.0.1:8787`.
+Depois acesse o endereço do Vite mostrado no terminal. O comando sobe frontend e backend juntos; o login deixa de ficar offline no ambiente local.
 
 Veja `COMMERCIAL_DEPLOY.md` para deploy e criacao de licencas.
 
@@ -62,6 +63,7 @@ O build de produção foi validado com `npm run build`.
 - **Visual neon cyberpunk**: paleta vibrante (menta, magenta, violeta, ciano elétrico) sobre fundo escuro arroxeado, com glow e scanlines sutis
 - **Múltiplos perfis no mesmo navegador**: cada pessoa cria seu perfil com nome (e PIN opcional), e o progresso fica separado por perfil
 - **Sistema comercial** com conta, licenca, plano e progresso em nuvem quando o backend esta ativo
+- **Trava correta de venda**: sem login e sem assinatura ativa, o aluno permanece na tela Conta
 
 ## 🖥️ Como rodar localmente
 

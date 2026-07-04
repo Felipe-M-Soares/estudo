@@ -90,8 +90,8 @@ export async function healthCheck(): Promise<{ ok: boolean; mode: string; time: 
   return apiRequest('/api/health', { method: 'GET' });
 }
 
-export async function getCommercialPlans(): Promise<{ ok: boolean; plans: CommercialPlan[] }> {
-  return apiRequest('/api/plans', { method: 'GET' });
+export async function getCommercialPlans(language = 'pt'): Promise<{ ok: boolean; plans: CommercialPlan[] }> {
+  return apiRequest(`/api/plans?lang=${encodeURIComponent(language)}`, { method: 'GET' });
 }
 
 export async function registerCommercialAccount(input: {

@@ -258,6 +258,15 @@ button {
   text-align: left;
 }
 
+.nav-list button span {
+  flex: 1;
+}
+
+.nav-lock {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
 .nav-list button:hover,
 .nav-list button.active {
   color: var(--text);
@@ -349,7 +358,8 @@ button {
 }
 
 .hud span,
-.theme-switch {
+.theme-switch,
+.language-switch {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -361,8 +371,15 @@ button {
   white-space: nowrap;
 }
 
-.theme-switch {
+.theme-switch,
+.language-switch {
   border: 1px solid var(--line);
+}
+
+.language-switch {
+  min-height: 42px;
+  outline: 0;
+  cursor: pointer;
 }
 
 .main-shell {
@@ -1507,6 +1524,22 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--surface-3);
+}
+
+.locked-stage {
+  display: grid;
+  gap: 10px;
+  place-items: start;
+  color: var(--soft);
+}
+
+.locked-stage svg {
+  color: var(--accent);
+}
+
+.locked-stage h2,
+.locked-stage p {
+  margin: 0;
 }
 
 .diagram-stage > .split {

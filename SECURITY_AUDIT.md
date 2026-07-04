@@ -15,6 +15,9 @@ Esta versao recebeu reforcos para uma primeira operacao comercial:
 - CSP, `X-Frame-Options`, `nosniff`, `Referrer-Policy` e `Permissions-Policy`;
 - servico de arquivos estaticos com normalizacao de caminho para reduzir traversal;
 - plano e acesso definidos no servidor, nao apenas na interface.
+- licença obrigatória por padrão, a menos que `REQUIRE_LICENSE=false` seja definido explicitamente.
+- seed de licença demo desligado por padrão.
+- frontend redireciona para Conta quando não existe API online, usuário logado e plano ativo.
 
 ## Configuracao obrigatoria em producao
 

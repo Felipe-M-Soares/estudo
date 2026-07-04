@@ -90,6 +90,8 @@ type Screen =
   | 'market'
   | 'account';
 
+type Language = 'pt' | 'en' | 'es';
+
 type CommercialState = {
   checked: boolean;
   online: boolean;
@@ -100,18 +102,195 @@ type CommercialState = {
 };
 
 const navItems = [
-  { id: 'command', label: 'Command Center', icon: Home },
-  { id: 'worlds', label: 'Mundos', icon: MapIcon },
-  { id: 'learn', label: 'Sala de Aula', icon: BookOpen },
-  { id: 'story', label: 'Modo Historia', icon: Sparkles },
-  { id: 'lab', label: 'Laboratorio', icon: Code2 },
-  { id: 'arcade', label: 'Arcade', icon: Gamepad2 },
-  { id: 'career', label: 'Carreira', icon: BriefcaseBusiness },
-  { id: 'review', label: 'Revisao', icon: ShieldCheck },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'market', label: 'Loja', icon: Coins },
-  { id: 'account', label: 'Conta', icon: ShieldCheck },
+  { id: 'command', labelKey: 'nav.command', icon: Home },
+  { id: 'worlds', labelKey: 'nav.worlds', icon: MapIcon },
+  { id: 'learn', labelKey: 'nav.learn', icon: BookOpen },
+  { id: 'story', labelKey: 'nav.story', icon: Sparkles },
+  { id: 'lab', labelKey: 'nav.lab', icon: Code2 },
+  { id: 'arcade', labelKey: 'nav.arcade', icon: Gamepad2 },
+  { id: 'career', labelKey: 'nav.career', icon: BriefcaseBusiness },
+  { id: 'review', labelKey: 'nav.review', icon: ShieldCheck },
+  { id: 'analytics', labelKey: 'nav.analytics', icon: BarChart3 },
+  { id: 'market', labelKey: 'nav.market', icon: Coins },
+  { id: 'account', labelKey: 'nav.account', icon: ShieldCheck },
 ] as const;
+
+const copy: Record<Language, Record<string, string>> = {
+  pt: {
+    'nav.command': 'Comecar',
+    'nav.worlds': 'Trilha',
+    'nav.learn': 'Aulas',
+    'nav.story': 'Historia',
+    'nav.lab': 'Laboratorio',
+    'nav.arcade': 'Arcade',
+    'nav.career': 'Carreira',
+    'nav.review': 'Revisao',
+    'nav.analytics': 'Analytics',
+    'nav.market': 'Loja',
+    'nav.account': 'Conta',
+    'brand.subtitle': 'Academia guiada para devs',
+    'search.placeholder': 'Pesquisar aulas, modulos e projetos...',
+    'status.active': 'Conta ativa',
+    'status.login': 'Entrar',
+    'status.offline': 'API offline',
+    'theme': 'Tema',
+    'progress.global': 'Progresso global',
+    'progress.next': 'Proximo passo: concluir a aula atual',
+    'gate.title': 'Entre e escolha um plano para acessar a trilha.',
+    'gate.body': 'O conteudo, os exercicios, o laboratorio e o progresso em nuvem ficam bloqueados ate o login e a assinatura.',
+    'hero.eyebrow': 'Caminho guiado',
+    'hero.title': 'Aprenda programacao na ordem certa, sem pular fundamento.',
+    'hero.body': 'O app agora orienta do primeiro modulo ate projetos avancados: aula primeiro, pratica depois, revisao no fim.',
+    'hero.continue': 'Continuar aula',
+    'hero.openLab': 'Abrir laboratorio',
+    'sequence.title': 'Roteiro do inicio ao avancado',
+    'sequence.body': 'Siga os meses em ordem. Exercicios so fazem sentido depois de ler a aula e marcar entendimento.',
+    'sequence.plan': 'Plano atual',
+    'sequence.continue': 'Continuar modulo ativo',
+    'sequence.locked': 'Bloqueado',
+    'daily.title': 'Missao de hoje',
+    'learn.eyebrow': 'Conteudo primeiro',
+    'learn.lessons': 'Aulas do modulo',
+    'learn.done': 'Aula concluida',
+    'learn.markDone': 'Concluir aula',
+    'learn.story': 'Ver como historia',
+    'learn.review': 'Revisar depois',
+    'learn.lab': 'Praticar no laboratorio',
+    'learn.exerciseLockedTitle': 'Exercicios liberados depois da aula',
+    'learn.exerciseLockedBody': 'Leia o conteudo, veja o exemplo e marque a aula como concluida. Depois disso o treino aparece.',
+    'learn.exercises': 'Treino guiado',
+    'account.heroTitle': 'Conta, plano e acesso em nuvem.',
+    'account.heroBody': 'Para vender corretamente, o aluno precisa estar logado e ter plano ativo antes de acessar a plataforma.',
+    'account.plans': 'Planos de acesso',
+    'account.login': 'Login',
+    'account.register': 'Cadastro',
+    'account.email': 'Email',
+    'account.password': 'Senha',
+    'account.name': 'Nome',
+    'account.buy': 'Pagar agora',
+    'account.enterToBuy': 'Entre para comprar',
+    'account.current': 'Plano ativo',
+    'account.license': 'Chave de licenca',
+    'account.activate': 'Ativar licenca',
+    'account.sync': 'Sincronizacao',
+  },
+  en: {
+    'nav.command': 'Start',
+    'nav.worlds': 'Path',
+    'nav.learn': 'Lessons',
+    'nav.story': 'Story',
+    'nav.lab': 'Lab',
+    'nav.arcade': 'Arcade',
+    'nav.career': 'Career',
+    'nav.review': 'Review',
+    'nav.analytics': 'Analytics',
+    'nav.market': 'Store',
+    'nav.account': 'Account',
+    'brand.subtitle': 'Guided academy for developers',
+    'search.placeholder': 'Search lessons, modules and projects...',
+    'status.active': 'Active account',
+    'status.login': 'Sign in',
+    'status.offline': 'API offline',
+    'theme': 'Theme',
+    'progress.global': 'Global progress',
+    'progress.next': 'Next step: finish the current lesson',
+    'gate.title': 'Sign in and choose a plan to access the path.',
+    'gate.body': 'Content, exercises, lab and cloud progress stay locked until login and subscription.',
+    'hero.eyebrow': 'Guided path',
+    'hero.title': 'Learn programming in the right order, without skipping foundations.',
+    'hero.body': 'The app now guides you from the first module to advanced projects: lesson first, practice after, review at the end.',
+    'hero.continue': 'Continue lesson',
+    'hero.openLab': 'Open lab',
+    'sequence.title': 'Roadmap from beginner to advanced',
+    'sequence.body': 'Follow the months in order. Exercises only make sense after reading the lesson and confirming understanding.',
+    'sequence.plan': 'Current plan',
+    'sequence.continue': 'Continue active module',
+    'sequence.locked': 'Locked',
+    'daily.title': 'Today mission',
+    'learn.eyebrow': 'Content first',
+    'learn.lessons': 'Module lessons',
+    'learn.done': 'Lesson completed',
+    'learn.markDone': 'Complete lesson',
+    'learn.story': 'View as story',
+    'learn.review': 'Review later',
+    'learn.lab': 'Practice in lab',
+    'learn.exerciseLockedTitle': 'Exercises unlock after the lesson',
+    'learn.exerciseLockedBody': 'Read the content, inspect the example and mark the lesson as completed. Then practice appears.',
+    'learn.exercises': 'Guided practice',
+    'account.heroTitle': 'Account, plan and cloud access.',
+    'account.heroBody': 'For a proper paid product, students must be signed in with an active plan before using the platform.',
+    'account.plans': 'Access plans',
+    'account.login': 'Login',
+    'account.register': 'Register',
+    'account.email': 'Email',
+    'account.password': 'Password',
+    'account.name': 'Name',
+    'account.buy': 'Pay now',
+    'account.enterToBuy': 'Sign in to buy',
+    'account.current': 'Active plan',
+    'account.license': 'License key',
+    'account.activate': 'Activate license',
+    'account.sync': 'Sync',
+  },
+  es: {
+    'nav.command': 'Inicio',
+    'nav.worlds': 'Ruta',
+    'nav.learn': 'Clases',
+    'nav.story': 'Historia',
+    'nav.lab': 'Laboratorio',
+    'nav.arcade': 'Arcade',
+    'nav.career': 'Carrera',
+    'nav.review': 'Repaso',
+    'nav.analytics': 'Analytics',
+    'nav.market': 'Tienda',
+    'nav.account': 'Cuenta',
+    'brand.subtitle': 'Academia guiada para devs',
+    'search.placeholder': 'Buscar clases, modulos y proyectos...',
+    'status.active': 'Cuenta activa',
+    'status.login': 'Entrar',
+    'status.offline': 'API offline',
+    'theme': 'Tema',
+    'progress.global': 'Progreso global',
+    'progress.next': 'Siguiente paso: terminar la clase actual',
+    'gate.title': 'Entra y elige un plan para acceder a la ruta.',
+    'gate.body': 'Contenido, ejercicios, laboratorio y progreso en la nube quedan bloqueados hasta iniciar sesion y suscribirse.',
+    'hero.eyebrow': 'Ruta guiada',
+    'hero.title': 'Aprende programacion en el orden correcto, sin saltarte la base.',
+    'hero.body': 'La app ahora guia desde el primer modulo hasta proyectos avanzados: clase primero, practica despues, repaso al final.',
+    'hero.continue': 'Continuar clase',
+    'hero.openLab': 'Abrir laboratorio',
+    'sequence.title': 'Ruta desde cero hasta avanzado',
+    'sequence.body': 'Sigue los meses en orden. Los ejercicios tienen sentido despues de leer la clase y confirmar comprension.',
+    'sequence.plan': 'Plan actual',
+    'sequence.continue': 'Continuar modulo activo',
+    'sequence.locked': 'Bloqueado',
+    'daily.title': 'Mision de hoy',
+    'learn.eyebrow': 'Contenido primero',
+    'learn.lessons': 'Clases del modulo',
+    'learn.done': 'Clase completada',
+    'learn.markDone': 'Completar clase',
+    'learn.story': 'Ver como historia',
+    'learn.review': 'Repasar despues',
+    'learn.lab': 'Practicar en laboratorio',
+    'learn.exerciseLockedTitle': 'Ejercicios liberados despues de la clase',
+    'learn.exerciseLockedBody': 'Lee el contenido, mira el ejemplo y marca la clase como completada. Despues aparece la practica.',
+    'learn.exercises': 'Practica guiada',
+    'account.heroTitle': 'Cuenta, plan y acceso en la nube.',
+    'account.heroBody': 'Para vender correctamente, el alumno debe iniciar sesion y tener un plan activo antes de usar la plataforma.',
+    'account.plans': 'Planes de acceso',
+    'account.login': 'Login',
+    'account.register': 'Registro',
+    'account.email': 'Email',
+    'account.password': 'Contrasena',
+    'account.name': 'Nombre',
+    'account.buy': 'Pagar ahora',
+    'account.enterToBuy': 'Entra para comprar',
+    'account.current': 'Plan activo',
+    'account.license': 'Clave de licencia',
+    'account.activate': 'Activar licencia',
+    'account.sync': 'Sincronizacion',
+  },
+};
 
 const worldIcons: Record<string, typeof Books> = {
   'world-foundation': Brain,
@@ -155,7 +334,24 @@ function formatPrice(priceCents: number) {
   });
 }
 
-function fallbackPlans(): CommercialPlan[] {
+function fallbackPlans(language: Language = 'pt'): CommercialPlan[] {
+  const features = {
+    pt: {
+      starter: ['Fundamentos ate o mes 6', 'Aulas, exercicios e revisao', 'Progresso em nuvem com licenca ativa'],
+      pro: ['Todos os 22 meses', 'Laboratorio, arcade e analytics', 'Projetos e revisoes avancadas'],
+      lifetime: ['Pagamento unico', 'Acesso completo vitalicio', 'Ideal para venda direta'],
+    },
+    en: {
+      starter: ['Foundations up to month 6', 'Lessons, exercises and review', 'Cloud progress with active license'],
+      pro: ['All 22 months', 'Lab, arcade and analytics', 'Projects and advanced reviews'],
+      lifetime: ['One-time payment', 'Full lifetime access', 'Ideal for direct sales'],
+    },
+    es: {
+      starter: ['Fundamentos hasta el mes 6', 'Clases, ejercicios y repaso', 'Progreso en la nube con licencia activa'],
+      pro: ['Los 22 meses completos', 'Laboratorio, arcade y analytics', 'Proyectos y repasos avanzados'],
+      lifetime: ['Pago unico', 'Acceso completo vitalicio', 'Ideal para venta directa'],
+    },
+  }[language];
   return [
     {
       id: 'starter',
@@ -167,7 +363,7 @@ function fallbackPlans(): CommercialPlan[] {
       durationDays: 30,
       seats: 1,
       maxMonth: 6,
-      features: ['Fundamentos ate o mes 6', 'Aulas, exercicios e revisao', 'Progresso em nuvem com licenca ativa'],
+      features: features.starter,
     },
     {
       id: 'pro',
@@ -179,7 +375,7 @@ function fallbackPlans(): CommercialPlan[] {
       durationDays: 30,
       seats: 1,
       maxMonth: 22,
-      features: ['Todos os 22 meses', 'Laboratorio, arcade e analytics', 'Projetos e revisoes avancadas'],
+      features: features.pro,
     },
     {
       id: 'lifetime',
@@ -191,7 +387,7 @@ function fallbackPlans(): CommercialPlan[] {
       durationDays: null,
       seats: 1,
       maxMonth: 22,
-      features: ['Pagamento unico', 'Acesso completo vitalicio', 'Ideal para venda direta'],
+      features: features.lifetime,
     },
   ];
 }
@@ -272,8 +468,9 @@ CREATE INDEX idx_progress_events_module ON progress_events(module_id);`;
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('command');
+  const [screen, setScreen] = useState<Screen>('account');
   const [theme, setTheme] = useState<PlatformTheme>('obsidian');
+  const [language, setLanguage] = useState<Language>('pt');
   const [navOpen, setNavOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeModuleId, setActiveModuleId] = useState(modules[0]?.id);
@@ -365,9 +562,10 @@ export default function App() {
     reviewAnswers,
     unlockedRewards,
     theme,
+    language,
     lastScreen: screen,
     updatedAt: new Date().toISOString(),
-  }), [activeModuleId, activeLessonId, gameScores, completedLessons, completedExercises, completedMissions, reviewAnswers, unlockedRewards, theme, screen]);
+  }), [activeModuleId, activeLessonId, gameScores, completedLessons, completedExercises, completedMissions, reviewAnswers, unlockedRewards, theme, language, screen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -403,6 +601,7 @@ export default function App() {
     if (saved.reviewAnswers && typeof saved.reviewAnswers === 'object') setReviewAnswers(saved.reviewAnswers as Record<string, boolean>);
     if (saved.unlockedRewards && typeof saved.unlockedRewards === 'object') setUnlockedRewards(saved.unlockedRewards as Record<string, boolean>);
     if (saved.theme === 'obsidian' || saved.theme === 'nexus' || saved.theme === 'daybreak') setTheme(saved.theme);
+    if (saved.language === 'pt' || saved.language === 'en' || saved.language === 'es') setLanguage(saved.language);
   }, []);
 
   useEffect(() => {
@@ -411,17 +610,19 @@ export default function App() {
 
   const activePlan = commercial.access ? commercial.user?.license?.plan as keyof typeof planRules | undefined : undefined;
   const activeAllowance = activePlan && activePlan in planRules ? planRules[activePlan] : null;
-  const isLicensedRuntime = commercial.online && commercial.mode === 'licensed';
+  const isLicensedRuntime = commercial.online;
+  const t = (key: string) => copy[language][key] ?? copy.pt[key] ?? key;
 
   function canUseScreen(nextScreen: Screen) {
-    if (!isLicensedRuntime || nextScreen === 'account' || nextScreen === 'command' || nextScreen === 'worlds') return true;
+    if (nextScreen === 'account') return true;
+    if (!commercial.checked || !isLicensedRuntime || !commercial.user || !commercial.access) return false;
     if (!activeAllowance) return false;
     return activeAllowance.screens.has(nextScreen);
   }
 
   function canUseModule(module: Module) {
-    if (!isLicensedRuntime) return true;
-    if (!activeAllowance) return module.month <= 2;
+    if (!commercial.checked || !isLicensedRuntime || !commercial.user || !commercial.access) return false;
+    if (!activeAllowance) return false;
     return module.month <= activeAllowance.maxMonth;
   }
 
@@ -441,6 +642,16 @@ export default function App() {
     setScreen(nextScreen);
     setNavOpen(false);
   }
+
+  useEffect(() => {
+    if (!commercial.checked || screen === 'account') return;
+    const allowed =
+      commercial.online &&
+      Boolean(commercial.user) &&
+      commercial.access &&
+      Boolean(activeAllowance?.screens.has(screen));
+    if (!allowed) setScreen('account');
+  }, [commercial.checked, commercial.online, commercial.user, commercial.access, activeAllowance, screen]);
 
   async function refreshCommercialAccount() {
     const me = await getCommercialMe();
@@ -464,7 +675,7 @@ export default function App() {
           </div>
           <div>
             <strong>DevQuest</strong>
-            <span>Academia RPG Tech</span>
+            <span>{t('brand.subtitle')}</span>
           </div>
           <button className="icon-btn close-btn" onClick={() => setNavOpen(false)} aria-label="Fechar menu">
             <X size={20} />
@@ -494,7 +705,8 @@ export default function App() {
                 }}
               >
                 <Icon size={19} />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
+                {!canUseScreen(item.id) && item.id !== 'account' && <Lock size={14} className="nav-lock" />}
               </button>
             );
           })}
@@ -502,13 +714,13 @@ export default function App() {
 
         <div className="sidebar-card">
           <div className="split">
-            <span>Progresso global</span>
+            <span>{t('progress.global')}</span>
             <strong>{metrics.progress}%</strong>
           </div>
           <div className="meter">
             <i style={{ width: `${metrics.progress}%` }} />
           </div>
-          <small>Proximo rank: Pleno em evolucao</small>
+          <small>{t('progress.next')}</small>
         </div>
       </aside>
 
@@ -522,15 +734,20 @@ export default function App() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Pesquisar aulas, mundos, bugs, projetos..."
+              placeholder={t('search.placeholder')}
             />
           </div>
+          <select className="language-switch" value={language} onChange={(event) => setLanguage(event.target.value as Language)} aria-label="Idioma">
+            <option value="pt">PT</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+          </select>
           <div className="hud">
             <span><Flame size={16} />{metrics.streak} dias</span>
             <span><Star size={16} />{metrics.xp.toLocaleString('pt-BR')} XP</span>
             <span><Coins size={16} />{metrics.coins.toLocaleString('pt-BR')}</span>
             <button className="hud-account" onClick={() => setScreen('account')}>
-              <ShieldCheck size={16} />{commercial.user ? 'Conta ativa' : commercial.online ? 'Entrar' : 'Offline'}
+              <ShieldCheck size={16} />{commercial.user ? t('status.active') : commercial.online ? t('status.login') : t('status.offline')}
             </button>
           </div>
           <button
@@ -538,7 +755,7 @@ export default function App() {
             onClick={() => setTheme(theme === 'obsidian' ? 'nexus' : theme === 'nexus' ? 'daybreak' : 'obsidian')}
           >
             <Moon size={17} />
-            Tema
+            {t('theme')}
           </button>
         </header>
 
@@ -553,6 +770,7 @@ export default function App() {
               onCompleteMission={(missionId) => setCompletedMissions((missions) => ({ ...missions, [missionId]: !missions[missionId] }))}
               activePlanName={commercial.user?.license?.planName ?? null}
               canUseModule={canUseModule}
+              t={t}
             />
           )}
           {screen === 'worlds' && (
@@ -564,6 +782,7 @@ export default function App() {
               completedExercises={completedExercises}
               gameScores={gameScores}
               canUseModule={canUseModule}
+              t={t}
             />
           )}
           {screen === 'learn' && (
@@ -576,6 +795,7 @@ export default function App() {
               completedExercises={completedExercises}
               onMarkLessonDone={(lessonId) => setCompletedLessons((lessons) => ({ ...lessons, [lessonId]: true }))}
               onExerciseResult={(exerciseId, correct) => setCompletedExercises((exercises) => ({ ...exercises, [exerciseId]: correct }))}
+              t={t}
             />
           )}
           {screen === 'story' && <StoryMode module={activeModule} setScreen={setScreen} />}
@@ -608,6 +828,8 @@ export default function App() {
               refreshCommercialAccount={refreshCommercialAccount}
               logoutCommercialAccount={logoutCommercialAccount}
               progress={commercialProgress}
+              language={language}
+              t={t}
               applyCloudProgress={(progress) => {
                 if (typeof progress.activeModuleId === 'string') setActiveModuleId(progress.activeModuleId);
                 if (typeof progress.activeLessonId === 'string') setActiveLessonId(progress.activeLessonId);
@@ -618,6 +840,7 @@ export default function App() {
                 if (progress.reviewAnswers && typeof progress.reviewAnswers === 'object') setReviewAnswers(progress.reviewAnswers as Record<string, boolean>);
                 if (progress.unlockedRewards && typeof progress.unlockedRewards === 'object') setUnlockedRewards(progress.unlockedRewards as Record<string, boolean>);
                 if (progress.theme === 'obsidian' || progress.theme === 'nexus' || progress.theme === 'daybreak') setTheme(progress.theme);
+                if (progress.language === 'pt' || progress.language === 'en' || progress.language === 'es') setLanguage(progress.language);
               }}
             />
           )}
@@ -636,6 +859,7 @@ function CommandCenter({
   onCompleteMission,
   activePlanName,
   canUseModule,
+  t,
 }: {
   metrics: ReturnType<typeof createMetricsShape>;
   activeModule: Module;
@@ -645,6 +869,7 @@ function CommandCenter({
   onCompleteMission: (missionId: string) => void;
   activePlanName: string | null;
   canUseModule: (module: Module) => boolean;
+  t: (key: string) => string;
 }) {
   const currentRank = rankForLevel(metrics.level);
   const nextRank = nextRankForLevel(metrics.level);
@@ -667,17 +892,14 @@ function CommandCenter({
     <section className="stack">
       <div className="hero-layout">
         <article className="hero-panel">
-          <span className="eyebrow"><Sparkles size={16} /> Plataforma 2.0 completa</span>
-          <h1>Aprenda como se estivesse subindo de nivel em uma carreira tech real.</h1>
-          <p>
-            Uma academia com mundos, aulas narrativas, revisao inteligente, projetos em sprint,
-            laboratorio estilo IDE, arcade, carreira, loja, conquistas e analytics.
-          </p>
+          <span className="eyebrow"><Sparkles size={16} /> {t('hero.eyebrow')}</span>
+          <h1>{t('hero.title')}</h1>
+          <p>{t('hero.body')}</p>
           <div className="hero-actions">
             <button className="primary-btn" onClick={() => selectModule(activeModule)}>
-              Continuar aula <ChevronRight size={18} />
+              {t('hero.continue')} <ChevronRight size={18} />
             </button>
-            <button className="ghost-btn" onClick={() => setScreen('lab')}>Abrir laboratorio</button>
+            <button className="ghost-btn" onClick={() => setScreen('lab')}>{t('hero.openLab')}</button>
           </div>
         </article>
 
@@ -704,12 +926,13 @@ function CommandCenter({
         activePlanName={activePlanName}
         canUseModule={canUseModule}
         selectModule={selectModule}
+        t={t}
       />
 
       <div className="section-title">
         <div>
-          <span className="eyebrow"><Target size={15} /> Plano adaptativo</span>
-          <h2>Missao de hoje</h2>
+          <span className="eyebrow"><Target size={15} /> {t('hero.eyebrow')}</span>
+          <h2>{t('daily.title')}</h2>
         </div>
         <strong>{dailyMinutes} min - ate +{dailyXp} XP</strong>
       </div>
@@ -768,21 +991,23 @@ function LearningSequence({
   activePlanName,
   canUseModule,
   selectModule,
+  t,
 }: {
   activeModule: Module;
   activePlanName: string | null;
   canUseModule: (module: Module) => boolean;
   selectModule: (module: Module, nextScreen?: Screen) => void;
+  t: (key: string) => string;
 }) {
   return (
-    <Panel title="Sequencia recomendada" icon={<Path size={22} weight="duotone" />}>
+    <Panel title={t('sequence.title')} icon={<Path size={22} weight="duotone" />}>
       <div className="sequence-header">
         <div>
-          <span>Comece pelo Mes 1 e avance por fase. Extras entram depois da base fullstack.</span>
-          <strong>Plano atual: {activePlanName ?? 'Preview/local'}</strong>
+          <span>{t('sequence.body')}</span>
+          <strong>{t('sequence.plan')}: {activePlanName ?? '-'}</strong>
         </div>
         <button className="primary-btn" onClick={() => selectModule(activeModule)}>
-          Continuar modulo ativo <ChevronRight size={17} />
+          {t('sequence.continue')} <ChevronRight size={17} />
         </button>
       </div>
       <div className="sequence-grid">
@@ -809,7 +1034,7 @@ function LearningSequence({
                       title={unlocked ? module.title : 'Disponivel no plano Pro ou Vitalicio'}
                     >
                       <span>{module.month}</span>
-                      {unlocked ? module.title : 'Bloqueado'}
+                      {unlocked ? module.title : t('sequence.locked')}
                     </button>
                   );
                 })}
@@ -830,6 +1055,7 @@ function WorldMap({
   completedExercises,
   gameScores,
   canUseModule,
+  t,
 }: {
   modules: Module[];
   activeModule: Module;
@@ -838,14 +1064,15 @@ function WorldMap({
   completedExercises: Record<string, boolean>;
   gameScores: Record<string, number>;
   canUseModule: (module: Module) => boolean;
+  t: (key: string) => string;
 }) {
   return (
     <section className="world-layout">
       <div className="stack">
         <div className="section-title">
           <div>
-            <span className="eyebrow"><MapIcon size={15} /> Mapa de conhecimento</span>
-            <h2>Mundos e trilhas</h2>
+            <span className="eyebrow"><MapIcon size={15} /> {t('nav.worlds')}</span>
+            <h2>{t('sequence.title')}</h2>
           </div>
           <strong>{modules.length} modulos encontrados</strong>
         </div>
@@ -918,6 +1145,7 @@ function LearningRoom({
   completedExercises,
   onMarkLessonDone,
   onExerciseResult,
+  t,
 }: {
   module: Module;
   lesson: LessonBlock | undefined;
@@ -927,6 +1155,7 @@ function LearningRoom({
   completedExercises: Record<string, boolean>;
   onMarkLessonDone: (lessonId: string) => void;
   onExerciseResult: (exerciseId: string, correct: boolean) => void;
+  t: (key: string) => string;
 }) {
   const [activeExerciseId, setActiveExerciseId] = useState(module.exercises[0]?.id);
   const activeExercise = module.exercises.find((exercise) => exercise.id === activeExerciseId) ?? module.exercises[0];
@@ -942,7 +1171,7 @@ function LearningRoom({
     <section className="learn-layout">
       <aside className="lesson-nav">
         <span className="eyebrow"><BookOpen size={15} /> {module.title}</span>
-        <h2>Aulas do modulo</h2>
+        <h2>{t('learn.lessons')}</h2>
         <div className="lesson-list">
           {module.lessons.map((item, index) => (
             <button
@@ -959,7 +1188,7 @@ function LearningRoom({
       </aside>
 
       <article className="lesson-stage">
-        <span className="eyebrow"><GraduationCap size={15} /> Aula escrita com contexto</span>
+        <span className="eyebrow"><GraduationCap size={15} /> {t('learn.eyebrow')}</span>
         <h1>{lesson.heading}</h1>
         <div className="lesson-copy">
           {cleanMarkdown(lesson.body).split(/\n\s*\n/).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
@@ -980,19 +1209,27 @@ function LearningRoom({
         )}
         <div className="lesson-actions">
           <button className={completedLessons[lesson.id] ? 'success-pill' : 'primary-btn'} onClick={() => onMarkLessonDone(lesson.id)}>
-            {completedLessons[lesson.id] ? 'Aula concluida' : 'Concluir aula'}
+            {completedLessons[lesson.id] ? t('learn.done') : t('learn.markDone')}
           </button>
-          <button className="primary-btn" onClick={() => setScreen('story')}>Transformar em historia</button>
-          <button className="ghost-btn" onClick={() => setScreen('review')}>Criar revisao</button>
-          <button className="ghost-btn" onClick={() => setScreen('lab')}>Praticar no laboratorio</button>
+          <button className="primary-btn" onClick={() => setScreen('story')}>{t('learn.story')}</button>
+          <button className="ghost-btn" onClick={() => setScreen('review')}>{t('learn.review')}</button>
+          <button className="ghost-btn" onClick={() => setScreen('lab')}>{t('learn.lab')}</button>
         </div>
 
-        {activeExercise && (
+        {!completedLessons[lesson.id] && (
+          <div className="exercise-stage locked-stage">
+            <Lock size={24} />
+            <h2>{t('learn.exerciseLockedTitle')}</h2>
+            <p>{t('learn.exerciseLockedBody')}</p>
+          </div>
+        )}
+
+        {activeExercise && completedLessons[lesson.id] && (
           <div className="exercise-stage">
             <div className="section-title compact">
               <div>
-                <span className="eyebrow"><Target size={15} /> Treino guiado</span>
-                <h2>Exercicios do modulo</h2>
+                <span className="eyebrow"><Target size={15} /> {t('learn.exercises')}</span>
+                <h2>{t('learn.exercises')}</h2>
               </div>
               <strong>{module.exercises.filter((exercise) => completedExercises[exercise.id]).length}/{module.exercises.length} corretos</strong>
             </div>
@@ -1485,6 +1722,8 @@ function CommercialAccount({
   refreshCommercialAccount,
   logoutCommercialAccount,
   progress,
+  language,
+  t,
   applyCloudProgress,
 }: {
   commercial: CommercialState;
@@ -1492,6 +1731,8 @@ function CommercialAccount({
   refreshCommercialAccount: () => Promise<void>;
   logoutCommercialAccount: () => void;
   progress: Record<string, unknown>;
+  language: Language;
+  t: (key: string) => string;
   applyCloudProgress: (progress: Record<string, unknown>) => void;
 }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -1506,7 +1747,7 @@ function CommercialAccount({
   useEffect(() => {
     if (!commercial.online) return;
     let cancelled = false;
-    getCommercialPlans()
+    getCommercialPlans(language)
       .then((result) => {
         if (!cancelled) setPlans(result.plans);
       })
@@ -1516,7 +1757,7 @@ function CommercialAccount({
     return () => {
       cancelled = true;
     };
-  }, [commercial.online]);
+  }, [commercial.online, language]);
 
   async function submitAccount() {
     setBusy(true);
@@ -1603,12 +1844,9 @@ function CommercialAccount({
     <section className="account-layout">
       <div className="stack">
         <article className="feature-panel account-hero">
-          <span className="eyebrow"><ShieldCheck size={15} /> Produto comercial</span>
-          <h1>Conta, licenca e progresso em nuvem.</h1>
-          <p>
-            Esta camada transforma o app em uma base vendavel: usuario com senha protegida,
-            pagamento por plano, ativacao de licenca e sincronizacao no servidor.
-          </p>
+          <span className="eyebrow"><ShieldCheck size={15} /> {t('nav.account')}</span>
+          <h1>{t('account.heroTitle')}</h1>
+          <p>{t('account.heroBody')}</p>
           <div className="account-status-grid">
             <div>
               <span>API</span>
@@ -1625,9 +1863,9 @@ function CommercialAccount({
           </div>
         </article>
 
-        <Panel title="Planos de acesso" icon={<CreditCard size={22} weight="duotone" />}>
+        <Panel title={t('account.plans')} icon={<CreditCard size={22} weight="duotone" />}>
           <div className="pricing-grid">
-            {(plans.length ? plans : fallbackPlans()).map((plan) => {
+            {(plans.length ? plans : fallbackPlans(language)).map((plan) => {
               const current = commercial.user?.license?.plan === plan.id;
               return (
                 <article className={`price-card ${current ? 'current' : ''}`} key={plan.id}>
@@ -1636,7 +1874,7 @@ function CommercialAccount({
                     {plan.id === 'pro' && <ChartLineUp size={28} weight="duotone" />}
                     {plan.id === 'lifetime' && <Certificate size={28} weight="duotone" />}
                   </div>
-                  <span>{plan.billing === 'lifetime' ? 'Pagamento unico' : 'Assinatura mensal'}</span>
+                  <span>{plan.billing === 'lifetime' ? 'Lifetime' : 'Monthly'}</span>
                   <h3>{plan.name}</h3>
                   <strong>{formatPrice(plan.priceCents)}{plan.billing === 'monthly' ? '/mes' : ''}</strong>
                   <p>Libera ate o mes {plan.maxMonth} da trilha.</p>
@@ -1650,7 +1888,7 @@ function CommercialAccount({
                     disabled={busy || !commercial.user || current}
                     onClick={() => startCheckout(plan.id)}
                   >
-                    {current ? 'Plano ativo' : commercial.user ? 'Pagar agora' : 'Entre para comprar'}
+                    {current ? t('account.current') : commercial.user ? t('account.buy') : t('account.enterToBuy')}
                   </button>
                 </article>
               );
@@ -1659,7 +1897,7 @@ function CommercialAccount({
         </Panel>
 
         {commercial.user && (
-          <Panel title="Sincronizacao" icon={<ShieldCheck size={20} />}>
+          <Panel title={t('account.sync')} icon={<ShieldCheck size={20} />}>
             <div className="sync-grid">
               <button className="primary-btn" disabled={busy || !commercial.access} onClick={syncUp}>Enviar progresso</button>
               <button className="ghost-btn" disabled={busy || !commercial.access} onClick={syncDown}>Baixar progresso</button>
@@ -1676,7 +1914,7 @@ function CommercialAccount({
       <aside className="command-card sticky">
         {commercial.user ? (
           <>
-            <span className="eyebrow"><Crown size={15} /> Conta ativa</span>
+            <span className="eyebrow"><Crown size={15} /> {t('status.active')}</span>
             <h2>{commercial.user.name}</h2>
             <p>{commercial.user.email}</p>
             <div className="account-facts">
@@ -1684,7 +1922,7 @@ function CommercialAccount({
               <span><strong>{commercial.user.license?.plan ?? 'sem licenca'}</strong> Plano</span>
               <span><strong>{commercial.user.license?.status ?? 'pendente'}</strong> Status</span>
             </div>
-            <label className="field-label">Chave de licenca</label>
+            <label className="field-label">{t('account.license')}</label>
             <input
               className="field-input"
               value={licenseKey}
@@ -1692,30 +1930,30 @@ function CommercialAccount({
               placeholder="DEVQUEST-XXXX-XXXX"
             />
             <button className="primary-btn full" disabled={busy || !licenseKey.trim()} onClick={activateLicense}>
-              Ativar licenca
+              {t('account.activate')}
             </button>
           </>
         ) : (
           <>
-            <span className="eyebrow"><ShieldCheck size={15} /> Entrar</span>
-            <h2>{mode === 'login' ? 'Acessar conta' : 'Criar conta'}</h2>
+            <span className="eyebrow"><ShieldCheck size={15} /> {t('status.login')}</span>
+            <h2>{mode === 'login' ? t('account.login') : t('account.register')}</h2>
             {!commercial.online && <p>Servidor comercial offline. Rode `npm run api:dev` ou `npm start` para ativar API.</p>}
             <div className="mode-tabs">
-              <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Login</button>
-              <button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Cadastro</button>
+              <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>{t('account.login')}</button>
+              <button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>{t('account.register')}</button>
             </div>
             {mode === 'register' && (
               <>
-                <label className="field-label">Nome</label>
+                <label className="field-label">{t('account.name')}</label>
                 <input className="field-input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nome do aluno" />
               </>
             )}
-            <label className="field-label">Email</label>
+            <label className="field-label">{t('account.email')}</label>
             <input className="field-input" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="aluno@email.com" />
-            <label className="field-label">Senha</label>
+            <label className="field-label">{t('account.password')}</label>
             <input className="field-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="minimo 8 caracteres" />
             <button className="primary-btn full" disabled={busy || !commercial.online || !email.trim() || !password.trim()} onClick={submitAccount}>
-              {mode === 'login' ? 'Entrar' : 'Criar conta'}
+              {mode === 'login' ? t('account.login') : t('account.register')}
             </button>
           </>
         )}
