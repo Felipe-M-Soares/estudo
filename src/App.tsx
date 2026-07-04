@@ -70,7 +70,7 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
   useDesignTheme();
 
   return (
-    <div className="app-shell flex min-h-screen">
+    <div className="app-shell app-shell-v2 flex min-h-screen">
       <Sidebar
         progress={progress}
         open={sidebarOpen}
@@ -83,7 +83,7 @@ function AuthenticatedApp({ profileId, profileName, profileEmoji, onLogout }: Au
       <div className="flex min-h-screen flex-1 flex-col lg:pl-0">
         <Topbar progress={progress} overallPercent={overallPercent} onMenuClick={() => setSidebarOpen(true)} />
 
-        <main className="flex-1 pb-20 lg:pb-0">
+        <main className="flex-1 pb-20 lg:pb-0 lg:pr-4">
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<DashboardPage progress={progress} overallPercent={overallPercent} onReviewResult={markReviewDone} />} />

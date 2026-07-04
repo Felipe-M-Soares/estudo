@@ -428,3 +428,121 @@
   animation: shimmer-sweep 2.2s ease-in-out infinite;
 }
 
+
+/* ===== Redesign 2.0 — game hub profissional ===== */
+@layer utilities {
+  .app-shell-v2 {
+    background:
+      radial-gradient(circle at 12% 10%, color-mix(in oklab, var(--color-cyan-400) 16%, transparent), transparent 28%),
+      radial-gradient(circle at 86% 16%, color-mix(in oklab, var(--color-amber-400) 14%, transparent), transparent 30%),
+      linear-gradient(135deg, var(--color-base-950), color-mix(in oklab, var(--color-base-900) 86%, black));
+  }
+
+  .game-frame {
+    position: relative;
+    border: 1px solid color-mix(in oklab, var(--color-base-500) 50%, transparent);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.045), transparent 44%),
+      linear-gradient(135deg, color-mix(in oklab, var(--color-base-850) 94%, transparent), color-mix(in oklab, var(--color-base-950) 84%, transparent));
+    box-shadow: 0 20px 80px -54px rgba(0,0,0,0.95), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .game-frame::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+      linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-mint-400) 32%, transparent), transparent) top/100% 1px no-repeat,
+      linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-violet-400) 22%, transparent), transparent) bottom/100% 1px no-repeat;
+  }
+
+  .hud-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.35rem;
+    border: 1px solid color-mix(in oklab, var(--color-base-600) 64%, transparent);
+    background:
+      radial-gradient(circle at 100% 0%, rgba(255,255,255,0.08), transparent 36%),
+      linear-gradient(145deg, color-mix(in oklab, var(--color-base-850) 92%, transparent), color-mix(in oklab, var(--color-base-950) 76%, transparent));
+    box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255,255,255,0.055);
+  }
+  .hud-card-hover { transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease; }
+  .hud-card-hover:hover { transform: translateY(-3px); border-color: color-mix(in oklab, var(--color-mint-400) 42%, var(--color-base-600)); box-shadow: var(--shadow-card-hover), 0 0 36px -20px var(--color-mint-400); }
+
+  .zone-title {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--color-base-50);
+  }
+  .zone-title::before {
+    content: '';
+    height: .75rem;
+    width: .75rem;
+    border-radius: .28rem;
+    background: linear-gradient(135deg, var(--color-mint-400), var(--color-cyan-400));
+    box-shadow: 0 0 18px -4px var(--color-mint-400);
+    transform: rotate(45deg);
+  }
+
+  .quest-map {
+    background:
+      linear-gradient(to right, color-mix(in oklab, var(--color-base-700) 38%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-base-700) 38%, transparent) 1px, transparent 1px),
+      radial-gradient(circle at 10% 20%, color-mix(in oklab, var(--color-mint-400) 10%, transparent), transparent 24%);
+    background-size: 44px 44px, 44px 44px, 100% 100%;
+  }
+
+  .mission-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--color-mint-400), var(--color-cyan-400));
+    color: var(--color-base-950);
+    font-weight: 800;
+    box-shadow: 0 16px 38px -22px var(--color-cyan-400), inset 0 1px 0 rgba(255,255,255,.42);
+    transition: transform .2s ease, filter .2s ease;
+  }
+  .mission-button:hover { transform: translateY(-2px); filter: brightness(1.06); }
+
+  .inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: .75rem;
+  }
+
+  .pixel-corner { clip-path: polygon(0 10px,10px 10px,10px 0,calc(100% - 10px) 0,calc(100% - 10px) 10px,100% 10px,100% calc(100% - 10px),calc(100% - 10px) calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,10px calc(100% - 10px),0 calc(100% - 10px)); }
+
+  .module-workbench {
+    display: grid;
+    gap: 1rem;
+  }
+  @media (min-width: 1024px) {
+    .module-workbench { grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
+  }
+
+  .tab-dock {
+    display: grid;
+    gap: .5rem;
+  }
+  @media (max-width: 1023px) {
+    .tab-dock { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: .25rem; }
+  }
+
+  .arcade-card {
+    min-height: 190px;
+    border-radius: 1.4rem;
+    border: 1px solid color-mix(in oklab, var(--color-violet-400) 18%, var(--color-base-700));
+    background:
+      radial-gradient(circle at 20% 0%, color-mix(in oklab, var(--color-violet-400) 18%, transparent), transparent 38%),
+      linear-gradient(145deg, color-mix(in oklab, var(--color-base-850) 92%, transparent), var(--color-base-950));
+    box-shadow: var(--shadow-card);
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+  }
+  .arcade-card:hover { transform: translateY(-4px) scale(1.01); border-color: color-mix(in oklab, var(--color-violet-400) 46%, var(--color-base-600)); box-shadow: var(--shadow-card-hover), 0 0 42px -24px var(--color-violet-400); }
+}
