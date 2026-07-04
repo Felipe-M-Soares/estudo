@@ -54,16 +54,11 @@ import {
   achievementCatalog,
   careerLadder,
   dailyPlan,
-  intelligenceCards,
   learningWorlds,
   marketplace,
   mentorActions,
-  productStats,
   projectCampaigns,
   reviewQueue,
-  seasons,
-  skillTree,
-  studioFiles,
   type PlatformTheme,
 } from './data/platform';
 
@@ -117,6 +112,94 @@ function firstParagraph(text: string) {
   return cleanMarkdown(text).split(/\n\s*\n/)[0] ?? cleanMarkdown(text).slice(0, 220);
 }
 
+function countDone(values: Record<string, boolean>) {
+  return Object.values(values).filter(Boolean).length;
+}
+
+function readMinutes(duration: string) {
+  return Number(duration.match(/\d+/)?.[0] ?? 0);
+}
+
+function rankForLevel(level: number) {
+  return careerLadder
+    .filter((rank) => level >= rank.level)
+    .at(-1) ?? careerLadder[0];
+}
+
+function nextRankForLevel(level: number) {
+  return careerLadder.find((rank) => rank.level > level) ?? null;
+}
+
+function moduleCompletion(
+  module: Module,
+  completedLessons: Record<string, boolean>,
+  completedExercises: Record<string, boolean>,
+  gameScores: Record<string, number>,
+) {
+  const total = module.lessons.length + module.exercises.length + module.games.length;
+  if (total === 0) return 0;
+  const done =
+    module.lessons.filter((lesson) => completedLessons[lesson.id]).length +
+    module.exercises.filter((exercise) => completedExercises[exercise.id]).length +
+    module.games.filter((game) => gameScores[game.gameId] !== undefined).length;
+  return clampPercent(Math.round((done / total) * 100));
+}
+
+function filesForModule(module: Module) {
+  const base = module.track === 'backend'
+    ? ['src/server/routes.ts', 'src/server/services.ts', 'src/server/schema.sql', 'tests/api.spec.ts']
+    : module.track === 'devops'
+      ? ['Dockerfile', 'docker-compose.yml', '.github/workflows/deploy.yml', 'infra/healthcheck.ts']
+      : ['src/app/page.tsx', 'src/components/QuestCard.tsx', 'src/hooks/useProgress.ts', 'tests/ui.spec.ts'];
+  return ['README.md', ...base];
+}
+
+function studioPreview(module: Module, file: string) {
+  if (file === 'README.md') {
+    return `# ${module.title}
+
+Objetivo: ${module.goalLabel}
+
+Contexto: ${firstParagraph(module.intro)}
+
+Entregue uma versao pequena, testavel e explicavel antes de adicionar acabamento.`;
+  }
+
+  if (file.endsWith('.sql')) {
+    return `CREATE TABLE progress_events (
+  id TEXT PRIMARY KEY,
+  module_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_progress_events_module ON progress_events(module_id);`;
+  }
+
+  if (file.includes('Docker') || file.includes('docker-compose')) {
+    return `services:
+  app:
+    build: .
+    ports:
+      - "4173:4173"
+    environment:
+      NODE_ENV: production`;
+  }
+
+  return `export async function completeSprint(context) {
+  const requirements = await readRequirements(context)
+  const solution = buildSmallestUsefulVersion(requirements)
+  await testHappyPath(solution)
+  await testRiskyCase(solution)
+  return explainTradeoffs(solution)
+}`;
+}
+
+function mentorPrompt(action: string, module: Module, lesson: LessonBlock | undefined) {
+  const lessonPart = lesson ? `A aula atual e "${lesson.heading}".` : 'Ainda nao ha aula selecionada.';
+  return `${action} para o modulo "${module.title}". ${lessonPart} Use o contexto abaixo, corrija informacoes imprecisas, explique com exemplos praticos e finalize com uma tarefa verificavel:\n\n${firstParagraph(module.intro)}`;
+}
+
 export default function App() {
   const [screen, setScreen] = useState<Screen>('command');
   const [theme, setTheme] = useState<PlatformTheme>('obsidian');
@@ -125,6 +208,11 @@ export default function App() {
   const [activeModuleId, setActiveModuleId] = useState(modules[3]?.id ?? modules[0]?.id);
   const [activeLessonId, setActiveLessonId] = useState(modules[3]?.lessons[0]?.id ?? modules[0]?.lessons[0]?.id);
   const [gameScores, setGameScores] = useState<Record<string, number>>({});
+  const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({});
+  const [completedExercises, setCompletedExercises] = useState<Record<string, boolean>>({});
+  const [completedMissions, setCompletedMissions] = useState<Record<string, boolean>>({});
+  const [reviewAnswers, setReviewAnswers] = useState<Record<string, boolean>>({});
+  const [unlockedRewards, setUnlockedRewards] = useState<Record<string, boolean>>({});
   const [commercial, setCommercial] = useState<CommercialState>({
     checked: false,
     online: false,
@@ -162,7 +250,20 @@ export default function App() {
     const lessons = modules.reduce((sum, module) => sum + module.lessons.length, 0);
     const games = modules.reduce((sum, module) => sum + module.games.length, 0);
     const projects = modules.filter((module) => module.projectBrief || module.sprintLab).length;
-    const progress = clampPercent(Math.round((6 / modules.length) * 100));
+    const exerciseDone = countDone(completedExercises);
+    const lessonDone = countDone(completedLessons);
+    const missionDone = countDone(completedMissions);
+    const reviewDone = countDone(reviewAnswers);
+    const gameDone = Object.keys(gameScores).length;
+    const totalActions = lessons + totalExerciseCount() + games + dailyPlan.length + reviewQueue.length;
+    const doneActions = lessonDone + exerciseDone + gameDone + missionDone + reviewDone;
+    const gameXp = Object.values(gameScores).reduce((sum, score) => sum + Math.round(score * 2), 0);
+    const xp = exerciseDone * 60 + lessonDone * 35 + missionDone * 120 + reviewDone * 45 + gameXp;
+    const level = Math.max(1, Math.floor(xp / 250) + 1);
+    const spentCoins = Object.keys(unlockedRewards).reduce((sum, itemId) => {
+      const item = marketplace.find((reward) => reward.id === itemId);
+      return sum + (item?.price ?? 0);
+    }, 0);
     return {
       modules: modules.length,
       lessons,
@@ -170,22 +271,32 @@ export default function App() {
       checklist: totalChecklistCount(),
       games,
       projects,
-      progress,
-      xp: 12450,
-      level: 18,
-      coins: 3280,
-      streak: 15,
+      progress: clampPercent(Math.round((doneActions / Math.max(totalActions, 1)) * 100)),
+      xp,
+      level,
+      coins: Math.max(0, Math.floor(xp / 5) - spentCoins),
+      streak: doneActions > 0 ? 1 : 0,
+      lessonDone,
+      exerciseDone,
+      missionDone,
+      reviewDone,
+      gameDone,
     };
-  }, []);
+  }, [completedExercises, completedLessons, completedMissions, gameScores, reviewAnswers, unlockedRewards]);
 
   const commercialProgress = useMemo(() => ({
     activeModuleId,
     activeLessonId,
     gameScores,
+    completedLessons,
+    completedExercises,
+    completedMissions,
+    reviewAnswers,
+    unlockedRewards,
     theme,
     lastScreen: screen,
     updatedAt: new Date().toISOString(),
-  }), [activeModuleId, activeLessonId, gameScores, theme, screen]);
+  }), [activeModuleId, activeLessonId, gameScores, completedLessons, completedExercises, completedMissions, reviewAnswers, unlockedRewards, theme, screen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -211,6 +322,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const saved = readLocalCommercialProgress();
+    if (typeof saved.activeModuleId === 'string') setActiveModuleId(saved.activeModuleId);
+    if (typeof saved.activeLessonId === 'string') setActiveLessonId(saved.activeLessonId);
+    if (saved.gameScores && typeof saved.gameScores === 'object') setGameScores(saved.gameScores as Record<string, number>);
+    if (saved.completedLessons && typeof saved.completedLessons === 'object') setCompletedLessons(saved.completedLessons as Record<string, boolean>);
+    if (saved.completedExercises && typeof saved.completedExercises === 'object') setCompletedExercises(saved.completedExercises as Record<string, boolean>);
+    if (saved.completedMissions && typeof saved.completedMissions === 'object') setCompletedMissions(saved.completedMissions as Record<string, boolean>);
+    if (saved.reviewAnswers && typeof saved.reviewAnswers === 'object') setReviewAnswers(saved.reviewAnswers as Record<string, boolean>);
+    if (saved.unlockedRewards && typeof saved.unlockedRewards === 'object') setUnlockedRewards(saved.unlockedRewards as Record<string, boolean>);
+    if (saved.theme === 'obsidian' || saved.theme === 'nexus' || saved.theme === 'daybreak') setTheme(saved.theme);
+  }, []);
+
+  useEffect(() => {
     writeLocalCommercialProgress(commercialProgress);
   }, [commercialProgress]);
 
@@ -230,6 +354,9 @@ export default function App() {
     storeToken(null);
     setCommercial((current) => ({ ...current, user: null, access: false, error: null }));
   }
+
+  const currentRank = rankForLevel(metrics.level);
+  const playerName = commercial.user?.name ?? 'Visitante';
 
   return (
     <div className={`platform theme-${theme}`}>
@@ -252,8 +379,8 @@ export default function App() {
             <Crown size={22} />
           </div>
           <div>
-            <strong>Felipe</strong>
-            <span>Lv {metrics.level} - Junior Avancado</span>
+            <strong>{playerName}</strong>
+            <span>Lv {metrics.level} - {currentRank.title}</span>
           </div>
         </div>
 
@@ -320,14 +447,36 @@ export default function App() {
         </header>
 
         <main className="main-shell">
-          {screen === 'command' && <CommandCenter metrics={metrics} activeModule={activeModule} selectModule={selectModule} setScreen={setScreen} />}
-          {screen === 'worlds' && <WorldMap modules={filteredModules} activeModule={activeModule} selectModule={selectModule} />}
+          {screen === 'command' && (
+            <CommandCenter
+              metrics={metrics}
+              activeModule={activeModule}
+              selectModule={selectModule}
+              setScreen={setScreen}
+              completedMissions={completedMissions}
+              onCompleteMission={(missionId) => setCompletedMissions((missions) => ({ ...missions, [missionId]: !missions[missionId] }))}
+            />
+          )}
+          {screen === 'worlds' && (
+            <WorldMap
+              modules={filteredModules}
+              activeModule={activeModule}
+              selectModule={selectModule}
+              completedLessons={completedLessons}
+              completedExercises={completedExercises}
+              gameScores={gameScores}
+            />
+          )}
           {screen === 'learn' && (
             <LearningRoom
               module={activeModule}
               lesson={activeLesson}
               setLessonId={setActiveLessonId}
               setScreen={setScreen}
+              completedLessons={completedLessons}
+              completedExercises={completedExercises}
+              onMarkLessonDone={(lessonId) => setCompletedLessons((lessons) => ({ ...lessons, [lessonId]: true }))}
+              onExerciseResult={(exerciseId, correct) => setCompletedExercises((exercises) => ({ ...exercises, [exerciseId]: correct }))}
             />
           )}
           {screen === 'story' && <StoryMode module={activeModule} setScreen={setScreen} />}
@@ -338,11 +487,22 @@ export default function App() {
               onGameComplete={(gameId, score) => setGameScores((scores) => ({ ...scores, [gameId]: Math.max(scores[gameId] ?? 0, score) }))}
             />
           )}
-          {screen === 'career' && <CareerMode />}
-          {screen === 'review' && <ReviewCenter />}
+          {screen === 'career' && <CareerMode metrics={metrics} />}
+          {screen === 'review' && (
+            <ReviewCenter
+              reviewAnswers={reviewAnswers}
+              onReviewAnswer={(reviewId, remembered) => setReviewAnswers((answers) => ({ ...answers, [reviewId]: remembered }))}
+            />
+          )}
           {screen === 'mentor' && <MentorHub module={activeModule} lesson={activeLesson} />}
           {screen === 'analytics' && <AnalyticsCenter metrics={metrics} />}
-          {screen === 'market' && <Marketplace />}
+          {screen === 'market' && (
+            <Marketplace
+              metrics={metrics}
+              unlockedRewards={unlockedRewards}
+              onUnlock={(itemId) => setUnlockedRewards((rewards) => ({ ...rewards, [itemId]: true }))}
+            />
+          )}
           {screen === 'account' && (
             <CommercialAccount
               commercial={commercial}
@@ -354,6 +514,11 @@ export default function App() {
                 if (typeof progress.activeModuleId === 'string') setActiveModuleId(progress.activeModuleId);
                 if (typeof progress.activeLessonId === 'string') setActiveLessonId(progress.activeLessonId);
                 if (progress.gameScores && typeof progress.gameScores === 'object') setGameScores(progress.gameScores as Record<string, number>);
+                if (progress.completedLessons && typeof progress.completedLessons === 'object') setCompletedLessons(progress.completedLessons as Record<string, boolean>);
+                if (progress.completedExercises && typeof progress.completedExercises === 'object') setCompletedExercises(progress.completedExercises as Record<string, boolean>);
+                if (progress.completedMissions && typeof progress.completedMissions === 'object') setCompletedMissions(progress.completedMissions as Record<string, boolean>);
+                if (progress.reviewAnswers && typeof progress.reviewAnswers === 'object') setReviewAnswers(progress.reviewAnswers as Record<string, boolean>);
+                if (progress.unlockedRewards && typeof progress.unlockedRewards === 'object') setUnlockedRewards(progress.unlockedRewards as Record<string, boolean>);
                 if (progress.theme === 'obsidian' || progress.theme === 'nexus' || progress.theme === 'daybreak') setTheme(progress.theme);
               }}
             />
@@ -369,12 +534,33 @@ function CommandCenter({
   activeModule,
   selectModule,
   setScreen,
+  completedMissions,
+  onCompleteMission,
 }: {
   metrics: ReturnType<typeof createMetricsShape>;
   activeModule: Module;
   selectModule: (module: Module, nextScreen?: Screen) => void;
   setScreen: (screen: Screen) => void;
+  completedMissions: Record<string, boolean>;
+  onCompleteMission: (missionId: string) => void;
 }) {
+  const currentRank = rankForLevel(metrics.level);
+  const nextRank = nextRankForLevel(metrics.level);
+  const dailyMinutes = dailyPlan.reduce((sum, mission) => sum + readMinutes(mission.duration), 0);
+  const dailyXp = dailyPlan.reduce((sum, mission) => sum + mission.xp, 0);
+  const remainingLevels = nextRank ? nextRank.level - metrics.level : 0;
+  const seasonProgress = [
+    { title: 'Base de conteudo', subtitle: `${metrics.lessonDone}/${metrics.lessons} aulas concluidas`, progress: metrics.lessons ? Math.round((metrics.lessonDone / metrics.lessons) * 100) : 0, reward: 'Libera revisoes melhores' },
+    { title: 'Pratica guiada', subtitle: `${metrics.exerciseDone}/${metrics.exercises} exercicios corretos`, progress: metrics.exercises ? Math.round((metrics.exerciseDone / metrics.exercises) * 100) : 0, reward: 'Aumenta XP e moedas' },
+    { title: 'Arcade e projetos', subtitle: `${metrics.gameDone}/${metrics.games} jogos com pontuacao`, progress: metrics.games ? Math.round((metrics.gameDone / metrics.games) * 100) : 0, reward: 'Alimenta carreira e conquistas' },
+  ];
+  const insights = [
+    { title: 'Modulo ativo', value: activeModule.title, detail: activeModule.goalLabel },
+    { title: 'Rank atual', value: currentRank.title, detail: nextRank ? `Faltam ${remainingLevels} niveis para ${nextRank.title}.` : 'Ultimo rank da trilha liberado.' },
+    { title: 'Revisoes feitas', value: metrics.reviewDone, detail: `${reviewQueue.length - metrics.reviewDone} itens ainda pendentes.` },
+    { title: 'Saldo real', value: metrics.coins, detail: 'Moedas calculadas por XP ganho menos recompensas compradas.' },
+  ];
+
   return (
     <section className="stack">
       <div className="hero-layout">
@@ -397,8 +583,8 @@ function CommandCenter({
           <div className="rank-ring" style={{ ['--value' as string]: `${metrics.progress * 3.6}deg` }}>
             <span>{metrics.progress}%</span>
           </div>
-          <strong>Junior Avancado</strong>
-          <p>Faltam 4 missoes e 1 boss fight para liberar o rank Pleno.</p>
+          <strong>{currentRank.title}</strong>
+          <p>{nextRank ? `Faltam ${remainingLevels} niveis para liberar ${nextRank.title}.` : 'Todos os ranks principais foram liberados.'}</p>
         </aside>
       </div>
 
@@ -416,7 +602,7 @@ function CommandCenter({
           <span className="eyebrow"><Target size={15} /> Plano adaptativo</span>
           <h2>Missao de hoje</h2>
         </div>
-        <strong>43 min - +760 XP</strong>
+        <strong>{dailyMinutes} min - ate +{dailyXp} XP</strong>
       </div>
       <div className="mission-grid">
         {dailyPlan.map((mission, index) => (
@@ -427,8 +613,11 @@ function CommandCenter({
             <p>{mission.duration} - {mission.focus}</p>
             <footer>
               <strong>{mission.xp} XP</strong>
-              <small>{mission.reward}</small>
+              <button className={completedMissions[mission.id] ? 'success-pill' : 'ghost-btn'} onClick={() => onCompleteMission(mission.id)}>
+                {completedMissions[mission.id] ? 'Concluida' : 'Concluir'}
+              </button>
             </footer>
+            <small>{mission.reward}</small>
           </article>
         ))}
       </div>
@@ -436,7 +625,7 @@ function CommandCenter({
       <div className="dashboard-grid">
         <Panel title="Temporadas" icon={<Trophy size={20} />}>
           <div className="season-list">
-            {seasons.map((season) => (
+            {seasonProgress.map((season) => (
               <div className="season-row" key={season.title}>
                 <div>
                   <strong>{season.title}</strong>
@@ -451,7 +640,7 @@ function CommandCenter({
 
         <Panel title="Inteligencia de estudo" icon={<Activity size={20} />}>
           <div className="insight-grid">
-            {intelligenceCards.map((card) => (
+            {insights.map((card) => (
               <div className="insight-card" key={card.title}>
                 <span>{card.title}</span>
                 <strong>{card.value}</strong>
@@ -469,10 +658,16 @@ function WorldMap({
   modules,
   activeModule,
   selectModule,
+  completedLessons,
+  completedExercises,
+  gameScores,
 }: {
   modules: Module[];
   activeModule: Module;
   selectModule: (module: Module, nextScreen?: Screen) => void;
+  completedLessons: Record<string, boolean>;
+  completedExercises: Record<string, boolean>;
+  gameScores: Record<string, number>;
 }) {
   return (
     <section className="world-layout">
@@ -500,22 +695,21 @@ function WorldMap({
         </div>
 
         <div className="module-grid">
-          {modules.map((module, index) => {
-            const progress = clampPercent(index < 3 ? 100 : index === 3 ? 62 : index < 12 ? 20 + index * 4 : 0);
-            const locked = index > 15;
+          {modules.map((module) => {
+            const progress = moduleCompletion(module, completedLessons, completedExercises, gameScores);
             return (
               <button
-                className={`module-tile ${activeModule.id === module.id ? 'selected' : ''} ${locked ? 'locked' : ''}`}
+                className={`module-tile ${activeModule.id === module.id ? 'selected' : ''}`}
                 key={module.id}
                 onClick={() => selectModule(module)}
               >
                 <div className="module-topline">
                   <span>{module.emoji}</span>
-                  {locked ? <Lock size={18} /> : <CheckCircle2 size={18} />}
+                  {progress === 100 ? <CheckCircle2 size={18} /> : <CircleDot size={18} />}
                 </div>
                 <strong>{module.title}</strong>
                 <p>{module.tagline}</p>
-                <div className="meter mini"><i style={{ width: `${locked ? 0 : progress}%` }} /></div>
+                <div className="meter mini"><i style={{ width: `${progress}%` }} /></div>
                 <small>{module.lessons.length} aulas - {module.exercises.length} exercicios - {module.games.length} jogos</small>
               </button>
             );
@@ -543,16 +737,27 @@ function LearningRoom({
   lesson,
   setLessonId,
   setScreen,
+  completedLessons,
+  completedExercises,
+  onMarkLessonDone,
+  onExerciseResult,
 }: {
   module: Module;
   lesson: LessonBlock | undefined;
   setLessonId: (lessonId: string) => void;
   setScreen: (screen: Screen) => void;
+  completedLessons: Record<string, boolean>;
+  completedExercises: Record<string, boolean>;
+  onMarkLessonDone: (lessonId: string) => void;
+  onExerciseResult: (exerciseId: string, correct: boolean) => void;
 }) {
   const [activeExerciseId, setActiveExerciseId] = useState(module.exercises[0]?.id);
-  const [exerciseResults, setExerciseResults] = useState<Record<string, boolean>>({});
   const activeExercise = module.exercises.find((exercise) => exercise.id === activeExerciseId) ?? module.exercises[0];
   const diagram = lesson?.diagramId ? diagramRegistry[lesson.diagramId] : null;
+
+  useEffect(() => {
+    setActiveExerciseId(module.exercises[0]?.id);
+  }, [module.id, module.exercises]);
 
   if (!lesson) return null;
 
@@ -570,6 +775,7 @@ function LearningRoom({
             >
               <span>{index + 1}</span>
               <strong>{item.heading}</strong>
+              {completedLessons[item.id] && <CheckCircle2 size={16} />}
             </button>
           ))}
         </div>
@@ -596,6 +802,9 @@ function LearningRoom({
           </div>
         )}
         <div className="lesson-actions">
+          <button className={completedLessons[lesson.id] ? 'success-pill' : 'primary-btn'} onClick={() => onMarkLessonDone(lesson.id)}>
+            {completedLessons[lesson.id] ? 'Aula concluida' : 'Concluir aula'}
+          </button>
           <button className="primary-btn" onClick={() => setScreen('story')}>Transformar em historia</button>
           <button className="ghost-btn" onClick={() => setScreen('review')}>Criar revisao</button>
           <button className="ghost-btn" onClick={() => setScreen('mentor')}>Pedir ajuda da IA</button>
@@ -608,7 +817,7 @@ function LearningRoom({
                 <span className="eyebrow"><Target size={15} /> Treino guiado</span>
                 <h2>Exercicios do modulo</h2>
               </div>
-              <strong>{Object.values(exerciseResults).filter(Boolean).length}/{module.exercises.length} corretos</strong>
+              <strong>{module.exercises.filter((exercise) => completedExercises[exercise.id]).length}/{module.exercises.length} corretos</strong>
             </div>
             <div className="exercise-layout">
               <aside className="exercise-picker">
@@ -620,14 +829,14 @@ function LearningRoom({
                   >
                     <span>{index + 1}</span>
                     <strong>{exercise.type}</strong>
-                    {exerciseResults[exercise.id] === true && <CheckCircle2 size={16} />}
+                    {completedExercises[exercise.id] === true && <CheckCircle2 size={16} />}
                   </button>
                 ))}
               </aside>
               <div className="exercise-card-shell">
                 <ExerciseRouter
                   exercise={activeExercise}
-                  onResult={(correct) => setExerciseResults((results) => ({ ...results, [activeExercise.id]: correct }))}
+                  onResult={(correct) => onExerciseResult(activeExercise.id, correct)}
                 />
               </div>
             </div>
@@ -655,6 +864,8 @@ function LearningRoom({
 function StoryMode({ module, setScreen }: { module: Module; setScreen: (screen: Screen) => void }) {
   const story = module.storyLessons?.[0];
   const choices = story?.choices ?? [];
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const selected = choices.find((choice) => choice.label === selectedChoice);
 
   return (
     <section className="stack">
@@ -668,16 +879,23 @@ function StoryMode({ module, setScreen }: { module: Module; setScreen: (screen: 
         </div>
         <div className="choice-grid">
           {choices.map((choice) => (
-            <button className={choice.correct ? 'best' : ''} key={choice.label}>
+            <button
+              className={`${selectedChoice === choice.label ? 'selected' : ''} ${selectedChoice && choice.correct ? 'best' : ''}`}
+              key={choice.label}
+              onClick={() => setSelectedChoice(choice.label)}
+            >
               <strong>{choice.label}</strong>
-              <span>{choice.consequence}</span>
+              <span>{selectedChoice === choice.label ? choice.consequence : 'Escolha para ver a consequencia.'}</span>
             </button>
           ))}
         </div>
-        <div className="reveal-card">
-          <strong>Descoberta</strong>
-          <p>{story?.reveal ?? 'A teoria aparece depois do problema, para criar contexto e memoria.'}</p>
-        </div>
+        {selected && (
+          <div className="reveal-card">
+            <strong>{selected.correct ? 'Boa decisao' : 'Consequencia aprendida'}</strong>
+            <p>{story?.reveal ?? 'A teoria aparece depois do problema, para criar contexto e memoria.'}</p>
+            {story?.takeaway && <small>{story.takeaway}</small>}
+          </div>
+        )}
         <button className="primary-btn" onClick={() => setScreen('learn')}>Voltar para aula</button>
       </article>
 
@@ -699,6 +917,12 @@ function StoryMode({ module, setScreen }: { module: Module; setScreen: (screen: 
 
 function LabStudio({ module }: { module: Module }) {
   const lab = module.sprintLab;
+  const files = useMemo(() => filesForModule(module), [module]);
+  const [activeFile, setActiveFile] = useState(files[0]);
+
+  useEffect(() => {
+    setActiveFile(files[0]);
+  }, [files]);
 
   return (
     <section className="stack">
@@ -712,22 +936,19 @@ function LabStudio({ module }: { module: Module }) {
       <div className="studio">
         <aside className="file-tree">
           <strong>Explorer</strong>
-          {studioFiles.map((file) => <button key={file}>{file}</button>)}
+          {files.map((file) => (
+            <button className={file === activeFile ? 'active' : ''} key={file} onClick={() => setActiveFile(file)}>
+              {file}
+            </button>
+          ))}
         </aside>
         <section className="editor-panel">
           <div className="editor-tabs">
-            <span>login.ts</span>
-            <span>tests.spec.ts</span>
+            <span>{activeFile}</span>
             <span>terminal</span>
           </div>
           <pre className="code-block">
-            <code>{`async function completeSprint(ticket) {
-  const context = await readRequirements(ticket)
-  const solution = buildSmallestUsefulVersion(context)
-  await testHappyPath(solution)
-  await testRiskyCase(solution)
-  return explainTradeoffs(solution)
-}`}</code>
+            <code>{studioPreview(module, activeFile)}</code>
           </pre>
           <div className="terminal-output">
             <span>$ npm run validate:sprint</span>
@@ -826,7 +1047,8 @@ function ArcadeHub({
   );
 }
 
-function CareerMode() {
+function CareerMode({ metrics }: { metrics: ReturnType<typeof createMetricsShape> }) {
+  const currentRank = rankForLevel(metrics.level);
   return (
     <section className="stack">
       <div className="section-title">
@@ -834,12 +1056,12 @@ function CareerMode() {
           <span className="eyebrow"><BriefcaseBusiness size={15} /> Carreira simulada</span>
           <h2>Do primeiro ticket a lideranca tecnica</h2>
         </div>
-        <strong>Rank atual: Junior Avancado</strong>
+        <strong>Rank atual: {currentRank.title}</strong>
       </div>
       <div className="career-track">
-        {careerLadder.map((rank, index) => (
-          <article className={`rank-step ${index < 3 ? 'done' : index === 3 ? 'active' : ''}`} key={rank.title}>
-            <div>{index < 3 ? <CheckCircle2 /> : index === 3 ? <Crown /> : <Lock />}</div>
+        {careerLadder.map((rank) => (
+          <article className={`rank-step ${rank.title === currentRank.title ? 'active' : metrics.level >= rank.level ? 'done' : ''}`} key={rank.title}>
+            <div>{rank.title === currentRank.title ? <Crown /> : metrics.level >= rank.level ? <CheckCircle2 /> : <Lock />}</div>
             <strong>{rank.title}</strong>
             <span>Lv {rank.level}</span>
             <p>{rank.responsibility}</p>
@@ -862,7 +1084,13 @@ function CareerMode() {
   );
 }
 
-function ReviewCenter() {
+function ReviewCenter({
+  reviewAnswers,
+  onReviewAnswer,
+}: {
+  reviewAnswers: Record<string, boolean>;
+  onReviewAnswer: (reviewId: string, remembered: boolean) => void;
+}) {
   const [revealed, setRevealed] = useState<string | null>(null);
 
   return (
@@ -873,7 +1101,7 @@ function ReviewCenter() {
             <span className="eyebrow"><ShieldCheck size={15} /> Revisao inteligente</span>
             <h2>Lembrar antes de consultar</h2>
           </div>
-          <strong>{reviewQueue.length} itens na fila</strong>
+          <strong>{Object.keys(reviewAnswers).length}/{reviewQueue.length} revisoes registradas</strong>
         </div>
         <div className="review-grid">
           {reviewQueue.map((item) => (
@@ -883,8 +1111,21 @@ function ReviewCenter() {
                 <strong>{item.due}</strong>
               </div>
               <h3>{item.prompt}</h3>
-              <div className="meter mini"><i style={{ width: `${item.strength}%` }} /></div>
-              {revealed === item.id ? <p>{item.answer}</p> : <button className="ghost-btn" onClick={() => setRevealed(item.id)}>Mostrar resposta</button>}
+              <div className="meter mini"><i style={{ width: `${reviewAnswers[item.id] ? 100 : item.strength}%` }} /></div>
+              {revealed === item.id ? (
+                <>
+                  <p>{item.answer}</p>
+                  <div className="hero-actions">
+                    <button className="primary-btn" onClick={() => onReviewAnswer(item.id, true)}>Lembrei</button>
+                    <button className="ghost-btn" onClick={() => onReviewAnswer(item.id, false)}>Nao lembrei</button>
+                  </div>
+                </>
+              ) : (
+                <button className="ghost-btn" onClick={() => setRevealed(item.id)}>Mostrar resposta</button>
+              )}
+              {item.id in reviewAnswers && (
+                <small>{reviewAnswers[item.id] ? 'Registrado como lembrado.' : 'Registrado para reforco futuro.'}</small>
+              )}
             </article>
           ))}
         </div>
@@ -906,6 +1147,9 @@ function ReviewCenter() {
 }
 
 function MentorHub({ module, lesson }: { module: Module; lesson: LessonBlock | undefined }) {
+  const [selectedAction, setSelectedAction] = useState(mentorActions[0]);
+  const generatedPrompt = mentorPrompt(selectedAction, module, lesson);
+
   return (
     <section className="stack">
       <article className="mentor-panel">
@@ -917,15 +1161,20 @@ function MentorHub({ module, lesson }: { module: Module; lesson: LessonBlock | u
           treino, revisao e feedback.
         </p>
         <div className="prompt-grid">
-          {mentorActions.map((action) => <button key={action}>{action}</button>)}
+          {mentorActions.map((action) => (
+            <button className={selectedAction === action ? 'active' : ''} key={action} onClick={() => setSelectedAction(action)}>
+              {action}
+            </button>
+          ))}
         </div>
       </article>
 
       <div className="dashboard-grid">
         <Panel title="Prompt sugerido" icon={<Bot size={20} />}>
           <div className="terminal-card">
-            <span>Explique {module.title} usando um problema real, depois crie 5 perguntas de revisao e um desafio pratico com criterio de aceite.</span>
+            <span>{generatedPrompt}</span>
           </div>
+          <p className="muted-copy">Gerado localmente com o contexto da aula. Para resposta automatica real, conecte uma API de IA no backend comercial.</p>
         </Panel>
         <Panel title="Acoes automaticas" icon={<Sparkles size={20} />}>
           <div className="checklist">
@@ -941,6 +1190,14 @@ function MentorHub({ module, lesson }: { module: Module; lesson: LessonBlock | u
 }
 
 function AnalyticsCenter({ metrics }: { metrics: ReturnType<typeof createMetricsShape> }) {
+  const trackRows = ['frontend', 'backend', 'devops', 'fullstack', 'soft'].map((track) => {
+    const trackModules = modules.filter((module) => module.track === track);
+    const trackLessons = trackModules.reduce((sum, module) => sum + module.lessons.length, 0);
+    const trackExercises = trackModules.reduce((sum, module) => sum + module.exercises.length, 0);
+    const mastery = metrics.progress;
+    return { track, modules: trackModules.length, lessons: trackLessons, exercises: trackExercises, mastery };
+  });
+
   return (
     <section className="stack">
       <div className="section-title">
@@ -950,42 +1207,82 @@ function AnalyticsCenter({ metrics }: { metrics: ReturnType<typeof createMetrics
         </div>
         <strong>{metrics.xp.toLocaleString('pt-BR')} XP acumulado</strong>
       </div>
-      <StatStrip stats={productStats.map((stat) => [stat.label, stat.value])} />
+      <StatStrip stats={[
+        ['Aulas reais', metrics.lessons],
+        ['Aulas concluidas', metrics.lessonDone],
+        ['Exercicios reais', metrics.exercises],
+        ['Exercicios corretos', metrics.exerciseDone],
+        ['Jogos jogados', metrics.gameDone],
+        ['Revisoes lembradas', metrics.reviewDone],
+      ]} />
       <div className="skill-grid">
-        {skillTree.map((cluster) => (
-          <article className="skill-card" key={cluster.title}>
+        {trackRows.map((cluster) => (
+          <article className="skill-card" key={cluster.track}>
             <div className="split">
-              <strong>{cluster.title}</strong>
+              <strong>{cluster.track}</strong>
               <span>{cluster.mastery}%</span>
             </div>
             <div className="meter mini"><i style={{ width: `${cluster.mastery}%` }} /></div>
-            {cluster.skills.map((skill) => (
-              <div className="skill-row" key={skill.label}>
-                <span>{skill.label}</span>
-                <strong>{'★'.repeat(skill.level)}{'☆'.repeat(5 - skill.level)}</strong>
-                <small>{skill.evidence}</small>
-              </div>
-            ))}
+            <div className="skill-row">
+              <span>Modulos cadastrados</span>
+              <strong>{cluster.modules}</strong>
+              <small>Conteudo real encontrado nos arquivos da trilha.</small>
+            </div>
+            <div className="skill-row">
+              <span>Aulas</span>
+              <strong>{cluster.lessons}</strong>
+              <small>Quantidade real, sem marcador +.</small>
+            </div>
+            <div className="skill-row">
+              <span>Exercicios</span>
+              <strong>{cluster.exercises}</strong>
+              <small>Usados para treino, revisao e XP.</small>
+            </div>
           </article>
         ))}
       </div>
       <Panel title="Conquistas" icon={<Award size={20} />}>
         <div className="achievement-grid">
-          {achievementCatalog.map((achievement, index) => (
-            <article className={`achievement-card ${index < 3 ? 'unlocked' : ''}`} key={achievement.title}>
+          {achievementCatalog.map((achievement, index) => {
+            const unlocked = metrics.xp >= achievement.points || index === 0 && metrics.missionDone > 0;
+            return (
+            <article className={`achievement-card ${unlocked ? 'unlocked' : ''}`} key={achievement.title}>
               <Trophy size={22} />
               <h3>{achievement.title}</h3>
               <p>{achievement.description}</p>
-              <strong>{achievement.points} pts</strong>
+              <strong>{unlocked ? 'Liberada' : `${achievement.points} XP alvo`}</strong>
             </article>
-          ))}
+          )})}
         </div>
       </Panel>
     </section>
   );
 }
 
-function Marketplace() {
+function Marketplace({
+  metrics,
+  unlockedRewards,
+  onUnlock,
+}: {
+  metrics: ReturnType<typeof createMetricsShape>;
+  unlockedRewards: Record<string, boolean>;
+  onUnlock: (itemId: string) => void;
+}) {
+  const [message, setMessage] = useState<string | null>(null);
+
+  function unlock(itemId: string, price: number) {
+    if (unlockedRewards[itemId]) {
+      setMessage('Este item ja foi desbloqueado.');
+      return;
+    }
+    if (metrics.coins < price) {
+      setMessage(`Saldo insuficiente. Faltam ${price - metrics.coins} moedas.`);
+      return;
+    }
+    onUnlock(itemId);
+    setMessage('Item desbloqueado e salvo no progresso local.');
+  }
+
   return (
     <section className="stack">
       <div className="section-title">
@@ -993,8 +1290,9 @@ function Marketplace() {
           <span className="eyebrow"><Coins size={15} /> Loja e recompensas</span>
           <h2>Desbloqueios sem atrapalhar o estudo</h2>
         </div>
-        <strong>3.280 moedas</strong>
+        <strong>{metrics.coins.toLocaleString('pt-BR')} moedas</strong>
       </div>
+      {message && <div className="success-note">{message}</div>}
       <div className="market-grid">
         {marketplace.map((item) => (
           <article className="market-card" key={item.id}>
@@ -1003,7 +1301,13 @@ function Marketplace() {
             <p>{item.description}</p>
             <footer>
               <strong>{item.price} moedas</strong>
-              <button className="ghost-btn">Desbloquear</button>
+              <button
+                className={unlockedRewards[item.id] ? 'success-pill' : 'ghost-btn'}
+                disabled={!unlockedRewards[item.id] && metrics.coins < item.price}
+                onClick={() => unlock(item.id, item.price)}
+              >
+                {unlockedRewards[item.id] ? 'Desbloqueado' : metrics.coins < item.price ? 'Sem saldo' : 'Desbloquear'}
+              </button>
             </footer>
           </article>
         ))}
@@ -1215,7 +1519,6 @@ function Panel({ title, icon, children }: { title: string; icon: React.ReactNode
     <section className="panel">
       <div className="panel-head">
         <div>{icon}<h2>{title}</h2></div>
-        <button>Ver tudo</button>
       </div>
       {children}
     </section>
@@ -1235,5 +1538,10 @@ function createMetricsShape() {
     level: 0,
     coins: 0,
     streak: 0,
+    lessonDone: 0,
+    exerciseDone: 0,
+    missionDone: 0,
+    reviewDone: 0,
+    gameDone: 0,
   };
 }

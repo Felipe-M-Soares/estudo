@@ -315,34 +315,3 @@ export const marketplace: MarketplaceItem[] = [
   { id: 'avatar-architect', title: 'Avatar Arquiteto', type: 'Avatar', price: 1500, rarity: 'Lendario', description: 'Liberado para quem conclui campanhas de sistema.' },
   { id: 'boost-review', title: 'Boost de Revisao', type: 'Boost', price: 400, rarity: 'Comum', description: 'Duplica XP de revisao ativa por um dia.' },
 ];
-
-export const seasons = [
-  { title: 'Temporada 1', subtitle: 'Fundacao Profissional', progress: 68, reward: 'Tema Nexus + 2 badges' },
-  { title: 'Temporada 2', subtitle: 'Produto Fullstack', progress: 21, reward: 'Campanha Delivery' },
-  { title: 'Temporada 3', subtitle: 'Arquitetura e IA', progress: 0, reward: 'Mentor avancado' },
-];
-
-export const intelligenceCards = [
-  { title: 'Ponto fraco detectado', value: 'Assincrono', detail: '3 erros recentes em Promises, Event Loop e callbacks.' },
-  { title: 'Melhor horario', value: '21h-22h', detail: 'Maior taxa de acerto nas ultimas sessoes.' },
-  { title: 'Ritmo ideal', value: '34 min', detail: 'Tempo medio antes de queda de desempenho.' },
-  { title: 'Proxima evolucao', value: 'Backend', detail: 'A base de front esta pronta para conectar com APIs.' },
-];
-
-export const studioFiles = [
-  'src/app/auth/login.ts',
-  'src/app/dashboard/page.tsx',
-  'src/server/routes/users.ts',
-  'src/server/database/schema.sql',
-  'docker-compose.yml',
-  '.github/workflows/deploy.yml',
-];
-
-export const productStats = [
-  { label: 'Modulos', value: '22', detail: 'trilhas principais' },
-  { label: 'Aulas', value: '180+', detail: 'incluindo narrativas' },
-  { label: 'Exercicios', value: '250+', detail: 'treino e revisao' },
-  { label: 'Jogos', value: '14', detail: 'arcade tecnico' },
-  { label: 'Projetos', value: '22+', detail: 'sprints guiadas' },
-  { label: 'Conquistas', value: '60+', detail: 'progressao RPG' },
-];
