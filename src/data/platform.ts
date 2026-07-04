@@ -155,7 +155,7 @@ export const learningWorlds: LearningWorld[] = [
     track: 'ia',
     color: 'pink',
     chapters: ['Prompting', 'APIs', 'RAG', 'Agentes', 'MCP'],
-    capstone: 'Criar um mentor de estudos que gera revisoes e desafios pelo historico.',
+    capstone: 'Criar um assistente de estudos que gera revisoes e desafios pelo historico.',
   },
 ];
 
@@ -287,17 +287,6 @@ export const skillTree: SkillCluster[] = [
       { label: 'Observabilidade', level: 1, evidence: 'Lida com logs e metricas.' },
     ],
   },
-];
-
-export const mentorActions = [
-  'Explicar de outro jeito',
-  'Criar analogia',
-  'Gerar 10 perguntas',
-  'Montar desafio mais dificil',
-  'Transformar em flashcards',
-  'Corrigir minha resposta',
-  'Criar plano de 30 minutos',
-  'Simular entrevista',
 ];
 
 export const achievementCatalog = [

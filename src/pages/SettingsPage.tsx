@@ -1,12 +1,9 @@
 import { useRef, useState } from 'react';
-import { Eye, EyeOff, ExternalLink, Trash2, ShieldCheck, AlertTriangle, Download, Upload, CheckCircle2, Palette } from 'lucide-react';
+import { AlertTriangle, Download, Upload, CheckCircle2, Palette, Trash2 } from 'lucide-react';
 import type { UserProgress } from '../data/types';
 import { useDesignTheme, type DesignThemeId } from '../hooks/useDesignTheme';
 
 interface SettingsPageProps {
-  apiKey: string;
-  onSetApiKey: (key: string) => void;
-  onClearApiKey: () => void;
   onResetProgress: () => void;
   progress: UserProgress;
   profileName: string;
@@ -14,27 +11,15 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({
-  apiKey,
-  onSetApiKey,
-  onClearApiKey,
   onResetProgress,
   progress,
   profileName,
   onImportProgress,
 }: SettingsPageProps) {
-  const [draft, setDraft] = useState(apiKey);
-  const [visible, setVisible] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const { theme, setTheme, themes } = useDesignTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  function handleSave() {
-    onSetApiKey(draft.trim());
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1800);
-  }
 
   function handleExport() {
     const blob = new Blob([JSON.stringify(progress, null, 2)], { type: 'application/json' });
@@ -110,78 +95,13 @@ export function SettingsPage({
         </div>
       </section>
 
-      <section className="mb-6 rounded-2xl card-surface p-5">
-        <h2 className="font-display text-base font-bold text-base-50">🤖 Mentor IA — Chave do Google Gemini (gratuita)</h2>
-        <p className="mt-1.5 text-sm text-base-300">
-          Sua chave é guardada <strong className="text-base-100">somente no localStorage deste navegador</strong> — ela nunca é
-          enviada para nenhum servidor além da API oficial do Google, e nunca aparece no código do projeto que você sobe para
-          o GitHub.
-        </p>
-
-        <div className="mt-4 rounded-xl border border-mint-400/30 bg-mint-900/15 p-3.5 text-sm text-mint-100">
-          <p className="mb-1.5 flex items-center gap-1.5 font-semibold text-mint-300">
-            <ShieldCheck size={14} /> Como pegar sua chave (gratuita, sem cartão de crédito)
-          </p>
-          <ol className="ml-4 list-decimal space-y-1 text-base-200">
-            <li>
-              Acesse{' '}
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-mint-300 underline">
-                aistudio.google.com/app/apikey <ExternalLink size={11} />
-              </a>
-            </li>
-            <li>Faça login com uma conta Google (não pede cartão de crédito)</li>
-            <li>Clique em "Create API key" e copie a chave gerada</li>
-            <li>Cole no campo abaixo e clique em Salvar</li>
-          </ol>
-          <p className="mt-2 text-[11px] text-base-300">
-            O plano gratuito do Gemini tem um limite de mensagens por dia que reseta automaticamente — mais que suficiente
-            para conversar com o mentor ao longo dos estudos.
-          </p>
-        </div>
-
-        <div className="mt-4">
-          <label className="mb-1.5 block text-xs font-semibold text-base-300">Sua chave de API</label>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type={visible ? 'text' : 'password'}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="AIza..."
-                className="w-full rounded-lg border border-base-600 bg-base-900 px-3 py-2.5 pr-10 font-mono text-sm text-base-100 outline-none focus:border-mint-400"
-              />
-              <button
-                onClick={() => setVisible((v) => !v)}
-                className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-base-400 hover:text-base-100"
-                aria-label={visible ? 'Esconder chave' : 'Mostrar chave'}
-                type="button"
-              >
-                {visible ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <button
-              onClick={handleSave}
-              className="shrink-0 rounded-lg bg-mint-400 px-4 py-2.5 text-sm font-semibold text-base-950 hover:opacity-90"
-            >
-              {saved ? '✓ Salvo' : 'Salvar'}
-            </button>
-          </div>
-          {apiKey && (
-            <button onClick={() => { onClearApiKey(); setDraft(''); }} className="mt-2 flex items-center gap-1.5 text-xs text-ember-400 hover:underline">
-              <Trash2 size={12} /> Remover chave salva
-            </button>
-          )}
-        </div>
-      </section>
-
       <section className="mb-6 rounded-2xl border border-ember-400/30 bg-ember-500/5 p-5">
         <h2 className="flex items-center gap-1.5 font-display text-base font-bold text-ember-300">
           <AlertTriangle size={16} /> Sobre publicar este projeto no GitHub
         </h2>
         <p className="mt-1.5 text-sm text-base-200">
-          Esta chave fica <strong>apenas no seu navegador</strong> e nunca em nenhum arquivo do projeto — por isso é seguro
-          subir todo o código para um repositório público. Mesmo assim, nunca cole sua chave de API diretamente em nenhum
-          arquivo de código, commit, ou print de tela que você compartilhe publicamente.
+          O fluxo de IA foi removido do produto principal. Ainda assim, nunca publique segredos como `TOKEN_SECRET`,
+          `ADMIN_TOKEN`, tokens de pagamento ou arquivos `.env` em repositórios públicos.
         </p>
       </section>
 

@@ -1,7 +1,6 @@
 import { NavLink, Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import {
-  Bot,
   Briefcase,
   ChevronRight,
   Crown,
@@ -72,7 +71,6 @@ export function Sidebar({ progress, open, onClose, profileName, profileEmoji, on
           <SidebarLink to="/laboratorio" icon={<FlaskConical size={18} />} label="Labs" onClick={onClose} />
           <SidebarLink to="/entrevista" icon={<Briefcase size={18} />} label="Arena" onClick={onClose} />
           <SidebarLink to="/conquistas" icon={<Trophy size={18} />} label="Troféus" onClick={onClose} />
-          <SidebarLink to="/mentor" icon={<Bot size={18} />} label="Mentor IA" onClick={onClose} />
           <SidebarLink to="/configuracoes" icon={<Settings size={18} />} label="Ajustes" onClick={onClose} />
         </nav>
 

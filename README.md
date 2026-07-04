@@ -16,21 +16,23 @@ Esta versão foi reformulada como uma plataforma de aprendizado em formato RPG p
 - Arcade técnico com modos rápidos de fixação
 - Carreira simulada por ranks, responsabilidades e desbloqueios
 - Revisão inteligente por força de memória
-- Mentor IA contextual por módulo e aula
 - Analytics de habilidades, conquistas e estatísticas de produto
 - Loja de recompensas, temas e desbloqueios
 
 ## Modo comercial
 
-Esta entrega tambem inclui backend comercial em `server/server.mjs`, sem dependencias extras:
+Esta entrega tambem inclui backend comercial em `server/server.mjs`:
 
 - cadastro e login de usuarios;
 - senha com hash `scrypt` e salt;
 - token de sessao assinado;
-- ativacao de licencas;
+- planos Starter, Pro e Vitalicio;
+- checkout Mercado Pago por plano;
+- webhook que libera licenca apos pagamento aprovado;
+- ativacao manual de licencas;
 - progresso salvo no servidor;
-- endpoints admin para gerar licencas;
-- headers de seguranca e rate limit basico.
+- endpoints admin para gerar licencas e confirmar venda direta;
+- headers de seguranca, validacao de entrada, bloqueio de login e rate limit basico.
 
 Para rodar a versao completa:
 
@@ -59,8 +61,7 @@ O build de produção foi validado com `npm run build`.
 - **Sistema de gamificação completo**: XP, níveis, sequência de estudo (streak) com mapa de constância estilo GitHub, conquistas com confetti
 - **Visual neon cyberpunk**: paleta vibrante (menta, magenta, violeta, ciano elétrico) sobre fundo escuro arroxeado, com glow e scanlines sutis
 - **Múltiplos perfis no mesmo navegador**: cada pessoa cria seu perfil com nome (e PIN opcional), e o progresso fica separado por perfil
-- **Mentor IA opcional** via API gratuita do Google Gemini, com contexto de onde você está na jornada
-- **100% dos seus dados ficam no seu navegador** (localStorage) — sem backend, sem conta na nuvem, sem rastreamento
+- **Sistema comercial** com conta, licenca, plano e progresso em nuvem quando o backend esta ativo
 
 ## 🖥️ Como rodar localmente
 
@@ -104,10 +105,6 @@ Aperte `Ctrl+K` (ou `⌘K` no Mac) em qualquer tela, ou clique em "Buscar" no to
 
 Em Configurações, exporte seu progresso completo como um arquivo `.json` a qualquer momento, e importe de volta se precisar (trocar de computador, restaurar depois de limpar o navegador). Isso é separado por perfil.
 
-## 🤖 Mentor IA com contexto real
-
-O Mentor IA agora enxerga seu desempenho real: módulos onde sua taxa de acerto está mais baixa, e quantos exercícios você tentou 3+ vezes sem sucesso. Ele usa isso pra personalizar a conversa, sem expor números de forma fria.
-
 ## 🎯 Modo Entrevista
 
 Acesse pelo menu lateral (destacado em ciano). Escolha sua trilha (Frontend, Backend ou Full Stack) e nível (Júnior, Pleno, Sênior), e passe pelas 3 etapas:
@@ -135,24 +132,14 @@ Quer usar com mais de uma pessoa? Cada uma cria seu próprio perfil, e o progres
 
 > ⚠️ Perfis **não sincronizam entre dispositivos** — um perfil "João" criado no notebook é diferente de um perfil "João" no celular, mesmo com o mesmo nome.
 
-## 🤖 Configurando o Mentor IA (opcional)
-
-O Mentor IA usa a API gratuita do Google Gemini. Isso é **opcional** — o app funciona 100% sem ele.
-
-1. Acesse [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) e crie sua chave gratuita (login com conta Google, sem cartão de crédito)
-2. No app, vá em **Configurações** e cole sua chave
-3. Pronto — sua chave fica só no seu navegador, nunca no código
-
-> ⚠️ **Nunca** cole sua chave de API em nenhum arquivo de código antes de subir para o GitHub. O app foi desenhado para isso nunca ser necessário: a chave é digitada por você, direto na interface, e fica salva localmente.
-
-> 💡 **Erro de limite atingido?** O plano gratuito do Gemini tem uma cota diária de mensagens (reseta automaticamente todo dia) — isso não é um bug nem significa que sua chave parou de funcionar, só que é preciso esperar a cota renovar. O app mostra essa explicação automaticamente na tela do Mentor quando isso acontece.
-
 ## 🛠️ Stack técnica
 
 - React 19 + TypeScript + Vite
 - Tailwind CSS v4
 - React Router (navegação)
 - Lucide Icons
+- Phosphor Icons
+- Zod
 - Canvas Confetti (celebrações de conquista)
 - PWA via Service Worker nativo (sem dependências externas)
 
@@ -165,9 +152,9 @@ src/
     games/      os mini-jogos
     layout/     sidebar, topbar
     ui/         componentes de exercício, XP bar, toasts
-  hooks/        useProgress (gamificação), useSettings (chave de API)
+  hooks/        useProgress (gamificação), perfis e tema visual
   pages/        as telas do app
-  utils/        cliente da API Gemini
+  utils/        utilitários locais do app
 ```
 
 ## 📝 Customizando seu conteúdo

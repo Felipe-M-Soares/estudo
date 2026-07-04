@@ -6,9 +6,25 @@ export interface CommercialUser {
   createdAt: string;
   license: null | {
     plan: string;
+    planName: string;
     status: string;
     expiresAt: string | null;
+    maxMonth: number;
+    billing: string;
   };
+}
+
+export interface CommercialPlan {
+  id: 'starter' | 'pro' | 'lifetime';
+  name: string;
+  priceCents: number;
+  price: number;
+  currency: string;
+  billing: 'monthly' | 'lifetime';
+  durationDays: number | null;
+  seats: number;
+  maxMonth: number;
+  features: string[];
 }
 
 export interface CommercialSession {
@@ -74,6 +90,10 @@ export async function healthCheck(): Promise<{ ok: boolean; mode: string; time: 
   return apiRequest('/api/health', { method: 'GET' });
 }
 
+export async function getCommercialPlans(): Promise<{ ok: boolean; plans: CommercialPlan[] }> {
+  return apiRequest('/api/plans', { method: 'GET' });
+}
+
 export async function registerCommercialAccount(input: {
   name: string;
   email: string;
@@ -107,6 +127,23 @@ export async function activateCommercialLicense(licenseKey: string): Promise<Omi
   return apiRequest('/api/license/activate', {
     method: 'POST',
     body: JSON.stringify({ licenseKey }),
+  });
+}
+
+export async function createCommercialCheckout(planId: CommercialPlan['id']): Promise<{
+  ok: boolean;
+  checkoutUrl: string;
+  plan: CommercialPlan;
+  order: {
+    id: string;
+    status: string;
+    amountCents: number;
+    currency: string;
+  };
+}> {
+  return apiRequest('/api/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ planId }),
   });
 }
 

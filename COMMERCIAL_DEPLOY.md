@@ -20,11 +20,32 @@ Copie `.env.example` para o ambiente do servidor e troque todos os segredos.
 PORT=8787
 HOST=0.0.0.0
 DATA_DIR=./.data
+PUBLIC_APP_URL=https://seudominio.com
 TOKEN_SECRET=gere-um-segredo-longo
 ADMIN_TOKEN=gere-um-token-admin-longo
 REQUIRE_LICENSE=true
 SEED_DEMO_LICENSE=false
 ALLOWED_ORIGINS=https://seudominio.com
+MERCADO_PAGO_ACCESS_TOKEN=APP_USR-xxxxxxxxxxxxxxxx
+MERCADO_PAGO_WEBHOOK_SECRET=gere-um-segredo-de-webhook
+```
+
+## Planos definidos
+
+- `starter`: R$ 49,90 por mes. Libera meses 1 a 6, aulas, exercicios, revisao e progresso em nuvem.
+- `pro`: R$ 89,90 por mes. Libera os 22 meses, laboratorio, arcade, projetos, analytics e atualizacoes.
+- `lifetime`: R$ 497,00 pagamento unico. Libera todos os conteudos atuais e o sistema vitalicio.
+
+Os planos ficam centralizados em `server/server.mjs` e tambem aparecem na tela Conta.
+
+## Pagamento por plano
+
+Com `MERCADO_PAGO_ACCESS_TOKEN` configurado, a tela Conta chama `POST /api/checkout`, cria uma preferencia no Mercado Pago e redireciona o aluno para pagar. O webhook `POST /api/payments/mercadopago/webhook` consulta o pagamento na API do Mercado Pago; quando o status volta `approved`, o servidor cria a licenca, vincula ao usuario e libera o plano.
+
+Configure no painel do Mercado Pago a URL:
+
+```text
+https://seudominio.com/api/payments/mercadopago/webhook
 ```
 
 ## Criar licencas
@@ -40,6 +61,17 @@ curl -X POST http://localhost:8787/api/admin/licenses \
 
 A resposta retorna uma `licenseKey`. Ela aparece apenas uma vez. Entregue essa chave ao comprador.
 
+## Confirmar pagamento manual
+
+Para venda direta fora do checkout, crie o pedido pelo app e confirme pelo admin:
+
+```bash
+curl -X POST http://localhost:8787/api/admin/payments/confirm \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Token: SEU_ADMIN_TOKEN" \
+  -d '{"orderId":"ord_xxx","note":"PIX confirmado"}'
+```
+
 ## Fluxo do comprador
 
 1. O aluno cria conta.
@@ -50,13 +82,17 @@ A resposta retorna uma `licenseKey`. Ela aparece apenas uma vez. Entregue essa c
 ## Endpoints principais
 
 - `GET /api/health`
+- `GET /api/plans`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/me`
+- `POST /api/checkout`
+- `POST /api/payments/mercadopago/webhook`
 - `POST /api/license/activate`
 - `GET /api/progress`
 - `PUT /api/progress`
 - `POST /api/admin/licenses`
+- `POST /api/admin/payments/confirm`
 - `GET /api/admin/summary`
 
 ## Seguranca incluida
@@ -68,13 +104,15 @@ A resposta retorna uma `licenseKey`. Ela aparece apenas uma vez. Entregue essa c
 - CSP no HTML e no servidor.
 - Licencas armazenadas por hash, nao em texto puro.
 - Progresso protegido por token.
+- Validacao de entrada com `zod`.
+- Bloqueio temporario apos tentativas repetidas de login.
+- Planos e licencas liberados apenas no servidor.
 
 ## O que ainda falta para escala SaaS grande
 
 Esta base e vendavel para uma primeira versao hospedada, venda direta ou acesso licenciado. Para escala maior, recomendo evoluir:
 
 - trocar JSON por PostgreSQL;
-- integrar Stripe/Mercado Pago;
 - emails transacionais;
 - recuperacao de senha;
 - painel admin visual;

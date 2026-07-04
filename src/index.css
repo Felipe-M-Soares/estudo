@@ -158,7 +158,7 @@ button {
 .lesson-nav,
 .lesson-stage,
 .cinema-panel,
-.mentor-panel,
+.feature-panel,
 .review-card,
 .game-card,
 .rank-step,
@@ -389,7 +389,7 @@ button {
 
 .hero-panel,
 .cinema-panel,
-.mentor-panel {
+.feature-panel {
   min-height: 330px;
   padding: clamp(22px, 4vw, 42px);
   border-radius: 28px;
@@ -399,7 +399,7 @@ button {
 
 .hero-panel::after,
 .cinema-panel::after,
-.mentor-panel::after {
+.feature-panel::after {
   content: "";
   position: absolute;
   right: -100px;
@@ -427,7 +427,7 @@ button {
 .hero-panel h1,
 .lesson-stage h1,
 .cinema-panel h1,
-.mentor-panel h1 {
+.feature-panel h1 {
   max-width: 900px;
   margin: 16px 0;
   font-family: "Space Grotesk", Inter, sans-serif;
@@ -437,7 +437,7 @@ button {
 
 .hero-panel p,
 .cinema-panel > p,
-.mentor-panel p {
+.feature-panel p {
   max-width: 780px;
   color: var(--soft);
   font-size: 17px;
@@ -579,6 +579,7 @@ button:disabled {
 .mission-grid,
 .worlds-grid,
 .module-grid,
+.sequence-grid,
 .arcade-grid,
 .career-track,
 .review-grid,
@@ -707,6 +708,97 @@ button:disabled {
   font-size: 22px;
 }
 
+.sequence-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sequence-header span {
+  display: block;
+  color: var(--muted);
+}
+
+.sequence-header strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--accent);
+}
+
+.sequence-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sequence-phase {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent),
+    var(--surface-3);
+}
+
+.sequence-phase.mint { --accent: #56f0a8; }
+.sequence-phase.amber { --accent: #ffc857; }
+.sequence-phase.violet { --accent: #a78bfa; }
+.sequence-phase.cyan { --accent: #58e6ff; }
+
+.sequence-phase .split span,
+.sequence-phase .split strong {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.sequence-phase h3 {
+  margin: 10px 0 6px;
+  font-size: 21px;
+}
+
+.sequence-phase p {
+  min-height: 44px;
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.sequence-months {
+  display: grid;
+  gap: 7px;
+}
+
+.sequence-months button {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border-radius: 13px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.045);
+  text-align: left;
+}
+
+.sequence-months button.active {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.sequence-months button:disabled {
+  color: var(--muted);
+}
+
+.sequence-months span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  color: #061018;
+  background: var(--accent);
+  font-weight: 900;
+}
+
 .world-layout {
   grid-template-columns: minmax(0, 1fr) 360px;
 }
@@ -716,9 +808,11 @@ button:disabled {
 }
 
 .world-card {
+  position: relative;
   min-height: 235px;
   padding: 20px;
   border-radius: 24px;
+  overflow: hidden;
 }
 
 .world-card.cyan { --accent: #58e6ff; }
@@ -727,6 +821,18 @@ button:disabled {
 .world-card.green { --accent: #56f0a8; }
 .world-card.pink { --accent: #ff7ad9; }
 .world-card.blue { --accent: #7aa8ff; }
+
+.world-visual,
+.price-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  color: #061018;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 35%, white));
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--accent) 22%, transparent);
+}
 
 .chip-row small {
   padding: 7px 10px;
@@ -902,7 +1008,7 @@ button:disabled {
 }
 
 .cinema-panel,
-.mentor-panel {
+.feature-panel {
   min-height: 0;
 }
 
@@ -1014,9 +1120,60 @@ button:disabled {
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
+.lab-checklist {
+  display: grid;
+  gap: 9px;
+  margin: 0 18px 18px;
+}
+
+.lab-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--soft);
+  background: var(--surface-3);
+}
+
+.lab-checklist input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.delivery-box {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-3);
+}
+
+.delivery-box span {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .sprint-list {
   display: grid;
   gap: 10px;
+}
+
+.sprint-list button {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--text);
+  background: var(--surface-3);
+  text-align: left;
+}
+
+.sprint-list button.active {
+  border-color: var(--accent);
+  background: rgba(88, 230, 255, 0.12);
 }
 
 .sprint-list p {
@@ -1088,7 +1245,7 @@ button:disabled {
   line-height: 1.45;
 }
 
-.mentor-panel strong {
+.feature-panel strong {
   color: var(--accent);
 }
 
@@ -1172,6 +1329,58 @@ button:disabled {
 
 .sync-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.price-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface-3);
+}
+
+.price-card.current {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+  box-shadow: 0 0 0 5px rgba(88, 230, 255, 0.08);
+}
+
+.price-card > span {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.price-card h3 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.price-card > strong {
+  color: var(--text);
+  font-family: "Space Grotesk", Inter, sans-serif;
+  font-size: 32px;
+}
+
+.price-card > p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.compact-list {
+  margin-top: 0;
+}
+
+.compact-list div {
+  padding: 10px;
+  font-size: 13px;
 }
 
 .account-status-grid div,
@@ -1467,6 +1676,8 @@ button:disabled {
 @media (max-width: 1280px) {
   .mission-grid,
   .worlds-grid,
+  .sequence-grid,
+  .pricing-grid,
   .stat-strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1543,23 +1754,30 @@ button:disabled {
 
   .mission-grid,
   .worlds-grid,
+  .sequence-grid,
+  .pricing-grid,
   .stat-strip,
   .insight-grid,
   .skill-grid {
     grid-template-columns: 1fr;
   }
 
+  .sequence-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .hero-panel h1,
   .lesson-stage h1,
   .cinema-panel h1,
-  .mentor-panel h1 {
+  .feature-panel h1 {
     font-size: 36px;
   }
 
   .hero-panel,
   .lesson-stage,
   .cinema-panel,
-  .mentor-panel,
+  .feature-panel,
   .command-card,
   .lesson-nav {
     border-radius: 20px;

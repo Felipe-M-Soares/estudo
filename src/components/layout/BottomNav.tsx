@@ -16,15 +16,14 @@ const ITEMS = [
 /**
  * Barra de navegação fixa no rodapé, visível só em mobile/tablet (escondida a
  * partir de lg, onde a Sidebar já cobre a navegação). Cobre os 4 destinos mais
- * usados; o botão "Mais" abre a Sidebar completa para tudo o resto (Conquistas,
- * Mentor IA, Configurações, e a trilha completa de módulos).
+ * usados; o botão "Mais" abre a Sidebar completa para conquistas, ajustes e a
+ * trilha completa de módulos.
  */
 export function BottomNav({ onMoreClick }: BottomNavProps) {
   const navRef = useRef<HTMLElement>(null);
 
-  // Publica a própria altura como variável CSS (mesmo mecanismo da Topbar) para
-  // que outras telas com altura calculada (ex: chat do Mentor IA) saibam quanto
-  // espaço reservar no rodapé sem depender de um valor fixo em pixels.
+  // Publica a própria altura como variável CSS para telas que reservam espaço no
+  // rodapé sem depender de um valor fixo em pixels.
   useEffect(() => {
     if (!navRef.current) return;
     const el = navRef.current;

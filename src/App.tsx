@@ -4,7 +4,6 @@ import {
   Award,
   BarChart3,
   BookOpen,
-  Bot,
   BriefcaseBusiness,
   CheckCircle2,
   ChevronRight,
@@ -31,7 +30,21 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { modules, totalChecklistCount, totalExerciseCount } from './data';
+import {
+  Books,
+  Brain,
+  BracketsCurly,
+  Browser,
+  Buildings,
+  Certificate,
+  ChartLineUp,
+  CreditCard,
+  GraduationCap as PhosphorGraduationCap,
+  Path,
+  RocketLaunch,
+  TerminalWindow,
+} from '@phosphor-icons/react';
+import { modules, phases, totalChecklistCount, totalExerciseCount } from './data';
 import type { LessonBlock, Module } from './data/types';
 import { diagramRegistry } from './components/diagrams/registry';
 import { gameRegistry } from './components/games/registry';
@@ -39,6 +52,8 @@ import { GameIcon } from './components/ui/GameIcon';
 import { ExerciseRouter } from './components/ui/ExerciseRouter';
 import {
   activateCommercialLicense,
+  createCommercialCheckout,
+  getCommercialPlans,
   getCommercialMe,
   healthCheck,
   loadCloudProgress,
@@ -48,6 +63,7 @@ import {
   saveCloudProgress,
   storeToken,
   writeLocalCommercialProgress,
+  type CommercialPlan,
   type CommercialUser,
 } from './services/commercialApi';
 import {
@@ -56,7 +72,6 @@ import {
   dailyPlan,
   learningWorlds,
   marketplace,
-  mentorActions,
   projectCampaigns,
   reviewQueue,
   type PlatformTheme,
@@ -71,7 +86,6 @@ type Screen =
   | 'arcade'
   | 'career'
   | 'review'
-  | 'mentor'
   | 'analytics'
   | 'market'
   | 'account';
@@ -94,11 +108,25 @@ const navItems = [
   { id: 'arcade', label: 'Arcade', icon: Gamepad2 },
   { id: 'career', label: 'Carreira', icon: BriefcaseBusiness },
   { id: 'review', label: 'Revisao', icon: ShieldCheck },
-  { id: 'mentor', label: 'Mentor IA', icon: Bot },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'market', label: 'Loja', icon: Coins },
   { id: 'account', label: 'Conta', icon: ShieldCheck },
 ] as const;
+
+const worldIcons: Record<string, typeof Books> = {
+  'world-foundation': Brain,
+  'world-frontend': Browser,
+  'world-backend': TerminalWindow,
+  'world-platform': RocketLaunch,
+  'world-fullstack': Buildings,
+  'world-ai': BracketsCurly,
+};
+
+const planRules = {
+  starter: { maxMonth: 6, screens: new Set<Screen>(['command', 'worlds', 'learn', 'story', 'career', 'review', 'account']) },
+  pro: { maxMonth: 22, screens: new Set<Screen>(['command', 'worlds', 'learn', 'story', 'lab', 'arcade', 'career', 'review', 'analytics', 'market', 'account']) },
+  lifetime: { maxMonth: 22, screens: new Set<Screen>(['command', 'worlds', 'learn', 'story', 'lab', 'arcade', 'career', 'review', 'analytics', 'market', 'account']) },
+} as const;
 
 function clampPercent(value: number) {
   return Math.max(0, Math.min(100, value));
@@ -118,6 +146,54 @@ function countDone(values: Record<string, boolean>) {
 
 function readMinutes(duration: string) {
   return Number(duration.match(/\d+/)?.[0] ?? 0);
+}
+
+function formatPrice(priceCents: number) {
+  return (priceCents / 100).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+}
+
+function fallbackPlans(): CommercialPlan[] {
+  return [
+    {
+      id: 'starter',
+      name: 'Starter',
+      priceCents: 4990,
+      price: 49.9,
+      currency: 'BRL',
+      billing: 'monthly',
+      durationDays: 30,
+      seats: 1,
+      maxMonth: 6,
+      features: ['Fundamentos ate o mes 6', 'Aulas, exercicios e revisao', 'Progresso em nuvem com licenca ativa'],
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      priceCents: 8990,
+      price: 89.9,
+      currency: 'BRL',
+      billing: 'monthly',
+      durationDays: 30,
+      seats: 1,
+      maxMonth: 22,
+      features: ['Todos os 22 meses', 'Laboratorio, arcade e analytics', 'Projetos e revisoes avancadas'],
+    },
+    {
+      id: 'lifetime',
+      name: 'Vitalicio',
+      priceCents: 49700,
+      price: 497,
+      currency: 'BRL',
+      billing: 'lifetime',
+      durationDays: null,
+      seats: 1,
+      maxMonth: 22,
+      features: ['Pagamento unico', 'Acesso completo vitalicio', 'Ideal para venda direta'],
+    },
+  ];
 }
 
 function rankForLevel(level: number) {
@@ -195,18 +271,13 @@ CREATE INDEX idx_progress_events_module ON progress_events(module_id);`;
 }`;
 }
 
-function mentorPrompt(action: string, module: Module, lesson: LessonBlock | undefined) {
-  const lessonPart = lesson ? `A aula atual e "${lesson.heading}".` : 'Ainda nao ha aula selecionada.';
-  return `${action} para o modulo "${module.title}". ${lessonPart} Use o contexto abaixo, corrija informacoes imprecisas, explique com exemplos praticos e finalize com uma tarefa verificavel:\n\n${firstParagraph(module.intro)}`;
-}
-
 export default function App() {
   const [screen, setScreen] = useState<Screen>('command');
   const [theme, setTheme] = useState<PlatformTheme>('obsidian');
   const [navOpen, setNavOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [activeModuleId, setActiveModuleId] = useState(modules[3]?.id ?? modules[0]?.id);
-  const [activeLessonId, setActiveLessonId] = useState(modules[3]?.lessons[0]?.id ?? modules[0]?.lessons[0]?.id);
+  const [activeModuleId, setActiveModuleId] = useState(modules[0]?.id);
+  const [activeLessonId, setActiveLessonId] = useState(modules[0]?.lessons[0]?.id);
   const [gameScores, setGameScores] = useState<Record<string, number>>({});
   const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({});
   const [completedExercises, setCompletedExercises] = useState<Record<string, boolean>>({});
@@ -338,7 +409,33 @@ export default function App() {
     writeLocalCommercialProgress(commercialProgress);
   }, [commercialProgress]);
 
+  const activePlan = commercial.access ? commercial.user?.license?.plan as keyof typeof planRules | undefined : undefined;
+  const activeAllowance = activePlan && activePlan in planRules ? planRules[activePlan] : null;
+  const isLicensedRuntime = commercial.online && commercial.mode === 'licensed';
+
+  function canUseScreen(nextScreen: Screen) {
+    if (!isLicensedRuntime || nextScreen === 'account' || nextScreen === 'command' || nextScreen === 'worlds') return true;
+    if (!activeAllowance) return false;
+    return activeAllowance.screens.has(nextScreen);
+  }
+
+  function canUseModule(module: Module) {
+    if (!isLicensedRuntime) return true;
+    if (!activeAllowance) return module.month <= 2;
+    return module.month <= activeAllowance.maxMonth;
+  }
+
+  function goToScreen(nextScreen: Screen) {
+    setScreen(canUseScreen(nextScreen) ? nextScreen : 'account');
+    setNavOpen(false);
+  }
+
   function selectModule(module: Module, nextScreen: Screen = 'learn') {
+    if (!canUseModule(module) || !canUseScreen(nextScreen)) {
+      setScreen('account');
+      setNavOpen(false);
+      return;
+    }
     setActiveModuleId(module.id);
     setActiveLessonId(module.lessons[0]?.id);
     setScreen(nextScreen);
@@ -389,12 +486,11 @@ export default function App() {
             const Icon = item.icon;
             const active = screen === item.id;
             return (
-              <button
+            <button
                 key={item.id}
                 className={active ? 'active' : ''}
                 onClick={() => {
-                  setScreen(item.id);
-                  setNavOpen(false);
+                  goToScreen(item.id);
                 }}
               >
                 <Icon size={19} />
@@ -452,9 +548,11 @@ export default function App() {
               metrics={metrics}
               activeModule={activeModule}
               selectModule={selectModule}
-              setScreen={setScreen}
+              setScreen={goToScreen}
               completedMissions={completedMissions}
               onCompleteMission={(missionId) => setCompletedMissions((missions) => ({ ...missions, [missionId]: !missions[missionId] }))}
+              activePlanName={commercial.user?.license?.planName ?? null}
+              canUseModule={canUseModule}
             />
           )}
           {screen === 'worlds' && (
@@ -465,6 +563,7 @@ export default function App() {
               completedLessons={completedLessons}
               completedExercises={completedExercises}
               gameScores={gameScores}
+              canUseModule={canUseModule}
             />
           )}
           {screen === 'learn' && (
@@ -494,7 +593,6 @@ export default function App() {
               onReviewAnswer={(reviewId, remembered) => setReviewAnswers((answers) => ({ ...answers, [reviewId]: remembered }))}
             />
           )}
-          {screen === 'mentor' && <MentorHub module={activeModule} lesson={activeLesson} />}
           {screen === 'analytics' && <AnalyticsCenter metrics={metrics} />}
           {screen === 'market' && (
             <Marketplace
@@ -536,6 +634,8 @@ function CommandCenter({
   setScreen,
   completedMissions,
   onCompleteMission,
+  activePlanName,
+  canUseModule,
 }: {
   metrics: ReturnType<typeof createMetricsShape>;
   activeModule: Module;
@@ -543,6 +643,8 @@ function CommandCenter({
   setScreen: (screen: Screen) => void;
   completedMissions: Record<string, boolean>;
   onCompleteMission: (missionId: string) => void;
+  activePlanName: string | null;
+  canUseModule: (module: Module) => boolean;
 }) {
   const currentRank = rankForLevel(metrics.level);
   const nextRank = nextRankForLevel(metrics.level);
@@ -569,7 +671,7 @@ function CommandCenter({
           <h1>Aprenda como se estivesse subindo de nivel em uma carreira tech real.</h1>
           <p>
             Uma academia com mundos, aulas narrativas, revisao inteligente, projetos em sprint,
-            laboratorio estilo IDE, mentor contextual, arcade, carreira, loja, conquistas e analytics.
+            laboratorio estilo IDE, arcade, carreira, loja, conquistas e analytics.
           </p>
           <div className="hero-actions">
             <button className="primary-btn" onClick={() => selectModule(activeModule)}>
@@ -596,6 +698,13 @@ function CommandCenter({
         ['Jogos', metrics.games],
         ['Checklists', metrics.checklist],
       ]} />
+
+      <LearningSequence
+        activeModule={activeModule}
+        activePlanName={activePlanName}
+        canUseModule={canUseModule}
+        selectModule={selectModule}
+      />
 
       <div className="section-title">
         <div>
@@ -654,6 +763,65 @@ function CommandCenter({
   );
 }
 
+function LearningSequence({
+  activeModule,
+  activePlanName,
+  canUseModule,
+  selectModule,
+}: {
+  activeModule: Module;
+  activePlanName: string | null;
+  canUseModule: (module: Module) => boolean;
+  selectModule: (module: Module, nextScreen?: Screen) => void;
+}) {
+  return (
+    <Panel title="Sequencia recomendada" icon={<Path size={22} weight="duotone" />}>
+      <div className="sequence-header">
+        <div>
+          <span>Comece pelo Mes 1 e avance por fase. Extras entram depois da base fullstack.</span>
+          <strong>Plano atual: {activePlanName ?? 'Preview/local'}</strong>
+        </div>
+        <button className="primary-btn" onClick={() => selectModule(activeModule)}>
+          Continuar modulo ativo <ChevronRight size={17} />
+        </button>
+      </div>
+      <div className="sequence-grid">
+        {phases.map((phase) => {
+          const phaseModules = modules.filter((module) => module.phase === phase.phase);
+          const unlockedCount = phaseModules.filter(canUseModule).length;
+          return (
+            <article className={`sequence-phase ${phase.color}`} key={phase.phase}>
+              <div className="split">
+                <span>Fase {phase.phase}</span>
+                <strong>{unlockedCount}/{phaseModules.length}</strong>
+              </div>
+              <h3>{phase.title}</h3>
+              <p>{phase.objective}</p>
+              <div className="sequence-months">
+                {phaseModules.map((module) => {
+                  const unlocked = canUseModule(module);
+                  return (
+                    <button
+                      className={module.id === activeModule.id ? 'active' : ''}
+                      key={module.id}
+                      disabled={!unlocked}
+                      onClick={() => selectModule(module)}
+                      title={unlocked ? module.title : 'Disponivel no plano Pro ou Vitalicio'}
+                    >
+                      <span>{module.month}</span>
+                      {unlocked ? module.title : 'Bloqueado'}
+                    </button>
+                  );
+                })}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </Panel>
+  );
+}
+
 function WorldMap({
   modules,
   activeModule,
@@ -661,6 +829,7 @@ function WorldMap({
   completedLessons,
   completedExercises,
   gameScores,
+  canUseModule,
 }: {
   modules: Module[];
   activeModule: Module;
@@ -668,6 +837,7 @@ function WorldMap({
   completedLessons: Record<string, boolean>;
   completedExercises: Record<string, boolean>;
   gameScores: Record<string, number>;
+  canUseModule: (module: Module) => boolean;
 }) {
   return (
     <section className="world-layout">
@@ -681,36 +851,43 @@ function WorldMap({
         </div>
 
         <div className="worlds-grid">
-          {learningWorlds.map((world) => (
-            <article className={`world-card ${world.color}`} key={world.id}>
-              <span>{world.track}</span>
-              <h3>{world.title}</h3>
-              <p>{world.subtitle}</p>
-              <div className="chip-row">
-                {world.chapters.slice(0, 4).map((chapter) => <small key={chapter}>{chapter}</small>)}
-              </div>
-              <strong>Capstone: {world.capstone}</strong>
-            </article>
-          ))}
+          {learningWorlds.map((world) => {
+            const Icon = worldIcons[world.id] ?? Books;
+            return (
+              <article className={`world-card ${world.color}`} key={world.id}>
+                <div className="world-visual">
+                  <Icon size={34} weight="duotone" />
+                </div>
+                <span>{world.track}</span>
+                <h3>{world.title}</h3>
+                <p>{world.subtitle}</p>
+                <div className="chip-row">
+                  {world.chapters.slice(0, 4).map((chapter) => <small key={chapter}>{chapter}</small>)}
+                </div>
+                <strong>Capstone: {world.capstone}</strong>
+              </article>
+            );
+          })}
         </div>
 
         <div className="module-grid">
           {modules.map((module) => {
             const progress = moduleCompletion(module, completedLessons, completedExercises, gameScores);
+            const unlocked = canUseModule(module);
             return (
               <button
-                className={`module-tile ${activeModule.id === module.id ? 'selected' : ''}`}
+                className={`module-tile ${activeModule.id === module.id ? 'selected' : ''} ${unlocked ? '' : 'locked'}`}
                 key={module.id}
                 onClick={() => selectModule(module)}
               >
                 <div className="module-topline">
                   <span>{module.emoji}</span>
-                  {progress === 100 ? <CheckCircle2 size={18} /> : <CircleDot size={18} />}
+                  {!unlocked ? <Lock size={18} /> : progress === 100 ? <CheckCircle2 size={18} /> : <CircleDot size={18} />}
                 </div>
                 <strong>{module.title}</strong>
                 <p>{module.tagline}</p>
                 <div className="meter mini"><i style={{ width: `${progress}%` }} /></div>
-                <small>{module.lessons.length} aulas - {module.exercises.length} exercicios - {module.games.length} jogos</small>
+                <small>Mes {module.month} - {module.lessons.length} aulas - {module.exercises.length} exercicios - {module.games.length} jogos</small>
               </button>
             );
           })}
@@ -807,7 +984,7 @@ function LearningRoom({
           </button>
           <button className="primary-btn" onClick={() => setScreen('story')}>Transformar em historia</button>
           <button className="ghost-btn" onClick={() => setScreen('review')}>Criar revisao</button>
-          <button className="ghost-btn" onClick={() => setScreen('mentor')}>Pedir ajuda da IA</button>
+          <button className="ghost-btn" onClick={() => setScreen('lab')}>Praticar no laboratorio</button>
         </div>
 
         {activeExercise && (
@@ -919,9 +1096,21 @@ function LabStudio({ module }: { module: Module }) {
   const lab = module.sprintLab;
   const files = useMemo(() => filesForModule(module), [module]);
   const [activeFile, setActiveFile] = useState(files[0]);
+  const [activeSprintIndex, setActiveSprintIndex] = useState(0);
+  const [acceptedItems, setAcceptedItems] = useState<Record<string, boolean>>({});
+  const sprint = lab?.sprints[activeSprintIndex] ?? lab?.sprints[0];
+  const acceptanceItems = [
+    'Entendi o problema antes de alterar codigo',
+    'Implementei a menor entrega verificavel',
+    'Validei um caminho feliz e um caso de erro',
+    'Sei explicar a decisao tecnica em voz alta',
+  ];
+  const acceptedCount = acceptanceItems.filter((item) => acceptedItems[`${module.id}:${activeSprintIndex}:${item}`]).length;
 
   useEffect(() => {
     setActiveFile(files[0]);
+    setActiveSprintIndex(0);
+    setAcceptedItems({});
   }, [files]);
 
   return (
@@ -945,26 +1134,43 @@ function LabStudio({ module }: { module: Module }) {
         <section className="editor-panel">
           <div className="editor-tabs">
             <span>{activeFile}</span>
-            <span>terminal</span>
+            <span>Sprint {activeSprintIndex + 1}</span>
           </div>
           <pre className="code-block">
             <code>{studioPreview(module, activeFile)}</code>
           </pre>
           <div className="terminal-output">
             <span>$ npm run validate:sprint</span>
-            <strong>Checklist aprovado: contexto, teste, entrega e explicacao.</strong>
+            <strong>{acceptedCount === acceptanceItems.length ? 'Sprint pronta para entrega.' : `${acceptedCount}/${acceptanceItems.length} criterios validados.`}</strong>
+          </div>
+          <div className="lab-checklist">
+            {acceptanceItems.map((item) => {
+              const key = `${module.id}:${activeSprintIndex}:${item}`;
+              return (
+                <label key={item}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(acceptedItems[key])}
+                    onChange={() => setAcceptedItems((current) => ({ ...current, [key]: !current[key] }))}
+                  />
+                  <span>{item}</span>
+                </label>
+              );
+            })}
           </div>
         </section>
         <aside className="sprint-panel">
           <span className="eyebrow"><Target size={15} /> Sprint ativa</span>
-          <h2>{lab?.title ?? `Projeto guiado: ${module.title}`}</h2>
+          <h2>{sprint?.title ?? lab?.title ?? `Projeto guiado: ${module.title}`}</h2>
+          <p>{sprint?.objective ?? 'Escolha uma sprint, abra os arquivos sugeridos e valide os criterios de aceite.'}</p>
+          {sprint?.deliverable && <div className="delivery-box"><strong>Entrega esperada</strong><span>{sprint.deliverable}</span></div>}
           <div className="sprint-list">
             {(lab?.sprints ?? []).slice(0, 4).map((sprint, index) => (
-              <div key={sprint.title}>
+              <button className={index === activeSprintIndex ? 'active' : ''} key={sprint.title} onClick={() => setActiveSprintIndex(index)}>
                 <strong>{index + 1}. {sprint.title}</strong>
                 <p>{sprint.objective}</p>
                 <small>Entrega: {sprint.deliverable}</small>
-              </div>
+              </button>
             ))}
           </div>
         </aside>
@@ -1146,49 +1352,6 @@ function ReviewCenter({
   );
 }
 
-function MentorHub({ module, lesson }: { module: Module; lesson: LessonBlock | undefined }) {
-  const [selectedAction, setSelectedAction] = useState(mentorActions[0]);
-  const generatedPrompt = mentorPrompt(selectedAction, module, lesson);
-
-  return (
-    <section className="stack">
-      <article className="mentor-panel">
-        <span className="eyebrow"><Bot size={15} /> Mentor IA contextual</span>
-        <h1>Ajuda no ponto exato da jornada.</h1>
-        <p>
-          Contexto atual: <strong>{module.title}</strong>
-          {lesson ? `, aula "${lesson.heading}".` : '.'} A IA deixa de ser um chat solto e vira uma camada de explicacao,
-          treino, revisao e feedback.
-        </p>
-        <div className="prompt-grid">
-          {mentorActions.map((action) => (
-            <button className={selectedAction === action ? 'active' : ''} key={action} onClick={() => setSelectedAction(action)}>
-              {action}
-            </button>
-          ))}
-        </div>
-      </article>
-
-      <div className="dashboard-grid">
-        <Panel title="Prompt sugerido" icon={<Bot size={20} />}>
-          <div className="terminal-card">
-            <span>{generatedPrompt}</span>
-          </div>
-          <p className="muted-copy">Gerado localmente com o contexto da aula. Para resposta automatica real, conecte uma API de IA no backend comercial.</p>
-        </Panel>
-        <Panel title="Acoes automaticas" icon={<Sparkles size={20} />}>
-          <div className="checklist">
-            <div><CheckCircle2 size={18} /><span>Gerar analogia curta</span></div>
-            <div><CheckCircle2 size={18} /><span>Criar exercicio no mesmo nivel</span></div>
-            <div><CheckCircle2 size={18} /><span>Subir dificuldade gradualmente</span></div>
-            <div><CheckCircle2 size={18} /><span>Avaliar resposta do aluno</span></div>
-          </div>
-        </Panel>
-      </div>
-    </section>
-  );
-}
-
 function AnalyticsCenter({ metrics }: { metrics: ReturnType<typeof createMetricsShape> }) {
   const trackRows = ['frontend', 'backend', 'devops', 'fullstack', 'soft'].map((track) => {
     const trackModules = modules.filter((module) => module.track === track);
@@ -1336,8 +1499,24 @@ function CommercialAccount({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [licenseKey, setLicenseKey] = useState('');
+  const [plans, setPlans] = useState<CommercialPlan[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!commercial.online) return;
+    let cancelled = false;
+    getCommercialPlans()
+      .then((result) => {
+        if (!cancelled) setPlans(result.plans);
+      })
+      .catch(() => {
+        if (!cancelled) setPlans([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [commercial.online]);
 
   async function submitAccount() {
     setBusy(true);
@@ -1370,6 +1549,19 @@ function CommercialAccount({
       setMessage('Licenca ativada. Sincronizacao em nuvem liberada.');
     } catch (error) {
       setCommercial((current) => ({ ...current, error: error instanceof Error ? error.message : 'Erro ao ativar licenca.' }));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startCheckout(planId: CommercialPlan['id']) {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const checkout = await createCommercialCheckout(planId);
+      window.location.href = checkout.checkoutUrl;
+    } catch (error) {
+      setCommercial((current) => ({ ...current, error: error instanceof Error ? error.message : 'Erro ao iniciar pagamento.' }));
     } finally {
       setBusy(false);
     }
@@ -1410,12 +1602,12 @@ function CommercialAccount({
   return (
     <section className="account-layout">
       <div className="stack">
-        <article className="mentor-panel account-hero">
+        <article className="feature-panel account-hero">
           <span className="eyebrow"><ShieldCheck size={15} /> Produto comercial</span>
           <h1>Conta, licenca e progresso em nuvem.</h1>
           <p>
             Esta camada transforma o app em uma base vendavel: usuario com senha protegida,
-            token de sessao, ativacao de licenca e sincronizacao no servidor.
+            pagamento por plano, ativacao de licenca e sincronizacao no servidor.
           </p>
           <div className="account-status-grid">
             <div>
@@ -1432,6 +1624,39 @@ function CommercialAccount({
             </div>
           </div>
         </article>
+
+        <Panel title="Planos de acesso" icon={<CreditCard size={22} weight="duotone" />}>
+          <div className="pricing-grid">
+            {(plans.length ? plans : fallbackPlans()).map((plan) => {
+              const current = commercial.user?.license?.plan === plan.id;
+              return (
+                <article className={`price-card ${current ? 'current' : ''}`} key={plan.id}>
+                  <div className="price-icon">
+                    {plan.id === 'starter' && <PhosphorGraduationCap size={28} weight="duotone" />}
+                    {plan.id === 'pro' && <ChartLineUp size={28} weight="duotone" />}
+                    {plan.id === 'lifetime' && <Certificate size={28} weight="duotone" />}
+                  </div>
+                  <span>{plan.billing === 'lifetime' ? 'Pagamento unico' : 'Assinatura mensal'}</span>
+                  <h3>{plan.name}</h3>
+                  <strong>{formatPrice(plan.priceCents)}{plan.billing === 'monthly' ? '/mes' : ''}</strong>
+                  <p>Libera ate o mes {plan.maxMonth} da trilha.</p>
+                  <div className="checklist compact-list">
+                    {plan.features.map((feature) => (
+                      <div key={feature}><CheckCircle2 size={16} /><span>{feature}</span></div>
+                    ))}
+                  </div>
+                  <button
+                    className={current ? 'success-pill full' : 'primary-btn full'}
+                    disabled={busy || !commercial.user || current}
+                    onClick={() => startCheckout(plan.id)}
+                  >
+                    {current ? 'Plano ativo' : commercial.user ? 'Pagar agora' : 'Entre para comprar'}
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        </Panel>
 
         {commercial.user && (
           <Panel title="Sincronizacao" icon={<ShieldCheck size={20} />}>
