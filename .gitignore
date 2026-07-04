@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Dados do backend comercial: banco JSON e segredos gerados automaticamente.
+# Nunca deve ir para o repositorio nem para backups publicos.
+.data
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

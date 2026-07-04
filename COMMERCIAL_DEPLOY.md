@@ -11,23 +11,31 @@ npm run dev
 
 Acesse o endereco do Vite mostrado no terminal. O comando sobe a API em `127.0.0.1:8787` e o frontend com proxy para `/api`.
 
-## Variaveis obrigatorias em producao
+## Variaveis de ambiente em producao
 
-Copie `.env.example` para o ambiente do servidor e troque todos os segredos.
+Copie `.env.example` para o ambiente do servidor.
 
 ```bash
 PORT=8787
 HOST=0.0.0.0
 DATA_DIR=./.data
 PUBLIC_APP_URL=https://seudominio.com
+# Opcionais: se omitidos, o servidor gera e persiste sozinho em .data/secrets.json
 TOKEN_SECRET=gere-um-segredo-longo
 ADMIN_TOKEN=gere-um-token-admin-longo
+# Opcional: exige esse token para o primeiro cadastro virar "owner"
+OWNER_SETUP_TOKEN=
 REQUIRE_LICENSE=true
 SEED_DEMO_LICENSE=false
 ALLOWED_ORIGINS=https://seudominio.com
 MERCADO_PAGO_ACCESS_TOKEN=APP_USR-xxxxxxxxxxxxxxxx
 MERCADO_PAGO_WEBHOOK_SECRET=gere-um-segredo-de-webhook
 ```
+
+`TOKEN_SECRET` e `ADMIN_TOKEN` nao sao mais obrigatorios tecnicamente (o
+servidor gera valores aleatorios fortes sozinho se faltarem), mas defini-los
+explicitamente em producao e mais previsivel para operar entre reinicios e
+multiplas instancias.
 
 ## Planos definidos
 
@@ -46,6 +54,11 @@ Configure no painel do Mercado Pago a URL:
 ```text
 https://seudominio.com/api/payments/mercadopago/webhook
 ```
+
+O servidor valida a assinatura real enviada pelo Mercado Pago (header
+`x-signature`, formato `ts=...,v1=...`, HMAC-SHA256 com `MERCADO_PAGO_WEBHOOK_SECRET`).
+Sem essa variavel configurada, o webhook aceita qualquer chamada — use isso
+apenas em teste local, nunca em producao.
 
 ## Criar licencas
 
@@ -89,6 +102,7 @@ Sem usuario logado e plano ativo, o frontend redireciona qualquer tentativa de a
 - `GET /api/plans?lang=es`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/change-password`
 - `GET /api/me`
 - `POST /api/checkout`
 - `POST /api/payments/mercadopago/webhook`
@@ -97,6 +111,7 @@ Sem usuario logado e plano ativo, o frontend redireciona qualquer tentativa de a
 - `PUT /api/progress`
 - `POST /api/admin/licenses`
 - `POST /api/admin/payments/confirm`
+- `POST /api/admin/users/reset-password`
 - `GET /api/admin/summary`
 
 ## Seguranca incluida

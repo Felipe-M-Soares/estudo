@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
@@ -10,21 +10,58 @@ const rootDir = resolve(__dirname, '..');
 const distDir = resolve(rootDir, 'dist');
 const dataDir = resolve(process.env.DATA_DIR ?? join(rootDir, '.data'));
 const dbPath = resolve(dataDir, 'devquest-db.json');
+const secretsPath = resolve(dataDir, 'secrets.json');
+
+const NODE_ENV = process.env.NODE_ENV ?? 'development';
+
+// Segredos fortes por padrao: nunca usamos mais um valor fixo hardcoded
+// como fallback (isso permitia forjar tokens de sessao/admin em qualquer
+// instalacao que nao configurasse as variaveis de ambiente). Se as
+// variaveis nao estiverem definidas, geramos segredos aleatorios uma unica
+// vez e persistimos em `.data/secrets.json` para sobreviver a reinicios.
+function loadOrCreateAutoSecrets() {
+  mkdirSync(dataDir, { recursive: true });
+  if (existsSync(secretsPath)) {
+    try {
+      return JSON.parse(readFileSync(secretsPath, 'utf8'));
+    } catch {
+      // arquivo corrompido: recria abaixo
+    }
+  }
+  const generated = {
+    TOKEN_SECRET: randomBytes(48).toString('hex'),
+    ADMIN_TOKEN: randomBytes(32).toString('hex'),
+  };
+  writeFileSync(secretsPath, JSON.stringify(generated, null, 2));
+  return generated;
+}
+
+const autoSecrets = process.env.TOKEN_SECRET && process.env.ADMIN_TOKEN ? null : loadOrCreateAutoSecrets();
 
 const PORT = Number(process.env.PORT ?? 8787);
 const HOST = process.env.HOST ?? '0.0.0.0';
-const TOKEN_SECRET = process.env.TOKEN_SECRET ?? 'devquest-local-change-this-secret';
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? 'devquest-admin-change-me';
+const TOKEN_SECRET = process.env.TOKEN_SECRET ?? autoSecrets.TOKEN_SECRET;
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? autoSecrets.ADMIN_TOKEN;
 const TOKEN_TTL_SECONDS = Number(process.env.TOKEN_TTL_SECONDS ?? 60 * 60 * 24 * 7);
 const REQUIRE_LICENSE = process.env.REQUIRE_LICENSE !== 'false';
 const SEED_DEMO_LICENSE = process.env.SEED_DEMO_LICENSE === 'true';
 const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL ?? '').replace(/\/$/, '');
 const MERCADO_PAGO_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN ?? '';
 const MERCADO_PAGO_WEBHOOK_SECRET = process.env.MERCADO_PAGO_WEBHOOK_SECRET ?? '';
+const OWNER_SETUP_TOKEN = process.env.OWNER_SETUP_TOKEN ?? '';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+if (NODE_ENV === 'production' && (!process.env.TOKEN_SECRET || !process.env.ADMIN_TOKEN)) {
+  console.warn(
+    '[DevQuest] ATENCAO: TOKEN_SECRET/ADMIN_TOKEN nao definidos via variavel de ambiente em ' +
+      'producao. Um valor aleatorio foi gerado e salvo em .data/secrets.json. Isso funciona, ' +
+      'mas o recomendado em producao real e definir as variaveis explicitamente e manter esse ' +
+      'arquivo fora de qualquer backup publico.',
+  );
+}
 
 const jsonLimitBytes = 1024 * 1024;
 const rateBuckets = new Map();
@@ -119,6 +156,12 @@ const registerSchema = z.object({
   name: z.string().trim().min(2).max(80),
   email: z.string().trim().email().max(160).transform((value) => value.toLowerCase()),
   password: z.string().min(10).max(200).regex(/[A-Za-z]/).regex(/[0-9]/),
+  ownerSetupToken: z.string().trim().max(200).optional(),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(10).max(200).regex(/[A-Za-z]/).regex(/[0-9]/),
 });
 
 const loginSchema = z.object({
@@ -376,7 +419,10 @@ function setHeaders(res, status, extra = {}) {
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Content-Security-Policy':
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://generativelanguage.googleapis.com https://api.deepseek.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+      // connect-src restrito a 'self': o app nao chama nenhuma API de IA
+      // diretamente do navegador, entao nao ha motivo para liberar dominios
+      // externos aqui (isso so amplia a superficie de ataque em caso de XSS).
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
     ...extra,
   };
   res.writeHead(status, headers);
@@ -454,6 +500,22 @@ function parseBody(req) {
   });
 }
 
+function safeEqualStrings(a, b) {
+  const bufA = Buffer.from(String(a ?? ''));
+  const bufB = Buffer.from(String(b ?? ''));
+  if (bufA.length !== bufB.length) {
+    // ainda gasta um tempo comparavel para nao vazar o tamanho via timing
+    timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return timingSafeEqual(bufA, bufB);
+}
+
+function isAdminAuthorized(req) {
+  const adminToken = req.headers['x-admin-token'];
+  return typeof adminToken === 'string' && adminToken.length > 0 && safeEqualStrings(adminToken, ADMIN_TOKEN);
+}
+
 function getBearer(req) {
   const header = req.headers.authorization ?? '';
   if (!header.startsWith('Bearer ')) return null;
@@ -476,7 +538,13 @@ function requireUser(req, res, db) {
 }
 
 async function handleApi(req, res, pathname) {
-  if (!rateLimit(req, res, pathname.startsWith('/api/auth') ? 'auth' : 'api')) return;
+  const isAuthRoute = pathname.startsWith('/api/auth');
+  // Rotas de auth (login/registro) usam um limite bem mais apertado que o
+  // restante da API, para dificultar brute force de senha e enumeracao de
+  // e-mail. O bloqueio de conta apos tentativas falhas continua existindo
+  // por cima disso.
+  const rateOk = isAuthRoute ? rateLimit(req, res, 'auth', 20, 60_000) : rateLimit(req, res, 'api', 100, 60_000);
+  if (!rateOk) return;
   const db = loadDb();
 
   if (req.method === 'GET' && pathname === '/api/health') {
@@ -503,13 +571,28 @@ async function handleApi(req, res, pathname) {
     const { name, email, password } = body;
     if (db.users.some((user) => user.email === email)) return sendError(res, 409, 'Email ja cadastrado.', 'email_exists');
 
+    // O primeiro usuario vira "owner" (admin do produto). Se OWNER_SETUP_TOKEN
+    // estiver configurado no ambiente, exigimos que ele seja enviado para
+    // conceder o papel de owner - evita que, em producao, qualquer pessoa que
+    // chegue primeiro no formulario de cadastro (ex: apos um reset de banco)
+    // vire administradora da plataforma.
+    const isFirstUser = db.users.length === 0;
+    let role = 'student';
+    if (isFirstUser) {
+      if (OWNER_SETUP_TOKEN) {
+        role = body.ownerSetupToken && safeEqualStrings(body.ownerSetupToken, OWNER_SETUP_TOKEN) ? 'owner' : 'student';
+      } else {
+        role = 'owner';
+      }
+    }
+
     const passwordHash = hashPassword(password);
     const user = {
       id: createId('usr'),
       name,
       email,
       passwordHash,
-      role: db.users.length === 0 ? 'owner' : 'student',
+      role,
       status: 'active',
       licenseId: null,
       failedLoginCount: 0,
@@ -559,6 +642,22 @@ async function handleApi(req, res, pathname) {
     const user = requireUser(req, res, db);
     if (!user) return;
     sendJson(res, 200, { ok: true, user: publicUser(user, db), access: hasAccess(user, db) });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/auth/change-password') {
+    const user = requireUser(req, res, db);
+    if (!user) return;
+    const body = validateParsed(changePasswordSchema, await parseBody(req), res);
+    if (!body) return;
+    if (!verifyPassword(body.currentPassword, user.passwordHash.salt, user.passwordHash.hash)) {
+      return sendError(res, 401, 'Senha atual incorreta.', 'invalid_credentials');
+    }
+    user.passwordHash = hashPassword(body.newPassword);
+    user.updatedAt = nowIso();
+    addEvent(db, 'user.password_changed', user.id);
+    saveDb(db);
+    sendJson(res, 200, { ok: true });
     return;
   }
 
@@ -653,13 +752,37 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === 'POST' && pathname === '/api/payments/mercadopago/webhook') {
-    const signature = String(req.headers['x-signature'] ?? '');
-    if (MERCADO_PAGO_WEBHOOK_SECRET && !signature.includes(MERCADO_PAGO_WEBHOOK_SECRET)) {
-      return sendError(res, 401, 'Webhook nao autorizado.', 'webhook_unauthorized');
-    }
-    const body = await parseBody(req).catch(() => ({}));
     const queryUrl = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+    const body = await parseBody(req).catch(() => ({}));
     const paymentId = body?.data?.id ?? body?.id ?? queryUrl.searchParams.get('data.id') ?? queryUrl.searchParams.get('id');
+
+    if (MERCADO_PAGO_WEBHOOK_SECRET) {
+      // Validacao real de assinatura, conforme o formato documentado pelo
+      // Mercado Pago: header `x-signature: ts=<epoch>,v1=<hmac_hex>` e
+      // `x-request-id`. O HMAC-SHA256 e calculado sobre um "manifest" no
+      // formato `id:{data.id};request-id:{x-request-id};ts:{ts};` usando o
+      // segredo do webhook. Isso substitui a checagem antiga (que so
+      // conferia se o segredo aparecia como substring no header, o que nao
+      // corresponde ao esquema real do provedor e podia ser forjado).
+      const signatureHeader = String(req.headers['x-signature'] ?? '');
+      const requestId = String(req.headers['x-request-id'] ?? '');
+      const parts = Object.fromEntries(
+        signatureHeader
+          .split(',')
+          .map((part) => part.trim().split('='))
+          .filter((pair) => pair.length === 2)
+          .map(([key, value]) => [key.trim(), value.trim()]),
+      );
+      const ts = parts.ts;
+      const v1 = parts.v1;
+      const dataId = String(paymentId ?? queryUrl.searchParams.get('data.id') ?? '').toLowerCase();
+      const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+      const expectedV1 = ts ? createHmac('sha256', MERCADO_PAGO_WEBHOOK_SECRET).update(manifest).digest('hex') : '';
+      if (!ts || !v1 || !safeEqualStrings(v1, expectedV1)) {
+        return sendError(res, 401, 'Webhook nao autorizado.', 'webhook_unauthorized');
+      }
+    }
+
     if (!paymentId) {
       sendJson(res, 200, { ok: true, ignored: true });
       return;
@@ -719,8 +842,7 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === 'POST' && pathname === '/api/admin/licenses') {
-    const adminToken = req.headers['x-admin-token'];
-    if (!adminToken || adminToken !== ADMIN_TOKEN) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
+    if (!isAdminAuthorized(req)) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
     const body = await parseBody(req);
     const plan = plans[String(body.plan ?? 'pro').trim()] ?? plans.pro;
     const seats = Math.max(1, Math.min(10000, Number(body.seats ?? 1)));
@@ -745,8 +867,7 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === 'POST' && pathname === '/api/admin/payments/confirm') {
-    const adminToken = req.headers['x-admin-token'];
-    if (!adminToken || adminToken !== ADMIN_TOKEN) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
+    if (!isAdminAuthorized(req)) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
     const body = await parseBody(req);
     const order = db.orders.find((item) => item.id === String(body.orderId ?? ''));
     if (!order) return sendError(res, 404, 'Pedido nao encontrado.', 'order_not_found');
@@ -762,9 +883,27 @@ async function handleApi(req, res, pathname) {
     return;
   }
 
+  if (req.method === 'POST' && pathname === '/api/admin/users/reset-password') {
+    if (!isAdminAuthorized(req)) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
+    const body = await parseBody(req);
+    const email = String(body.email ?? '').trim().toLowerCase();
+    const user = db.users.find((item) => item.email === email);
+    if (!user) return sendError(res, 404, 'Usuario nao encontrado.', 'user_not_found');
+    // Sem servico de e-mail configurado, o admin gera uma senha temporaria
+    // aqui e repassa manualmente para a pessoa (canal seguro, fora do app).
+    const tempPassword = `${randomBytes(6).toString('hex')}Aa1`;
+    user.passwordHash = hashPassword(tempPassword);
+    user.failedLoginCount = 0;
+    user.lockedUntil = null;
+    user.updatedAt = nowIso();
+    addEvent(db, 'user.password_reset_by_admin', user.id);
+    saveDb(db);
+    sendJson(res, 200, { ok: true, email: user.email, temporaryPassword: tempPassword });
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/admin/summary') {
-    const adminToken = req.headers['x-admin-token'];
-    if (!adminToken || adminToken !== ADMIN_TOKEN) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
+    if (!isAdminAuthorized(req)) return sendError(res, 401, 'Admin token invalido.', 'admin_unauthorized');
     sendJson(res, 200, {
       ok: true,
       users: db.users.length,
