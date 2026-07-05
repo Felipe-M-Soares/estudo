@@ -1,35 +1,7 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 
-// Fontes auto-hospedadas — sem dependência de CDN externo
-import '@fontsource/cinzel/500.css';
-import '@fontsource/cinzel/600.css';
-import '@fontsource/cinzel/700.css';
-import '@fontsource/cinzel/900.css';
-import '@fontsource/inter/400.css';
-import '@fontsource/inter/500.css';
-import '@fontsource/inter/600.css';
-import '@fontsource/inter/700.css';
-import '@fontsource/jetbrains-mono/400.css';
-import '@fontsource/jetbrains-mono/500.css';
-import '@fontsource/jetbrains-mono/600.css';
+  import { createRoot } from "react-dom/client";
+  import App from "./app/App.tsx";
+  import "./styles/index.css";
 
-import './index.css';
-import App from './App.tsx';
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </StrictMode>
-);
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // O app continua funcionando mesmo quando o navegador bloqueia PWA/SW.
-    });
-  });
-}
+  createRoot(document.getElementById("root")!).render(<App />);
+  
