@@ -1,5 +1,48 @@
 # DevQuest - Analise de Seguranca
 
+## Correcoes e novidades desta rodada (04/07/2026)
+
+- **Bug real de layout mobile corrigido**: a tela Laboratorio tinha um
+  elemento chegando a 3232px de largura numa tela de 375px (classico "grid
+  blowout" de CSS Grid - conteudo de codigo sem `min-width: 0` no item do
+  grid forcava a coluna a crescer). Corrigido com `min-width: 0` nos itens
+  do grid e trocando `1fr` por `minmax(0, 1fr)` nas media queries afetadas
+  (`.studio`, `.sandbox-grid`, `.learn-layout`).
+- **Paleta de cores trocada** para uma baseada em cores reais confirmadas de
+  referencias de produto (Tamamon usa `#F97316`; Raycast/Glaze usa a mesma
+  familia vermelho-laranja) - fundo neutro escuro em vez do marrom "taverna
+  medieval" anterior.
+- **Textos em ingles na tela Conta mesmo com idioma em portugues**:
+  `owner`/`lifetime`/`active` apareciam brutos (vindos direto do backend)
+  em vez de traduzidos. Adicionado mapeamento de traducao para papel, plano
+  e status da licenca nos 3 idiomas.
+- **Enter agora funciona nos formularios** de login/cadastro e ativacao de
+  licenca (antes so funcionava clicando com o mouse no botao) - os campos
+  foram envolvidos em `<form onSubmit>` de verdade.
+- **Bug de seguranca/logica corrigido nas missoes diarias**: antes
+  qualquer pessoa podia clicar "Concluir" sem ter feito nada. Agora cada
+  missao exige uma prova real (revisao respondida, aula concluida,
+  exercicio resolvido) antes de poder ser marcada, verificado a partir do
+  proprio estado de progresso.
+- **Sandbox de codigo do Laboratorio corrigido para rodar de verdade**:
+  bloqueado por CSP: e agora roda via rota dedicada `/api/sandbox-frame`
+  com CSP proprio (so para essa resposta), mantendo o resto do site com CSP
+  estrito.
+- **Icones dos 34 jogos do Arcade trocados para "duotone"** (Phosphor
+  Icons, ja incluso no projeto) - visual mais rico que icones de linha
+  simples, sem repetir icone entre jogos diferentes.
+- **Checkout internacional com Stripe adicionado**, ao lado do Mercado
+  Pago ja existente. Cada plano tem preco em USD alem de BRL. Os dois
+  webhooks (Mercado Pago e Stripe) verificam assinatura de verdade via
+  HMAC em tempo constante - nenhum e so decorativo.
+- **Screenshots reais do app** substituindo o mockup de CSS na pagina
+  inicial (landing page), capturados do proprio app rodando com o tema
+  novo.
+- Encontrado (via `tsc -b --force`, nao pelo `tsc --noEmit` comum) um erro
+  de tipo real no componente de icones dos jogos que estava sendo mascarado
+  por cache incremental do TypeScript - corrigido e documentado o metodo de
+  checagem mais confiavel para o futuro.
+
 ## Correcao: rotas com mais de um segmento davam 404 na Vercel (04/07/2026)
 
 Depois do suporte inicial a Vercel (secao abaixo), o usuario reportou em

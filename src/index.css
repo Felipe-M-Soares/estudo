@@ -3,41 +3,43 @@
 @theme {
   --font-display: "Cinzel", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --color-base-50: #faf3e4;
-  --color-base-100: #f0e2c4;
-  --color-base-200: #dcc79a;
-  --color-base-300: #b39b76;
-  --color-base-400: #8c754f;
-  --color-base-500: #6b5836;
-  --color-base-600: #4a3c25;
-  --color-base-700: #34281a;
-  --color-base-800: #241a10;
-  --color-base-850: #1c130b;
-  --color-base-900: #150e08;
-  --color-base-950: #0c0805;
-  --color-gold-100: #fbecc8;
-  --color-gold-200: #f3d488;
-  --color-gold-300: #e8b856;
-  --color-gold-400: #e3a63d;
-  --color-gold-900: #4a350f;
-  --color-ember-300: #e58666;
-  --color-ember-400: #c9452c;
-  --color-ember-500: #a3341f;
-  --color-emerald-100: #d3f3e2;
-  --color-emerald-200: #97dfb8;
-  --color-emerald-300: #5fc98e;
-  --color-emerald-400: #3f9d6b;
-  --color-emerald-900: #163a26;
-  --color-arcane-300: #d3bfff;
-  --color-arcane-400: #b48cff;
-  --color-arcane-500: #9161f2;
-  --color-arcane-900: #2a1a4c;
+  --color-base-50: #eafbe6;
+  --color-base-100: #cfeee0;
+  --color-base-200: #a7d3c8;
+  --color-base-300: #7fa8a2;
+  --color-base-400: #587d7c;
+  --color-base-500: #3c5c60;
+  --color-base-600: #294046;
+  --color-base-700: #1c2d33;
+  --color-base-800: #14212a;
+  --color-base-850: #0f1a20;
+  --color-base-900: #0a1418;
+  --color-base-950: #050b0d;
+  --color-magenta-100: #fce0f6;
+  --color-magenta-200: #f9b3ec;
+  --color-magenta-300: #f57add;
+  --color-magenta-400: #f241c3;
+  --color-magenta-900: #6b1a58;
+  --color-green-100: #e4fbd8;
+  --color-green-200: #cdf7b5;
+  --color-green-300: #aef29b;
+  --color-green-400: #73f250;
+  --color-green-900: #234a17;
+  --color-gold-100: #fdf1cf;
+  --color-gold-200: #f9e19a;
+  --color-gold-300: #f5d573;
+  --color-gold-400: #f2c84b;
+  --color-gold-900: #5c4413;
+  --color-teal-300: #3f7a8f;
+  --color-teal-400: #1e4959;
+  --color-teal-500: #163540;
+  --color-teal-900: #0a1418;
 }
 
 :root {
   font-family: Inter, system-ui, sans-serif;
-  color: #f4e8ce;
-  background: #150e08;
+  color: #eafbe6;
+  background: #0a1418;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -50,7 +52,7 @@
 html {
   min-width: 320px;
   min-height: 100%;
-  background: #150e08;
+  background: #0a1418;
   overflow-x: hidden;
 }
 
@@ -71,71 +73,75 @@ button {
   cursor: pointer;
 }
 
-/* Tema padrao "Torchlight": masmorra/taverna a luz de tocha - dourado
-   quente como cor primaria (em vez do ciano tecnologico generico), rubi
-   como acento secundario e esmeralda para sucesso/XP. */
+/* Tema unico "Quest" - construido em cima da paleta de marca fornecida
+   (#F241C3 magenta, #1E4959 teal escuro, #73F250 e #AEF29B verdes,
+   #F2C84B dourado). Fundo escuro derivado do teal, verde vibrante como
+   acento primario (call-to-action), magenta como destaque secundario,
+   dourado para XP/moedas/recompensas - a mesma logica de "moeda dourada,
+   acao verde, alerta magenta" se repete em todo o app. */
 .platform {
-  --bg: #150e08;
-  --bg-2: #1e140b;
-  --surface: rgba(41, 29, 18, 0.92);
-  --surface-2: rgba(58, 41, 24, 0.85);
-  --surface-3: rgba(232, 178, 61, 0.07);
-  --line: rgba(201, 149, 74, 0.28);
-  --text: #f4e8ce;
-  --muted: #b39b76;
-  --soft: #ddc9a0;
-  --accent: #e3a63d;
-  --accent-2: #c9452c;
-  --accent-3: #3f9d6b;
-  --warning: #e3a63d;
-  --danger: #c9452c;
+  --bg: #0a1418;
+  --bg-2: #0f2028;
+  --surface: rgba(30, 73, 89, 0.38);
+  --surface-2: rgba(30, 73, 89, 0.55);
+  --surface-3: rgba(115, 242, 80, 0.08);
+  --line: rgba(115, 242, 80, 0.22);
+  --text: #eafbe6;
+  --muted: #8fada6;
+  --soft: #c8e6c9;
+  --accent: #73f250;
+  --accent-2: #f241c3;
+  --accent-3: #f2c84b;
+  --warning: #f2c84b;
+  --danger: #f241c3;
   display: grid;
   grid-template-columns: 286px minmax(0, 1fr);
   min-height: 100vh;
   color: var(--text);
   background:
-    radial-gradient(circle at 14% -6%, rgba(227, 166, 61, 0.18), transparent 32%),
-    radial-gradient(circle at 92% 2%, rgba(201, 69, 44, 0.14), transparent 34%),
-    linear-gradient(135deg, var(--bg), #120b06 55%, #0e0904);
+    radial-gradient(circle at 14% -6%, rgba(115, 242, 80, 0.14), transparent 32%),
+    radial-gradient(circle at 92% 2%, rgba(242, 65, 195, 0.12), transparent 34%),
+    linear-gradient(135deg, var(--bg), #071013 55%, #040a0c);
 }
 
-/* Tema "Arcano": masmorra magica em violeta, para quem prefere um visual
-   mais mistico/feiticaria do que taverna classica. */
+/* Tema "Arcade": mesma paleta, com magenta assumindo o papel de acento
+   primario e verde como secundario - para quem prefere o destaque neon
+   rosa/magenta em vez do verde. */
 .theme-nexus {
-  --bg: #0f0a1a;
-  --bg-2: #180f2b;
-  --surface: rgba(35, 24, 56, 0.92);
-  --surface-2: rgba(51, 34, 79, 0.85);
-  --surface-3: rgba(180, 140, 255, 0.07);
-  --line: rgba(180, 140, 255, 0.26);
-  --accent: #b48cff;
-  --accent-2: #46d9c1;
-  --accent-3: #ff8fd0;
-  --warning: #f3d488;
+  --bg: #100a16;
+  --bg-2: #1a1020;
+  --surface: rgba(107, 26, 88, 0.3);
+  --surface-2: rgba(107, 26, 88, 0.45);
+  --surface-3: rgba(242, 65, 195, 0.08);
+  --line: rgba(242, 65, 195, 0.24);
+  --accent: #f241c3;
+  --accent-2: #73f250;
+  --accent-3: #f2c84b;
+  --warning: #f2c84b;
+  --danger: #f57add;
 }
 
-/* Tema "Pergaminho": modo claro, como um mapa do tesouro/pergaminho antigo
-   a luz do dia, para quem prefere fundo claro. */
+/* Tema "Daylight": modo claro usando o verde claro da paleta como base. */
 .theme-daybreak {
-  --bg: #f1e6c9;
-  --bg-2: #e9dab3;
-  --surface: rgba(255, 250, 237, 0.92);
-  --surface-2: rgba(240, 226, 192, 0.88);
-  --surface-3: rgba(90, 62, 20, 0.06);
-  --line: rgba(120, 82, 30, 0.24);
-  --text: #2c1d0e;
-  --muted: #7a6238;
-  --soft: #4a3620;
-  --accent: #a5620f;
-  --accent-2: #7c3a1d;
-  --accent-3: #3d7a45;
-  --warning: #a5620f;
-  --danger: #7c3a1d;
+  --bg: #f4fbf0;
+  --bg-2: #e9f7e2;
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-2: rgba(228, 251, 216, 0.85);
+  --surface-3: rgba(30, 73, 89, 0.06);
+  --line: rgba(30, 73, 89, 0.18);
+  --text: #0f2029;
+  --muted: #4f6b70;
+  --soft: #1e4959;
+  --accent: #1e4959;
+  --accent-2: #f241c3;
+  --accent-3: #f2c84b;
+  --warning: #b5860f;
+  --danger: #c2299e;
   color: var(--text);
   background:
-    radial-gradient(circle at 12% -8%, rgba(165, 98, 15, 0.14), transparent 34%),
-    radial-gradient(circle at 96% 2%, rgba(124, 58, 29, 0.12), transparent 34%),
-    linear-gradient(135deg, var(--bg), #f6ecd6);
+    radial-gradient(circle at 12% -8%, rgba(30, 73, 89, 0.08), transparent 34%),
+    radial-gradient(circle at 96% 2%, rgba(242, 65, 195, 0.08), transparent 34%),
+    linear-gradient(135deg, var(--bg), #eef7e6);
 }
 
 .sidebar {
@@ -218,9 +224,125 @@ button {
   height: 46px;
   flex: 0 0 auto;
   border-radius: 50%;
-  color: #241505;
+  color: #18181b;
   background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--accent-2)));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Molduras de avatar por nivel - reaproveitam os 8 degraus do rank de
+   carreira (Aprendiz ate Staff). Cada tier fica visualmente mais rico:
+   bronze e um anel simples, legendario tem brilho e gradiente animado. */
+.avatar-frame.frame-bronze {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 3px #a9723f, 0 0 0 4px rgba(169, 114, 63, 0.35);
+}
+
+.avatar-frame.frame-silver {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 3px #c7cbd1, 0 0 0 4px rgba(199, 203, 209, 0.4);
+}
+
+.avatar-frame.frame-gold {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 3px var(--accent-3), 0 0 10px 2px color-mix(in srgb, var(--accent-3) 55%, transparent);
+}
+
+.avatar-frame.frame-platinum {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 3px #7fd8c8, 0 0 10px 2px rgba(127, 216, 200, 0.4);
+}
+
+.avatar-frame.frame-emerald {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 3px var(--accent), 0 0 12px 2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.avatar-frame.frame-ruby {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 3px #e0447a, 0 0 12px 2px rgba(224, 68, 122, 0.45);
+}
+
+.avatar-frame.frame-diamond {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 3px #8fd6ff, 0 0 14px 3px rgba(143, 214, 255, 0.5);
+}
+
+.avatar-frame.frame-legendary {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 0 3px var(--accent-2), 0 0 18px 4px color-mix(in srgb, var(--accent-2) 60%, transparent);
+  animation: legendaryPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes legendaryPulse {
+  0%, 100% { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 0 3px var(--accent-2), 0 0 14px 3px color-mix(in srgb, var(--accent-2) 55%, transparent); }
+  50% { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 0 3px var(--accent-2), 0 0 22px 6px color-mix(in srgb, var(--accent-2) 75%, transparent); }
+}
+
+.player-avatar.avatar-frame.lg {
+  width: 84px;
+  height: 84px;
+}
+
+.profile-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.profile-preview strong {
+  display: block;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 18px;
+}
+
+.profile-preview span {
+  display: block;
+  margin-top: 2px;
+  color: var(--accent-3);
+  font-weight: 700;
+}
+
+.profile-preview small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  max-width: 420px;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 10px;
+}
+
+.avatar-option {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  padding: 4px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-3);
+  overflow: hidden;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.avatar-option img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-option:hover {
+  transform: translateY(-2px);
+}
+
+.avatar-option.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .brand strong,
@@ -539,7 +661,7 @@ button {
 }
 
 .primary-btn {
-  color: #241505;
+  color: #18181b;
   border: 1px solid color-mix(in srgb, var(--accent) 60%, black);
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, white 8%), var(--accent) 55%, color-mix(in srgb, var(--accent) 78%, black 22%));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.18), 0 8px 18px -6px color-mix(in srgb, var(--accent) 55%, transparent);
@@ -726,6 +848,17 @@ button:not(:disabled):active {
   padding: 18px;
   border-radius: 22px;
   overflow: hidden;
+}
+
+.mission-card.locked {
+  opacity: 0.82;
+}
+
+.mission-lock-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
 }
 
 .mission-card::after,
@@ -916,7 +1049,7 @@ button:not(:disabled):active {
   width: 30px;
   height: 30px;
   border-radius: 10px;
-  color: #241505;
+  color: #18181b;
   background: var(--accent);
   font-weight: 900;
 }
@@ -1261,12 +1394,23 @@ button:not(:disabled):active {
   background: var(--surface);
 }
 
+/* min-width: 0 e essencial aqui: sem isso, um <pre><code> com uma linha
+   longa (ex.: import statement, CREATE TABLE) forca essa coluna do grid a
+   crescer alem do espaco disponivel, "explodindo" o layout inteiro - bug
+   classico de CSS Grid que so aparece quando o conteudo e mais largo que a
+   tela (por isso so quebrava em mobile). */
+.editor-panel {
+  min-width: 0;
+  overflow: hidden;
+}
+
 .file-tree,
 .sprint-panel {
   display: grid;
   align-content: start;
   gap: 10px;
   padding: 18px;
+  min-width: 0;
   background: var(--surface-3);
 }
 
@@ -1383,7 +1527,7 @@ button:not(:disabled):active {
 }
 
 .game-mark {
-  color: #241505;
+  color: #18181b;
 }
 
 .game-card strong {
@@ -1549,7 +1693,7 @@ button:not(:disabled):active {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  color: #241505;
+  color: #18181b;
   background: linear-gradient(135deg, var(--rarity, var(--accent)), color-mix(in srgb, var(--rarity, var(--accent)) 50%, white));
 }
 
@@ -1560,7 +1704,7 @@ button:not(:disabled):active {
 }
 
 .wallpaper-swatch.wallpaper-ember {
-  background: radial-gradient(circle at 30% 30%, #e3a63d, #7a2f0f 70%);
+  background: radial-gradient(circle at 30% 30%, #f97316, #7a2f0f 70%);
 }
 
 .wallpaper-swatch.wallpaper-aurora {
@@ -1834,6 +1978,12 @@ button:not(:disabled):active {
   color: var(--accent);
 }
 
+.intl-checkout-btn {
+  margin-top: 8px;
+  font-size: 12px;
+  min-height: 38px;
+}
+
 .offline-hint {
   display: block;
   margin-top: 6px;
@@ -1858,7 +2008,7 @@ button:not(:disabled):active {
 }
 
 .mode-tabs button.active {
-  color: #241505;
+  color: #18181b;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
@@ -1998,7 +2148,7 @@ button:not(:disabled):active {
   flex: 0 0 auto;
   border-radius: 50%;
   background: var(--accent);
-  color: #241505;
+  color: #18181b;
   font-family: "Cinzel", Georgia, serif;
   font-weight: 700;
   font-size: 13px;
@@ -2029,13 +2179,14 @@ button:not(:disabled):active {
 
 .sandbox-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 14px;
   min-height: 260px;
 }
 
 .sandbox-editor {
   width: 100%;
+  min-width: 0;
   min-height: 260px;
   padding: 16px;
   border: 1px solid var(--line);
@@ -2058,6 +2209,7 @@ button:not(:disabled):active {
   display: grid;
   align-content: start;
   gap: 8px;
+  min-width: 0;
   min-height: 260px;
   padding: 16px;
   border: 1px solid var(--line);
@@ -2105,7 +2257,7 @@ button:not(:disabled):active {
 
 @media (max-width: 900px) {
   .sandbox-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .diagram-stage > .split {
@@ -2208,7 +2360,7 @@ button:not(:disabled):active {
   height: 48px;
   flex: 0 0 auto;
   border-radius: 16px;
-  color: #241505;
+  color: #18181b;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
@@ -2222,7 +2374,7 @@ button:not(:disabled):active {
   align-items: center;
   gap: 6px;
   border-radius: 999px;
-  color: #241505;
+  color: #18181b;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   font-weight: 900;
 }
@@ -2283,7 +2435,7 @@ button:not(:disabled):active {
 
   .learn-layout,
   .studio {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .lesson-list {
@@ -2525,25 +2677,71 @@ button:not(:disabled):active {
 }
 
 .mock-window {
-  border: 1px solid rgba(201, 149, 74, 0.28);
+  border: 1px solid rgba(249, 115, 22, 0.25);
   border-radius: 18px;
   overflow: hidden;
-  background: rgba(41, 29, 18, 0.92);
+  background: rgba(24, 24, 29, 0.92);
   box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6);
+}
+
+.mock-window img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .mock-titlebar {
   display: flex;
   gap: 6px;
   padding: 12px 14px;
-  background: rgba(58, 41, 24, 0.85);
+  background: rgba(32, 32, 39, 0.9);
 }
 
 .mock-titlebar span {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: rgba(227, 166, 61, 0.4);
+  background: rgba(249, 115, 22, 0.5);
+}
+
+.landing-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.landing-showcase-item {
+  margin: 0;
+  border: 1px solid rgba(249, 115, 22, 0.16);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(24, 24, 29, 0.6);
+}
+
+.landing-showcase-item img {
+  display: block;
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  object-position: top;
+  border-bottom: 1px solid rgba(249, 115, 22, 0.16);
+}
+
+.landing-showcase-item figcaption {
+  padding: 16px;
+}
+
+.landing-showcase-item strong {
+  display: block;
+  margin-bottom: 6px;
+  font-family: "Cinzel", Georgia, serif;
+}
+
+.landing-showcase-item p {
+  margin: 0;
+  color: var(--soft, #d4d4d8);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .mock-body {
@@ -2564,7 +2762,7 @@ button:not(:disabled):active {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #e3a63d, #c9452c);
+  background: linear-gradient(135deg, #73f250, #f241c3);
 }
 
 .mock-nav-line {
@@ -2574,7 +2772,7 @@ button:not(:disabled):active {
 }
 
 .mock-nav-line.active {
-  background: #e3a63d;
+  background: #73f250;
 }
 
 .mock-main {
@@ -2637,8 +2835,8 @@ button:not(:disabled):active {
   height: 34px;
   margin-bottom: 12px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #e3a63d, #c9452c);
-  color: #241505;
+  background: linear-gradient(135deg, #73f250, #f241c3);
+  color: #18181b;
   font-family: "Cinzel", Georgia, serif;
   font-weight: 700;
 }
@@ -2682,8 +2880,8 @@ button:not(:disabled):active {
   height: 44px;
   margin-bottom: 12px;
   border-radius: 12px;
-  color: #241505;
-  background: linear-gradient(135deg, #e3a63d, #c9452c);
+  color: #18181b;
+  background: linear-gradient(135deg, #73f250, #f241c3);
 }
 
 .landing-feature-card h3,
@@ -2737,7 +2935,7 @@ button:not(:disabled):active {
 
 .landing-journey-badge strong {
   font-family: "Cinzel", Georgia, serif;
-  color: #e3a63d;
+  color: #73f250;
   white-space: nowrap;
 }
 
@@ -2773,7 +2971,7 @@ button:not(:disabled):active {
   content: '+';
   display: inline-block;
   width: 18px;
-  color: #e3a63d;
+  color: #73f250;
   font-weight: 900;
 }
 

@@ -15,6 +15,7 @@ import {
   Flame,
   Gamepad2,
   Gem,
+  Globe,
   GraduationCap,
   Home,
   Lock,
@@ -147,6 +148,18 @@ const copy: Record<Language, Record<string, string>> = {
     'lock.step1': 'Entre ou crie sua conta',
     'lock.step2': 'Escolha um plano de acesso',
     'lock.step3': 'Aproveite o ensino completo',
+    'account.roleLabel': 'Papel',
+    'account.planLabel': 'Plano',
+    'account.statusLabel': 'Status',
+    'account.roleOwner': 'Dono',
+    'account.roleStudent': 'Aluno',
+    'account.planStarter': 'Starter',
+    'account.planPro': 'Pro',
+    'account.planLifetime': 'Vitalicio',
+    'account.planNone': 'Sem licenca',
+    'account.licenseActive': 'Ativo',
+    'account.licensePending': 'Pendente',
+    'account.licenseExpired': 'Expirado',
     'hero.eyebrow': 'Caminho guiado',
     'hero.title': 'Aprenda programacao na ordem certa, sem pular fundamento.',
     'hero.body': 'O app agora orienta do primeiro modulo ate projetos avancados: aula primeiro, pratica depois, revisao no fim.',
@@ -215,6 +228,18 @@ const copy: Record<Language, Record<string, string>> = {
     'lock.step1': 'Sign in or create your account',
     'lock.step2': 'Choose an access plan',
     'lock.step3': 'Enjoy the full learning path',
+    'account.roleLabel': 'Role',
+    'account.planLabel': 'Plan',
+    'account.statusLabel': 'Status',
+    'account.roleOwner': 'Owner',
+    'account.roleStudent': 'Student',
+    'account.planStarter': 'Starter',
+    'account.planPro': 'Pro',
+    'account.planLifetime': 'Lifetime',
+    'account.planNone': 'No license',
+    'account.licenseActive': 'Active',
+    'account.licensePending': 'Pending',
+    'account.licenseExpired': 'Expired',
     'hero.eyebrow': 'Guided path',
     'hero.title': 'Learn programming in the right order, without skipping foundations.',
     'hero.body': 'The app now guides you from the first module to advanced projects: lesson first, practice after, review at the end.',
@@ -283,6 +308,18 @@ const copy: Record<Language, Record<string, string>> = {
     'lock.step1': 'Inicia sesion o crea tu cuenta',
     'lock.step2': 'Elige un plan de acceso',
     'lock.step3': 'Aprovecha el aprendizaje completo',
+    'account.roleLabel': 'Rol',
+    'account.planLabel': 'Plan',
+    'account.statusLabel': 'Estado',
+    'account.roleOwner': 'Dueno',
+    'account.roleStudent': 'Estudiante',
+    'account.planStarter': 'Starter',
+    'account.planPro': 'Pro',
+    'account.planLifetime': 'Vitalicio',
+    'account.planNone': 'Sin licencia',
+    'account.licenseActive': 'Activo',
+    'account.licensePending': 'Pendiente',
+    'account.licenseExpired': 'Expirado',
     'hero.eyebrow': 'Ruta guiada',
     'hero.title': 'Aprende programacion en el orden correcto, sin saltarte la base.',
     'hero.body': 'La app ahora guia desde el primer modulo hasta proyectos avanzados: clase primero, practica despues, repaso al final.',
@@ -399,6 +436,8 @@ function fallbackPlans(language: Language = 'pt'): CommercialPlan[] {
       name: 'Starter',
       priceCents: 4990,
       price: 49.9,
+      priceUsdCents: 900,
+      priceUsd: 9,
       currency: 'BRL',
       billing: 'monthly',
       durationDays: 30,
@@ -411,6 +450,8 @@ function fallbackPlans(language: Language = 'pt'): CommercialPlan[] {
       name: 'Pro',
       priceCents: 8990,
       price: 89.9,
+      priceUsdCents: 1900,
+      priceUsd: 19,
       currency: 'BRL',
       billing: 'monthly',
       durationDays: 30,
@@ -423,6 +464,8 @@ function fallbackPlans(language: Language = 'pt'): CommercialPlan[] {
       name: 'Vitalicio',
       priceCents: 49700,
       price: 497,
+      priceUsdCents: 8900,
+      priceUsd: 89,
       currency: 'BRL',
       billing: 'lifetime',
       durationDays: null,
@@ -441,6 +484,30 @@ function rankForLevel(level: number) {
 
 function nextRankForLevel(level: number) {
   return careerLadder.find((rank) => rank.level > level) ?? null;
+}
+
+// Catalogo de avatares (personagens/icones extraidos do pacote enviado).
+// Cada aluno pode escolher um livremente - a moldura ao redor e que muda
+// conforme o nivel/rank de carreira, nao o avatar em si.
+const AVATAR_CATALOG = Array.from({ length: 24 }, (_, i) => `/avatars/avatar-${String(i + 1).padStart(2, '0')}.png`);
+
+// Moldura do avatar por nivel: reaproveita os mesmos 8 degraus do rank de
+// carreira (Aprendiz -> Staff) ja usados em outras partes do app, entao a
+// moldura do perfil sempre bate com o rank mostrado no menu lateral.
+const FRAME_TIER_BY_RANK: Record<string, string> = {
+  Aprendiz: 'frame-bronze',
+  Estagiario: 'frame-silver',
+  Junior: 'frame-gold',
+  'Junior Avancado': 'frame-platinum',
+  Pleno: 'frame-emerald',
+  Senior: 'frame-ruby',
+  'Tech Lead': 'frame-diamond',
+  Staff: 'frame-legendary',
+};
+
+function frameClassForLevel(level: number) {
+  const rank = rankForLevel(level);
+  return FRAME_TIER_BY_RANK[rank.title] ?? 'frame-bronze';
 }
 
 function moduleCompletion(
@@ -524,6 +591,7 @@ export default function App() {
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, boolean>>({});
   const [unlockedRewards, setUnlockedRewards] = useState<Record<string, boolean>>({});
   const [equippedAvatarId, setEquippedAvatarId] = useState<string | null>(null);
+  const [equippedAvatarImage, setEquippedAvatarImage] = useState<string | null>(null);
   const [equippedWallpaperId, setEquippedWallpaperId] = useState<string | null>(null);
   const [commercial, setCommercial] = useState<CommercialState>({
     checked: false,
@@ -596,6 +664,19 @@ export default function App() {
     };
   }, [completedExercises, completedLessons, completedMissions, gameScores, reviewAnswers, unlockedRewards]);
 
+  const missionRequirementsMet: Record<string, boolean> = {
+    'daily-review': Object.keys(reviewAnswers).length > 0,
+    'daily-lesson': Object.keys(completedLessons).length > 0,
+    'daily-debug': Object.values(completedExercises).some(Boolean) || gameScores['bug-hunter'] !== undefined,
+    'daily-lab': Object.values(completedExercises).some(Boolean) || Object.keys(gameScores).length > 0,
+  };
+  const missionTargetScreen: Record<string, Screen> = {
+    'daily-review': 'review',
+    'daily-lesson': 'learn',
+    'daily-debug': 'arcade',
+    'daily-lab': 'lab',
+  };
+
   const commercialProgress = useMemo(() => ({
     activeModuleId,
     activeLessonId,
@@ -606,12 +687,13 @@ export default function App() {
     reviewAnswers,
     unlockedRewards,
     equippedAvatarId,
+    equippedAvatarImage,
     equippedWallpaperId,
     theme,
     language,
     lastScreen: screen,
     updatedAt: new Date().toISOString(),
-  }), [activeModuleId, activeLessonId, gameScores, completedLessons, completedExercises, completedMissions, reviewAnswers, unlockedRewards, equippedAvatarId, equippedWallpaperId, theme, language, screen]);
+  }), [activeModuleId, activeLessonId, gameScores, completedLessons, completedExercises, completedMissions, reviewAnswers, unlockedRewards, equippedAvatarId, equippedAvatarImage, equippedWallpaperId, theme, language, screen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -647,6 +729,7 @@ export default function App() {
     if (saved.reviewAnswers && typeof saved.reviewAnswers === 'object') setReviewAnswers(saved.reviewAnswers as Record<string, boolean>);
     if (saved.unlockedRewards && typeof saved.unlockedRewards === 'object') setUnlockedRewards(saved.unlockedRewards as Record<string, boolean>);
     if (typeof saved.equippedAvatarId === 'string') setEquippedAvatarId(saved.equippedAvatarId);
+    if (typeof saved.equippedAvatarImage === 'string') setEquippedAvatarImage(saved.equippedAvatarImage);
     if (typeof saved.equippedWallpaperId === 'string') setEquippedWallpaperId(saved.equippedWallpaperId);
     if (saved.theme === 'obsidian' || saved.theme === 'nexus' || saved.theme === 'daybreak') setTheme(saved.theme);
     if (saved.language === 'pt' || saved.language === 'en' || saved.language === 'es') setLanguage(saved.language);
@@ -735,11 +818,15 @@ export default function App() {
         </div>
 
         <div className="player-card">
-          <div className="player-avatar">
-            {(() => {
-              const AvatarIcon = equippedAvatarId ? AVATAR_ITEM_ICONS[equippedAvatarId] : null;
-              return AvatarIcon ? <AvatarIcon size={22} /> : <Crown size={22} />;
-            })()}
+          <div className={`player-avatar avatar-frame ${frameClassForLevel(metrics.level)}`}>
+            {equippedAvatarImage ? (
+              <img src={equippedAvatarImage} alt="Avatar" className="avatar-image" />
+            ) : (
+              (() => {
+                const AvatarIcon = equippedAvatarId ? AVATAR_ITEM_ICONS[equippedAvatarId] : null;
+                return AvatarIcon ? <AvatarIcon size={22} /> : <Crown size={22} />;
+              })()
+            )}
           </div>
           <div>
             <strong>{playerName}</strong>
@@ -826,7 +913,12 @@ export default function App() {
               selectModule={selectModule}
               setScreen={goToScreen}
               completedMissions={completedMissions}
-              onCompleteMission={(missionId) => setCompletedMissions((missions) => ({ ...missions, [missionId]: !missions[missionId] }))}
+              missionRequirementsMet={missionRequirementsMet}
+              missionTargetScreen={missionTargetScreen}
+              onCompleteMission={(missionId) => {
+                if (!missionRequirementsMet[missionId]) return;
+                setCompletedMissions((missions) => ({ ...missions, [missionId]: !missions[missionId] }));
+              }}
               activePlanName={commercial.user?.license?.planName ?? null}
               canUseModule={canUseModule}
               t={t}
@@ -906,6 +998,9 @@ export default function App() {
               progress={commercialProgress}
               language={language}
               t={t}
+              metrics={metrics}
+              equippedAvatarImage={equippedAvatarImage}
+              setEquippedAvatarImage={setEquippedAvatarImage}
               applyCloudProgress={(progress) => {
                 if (typeof progress.activeModuleId === 'string') setActiveModuleId(progress.activeModuleId);
                 if (typeof progress.activeLessonId === 'string') setActiveLessonId(progress.activeLessonId);
@@ -916,6 +1011,7 @@ export default function App() {
                 if (progress.reviewAnswers && typeof progress.reviewAnswers === 'object') setReviewAnswers(progress.reviewAnswers as Record<string, boolean>);
                 if (progress.unlockedRewards && typeof progress.unlockedRewards === 'object') setUnlockedRewards(progress.unlockedRewards as Record<string, boolean>);
                 if (typeof progress.equippedAvatarId === 'string') setEquippedAvatarId(progress.equippedAvatarId);
+                if (typeof progress.equippedAvatarImage === 'string') setEquippedAvatarImage(progress.equippedAvatarImage);
                 if (typeof progress.equippedWallpaperId === 'string') setEquippedWallpaperId(progress.equippedWallpaperId);
                 if (progress.theme === 'obsidian' || progress.theme === 'nexus' || progress.theme === 'daybreak') setTheme(progress.theme);
                 if (progress.language === 'pt' || progress.language === 'en' || progress.language === 'es') setLanguage(progress.language);
@@ -936,6 +1032,8 @@ function CommandCenter({
   selectModule,
   setScreen,
   completedMissions,
+  missionRequirementsMet,
+  missionTargetScreen,
   onCompleteMission,
   activePlanName,
   canUseModule,
@@ -946,6 +1044,8 @@ function CommandCenter({
   selectModule: (module: Module, nextScreen?: Screen) => void;
   setScreen: (screen: Screen) => void;
   completedMissions: Record<string, boolean>;
+  missionRequirementsMet: Record<string, boolean>;
+  missionTargetScreen: Record<string, Screen>;
   onCompleteMission: (missionId: string) => void;
   activePlanName: string | null;
   canUseModule: (module: Module) => boolean;
@@ -1017,21 +1117,37 @@ function CommandCenter({
         <strong>{dailyMinutes} min - ate +{dailyXp} XP</strong>
       </div>
       <div className="mission-grid">
-        {dailyPlan.map((mission, index) => (
-          <article className="mission-card" key={mission.id}>
-            <div className="mission-index">0{index + 1}</div>
-            <span>{mission.mode}</span>
-            <h3>{mission.title}</h3>
-            <p>{mission.duration} - {mission.focus}</p>
-            <footer>
-              <strong>{mission.xp} XP</strong>
-              <button className={completedMissions[mission.id] ? 'success-pill' : 'ghost-btn'} onClick={() => onCompleteMission(mission.id)}>
-                {completedMissions[mission.id] ? 'Concluida' : 'Concluir'}
-              </button>
-            </footer>
-            <small>{mission.reward}</small>
-          </article>
-        ))}
+        {dailyPlan.map((mission, index) => {
+          const done = completedMissions[mission.id];
+          const met = missionRequirementsMet[mission.id];
+          return (
+            <article className={`mission-card ${!met && !done ? 'locked' : ''}`} key={mission.id}>
+              <div className="mission-index">0{index + 1}</div>
+              <span>{mission.mode}</span>
+              <h3>{mission.title}</h3>
+              <p>{mission.duration} - {mission.focus}</p>
+              <footer>
+                <strong>{mission.xp} XP</strong>
+                {done ? (
+                  <button className="success-pill" onClick={() => onCompleteMission(mission.id)}>Concluida</button>
+                ) : met ? (
+                  <button className="ghost-btn" onClick={() => onCompleteMission(mission.id)}>Marcar concluida</button>
+                ) : (
+                  <button className="ghost-btn" onClick={() => setScreen(missionTargetScreen[mission.id] ?? 'command')}>
+                    Fazer a atividade
+                  </button>
+                )}
+              </footer>
+              {!met && !done && (
+                <small className="mission-lock-hint">
+                  <Lock size={12} /> Precisa concluir a atividade de verdade pra contar
+                </small>
+              )}
+              {met && !done && <small>Atividade feita - so falta marcar!</small>}
+              {done && <small>{mission.reward}</small>}
+            </article>
+          );
+        })}
       </div>
 
       <div className="dashboard-grid">
@@ -2047,6 +2163,9 @@ function CommercialAccount({
   language,
   t,
   applyCloudProgress,
+  metrics,
+  equippedAvatarImage,
+  setEquippedAvatarImage,
 }: {
   commercial: CommercialState;
   setCommercial: Dispatch<SetStateAction<CommercialState>>;
@@ -2056,6 +2175,9 @@ function CommercialAccount({
   language: Language;
   t: (key: string) => string;
   applyCloudProgress: (progress: Record<string, unknown>) => void;
+  metrics: ReturnType<typeof createMetricsShape>;
+  equippedAvatarImage: string | null;
+  setEquippedAvatarImage: (image: string | null) => void;
 }) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
@@ -2138,11 +2260,11 @@ function CommercialAccount({
     }
   }
 
-  async function startCheckout(planId: CommercialPlan['id']) {
+  async function startCheckout(planId: CommercialPlan['id'], provider: 'mercadopago' | 'stripe' = 'mercadopago') {
     setBusy(true);
     setMessage(null);
     try {
-      const checkout = await createCommercialCheckout(planId);
+      const checkout = await createCommercialCheckout(planId, provider);
       window.location.href = checkout.checkoutUrl;
     } catch (error) {
       setCommercial((current) => ({ ...current, error: error instanceof Error ? error.message : 'Erro ao iniciar pagamento.' }));
@@ -2198,6 +2320,36 @@ function CommercialAccount({
           </div>
         </article>
 
+        {commercial.user && (
+          <Panel title="Perfil" icon={<Crown size={20} />}>
+            <div className="profile-preview">
+              <div className={`player-avatar avatar-frame lg ${frameClassForLevel(metrics.level)}`}>
+                {equippedAvatarImage ? (
+                  <img src={equippedAvatarImage} alt="Avatar" className="avatar-image" />
+                ) : (
+                  <Crown size={32} />
+                )}
+              </div>
+              <div>
+                <strong>{commercial.user.name}</strong>
+                <span>Lv {metrics.level} - {rankForLevel(metrics.level).title}</span>
+                <small>Moldura desbloqueada pelo seu rank de carreira - suba de nivel pra evoluir ela.</small>
+              </div>
+            </div>
+            <div className="avatar-grid">
+              {AVATAR_CATALOG.map((src) => (
+                <button
+                  key={src}
+                  className={`avatar-option ${equippedAvatarImage === src ? 'selected' : ''}`}
+                  onClick={() => setEquippedAvatarImage(src)}
+                >
+                  <img src={src} alt="Opcao de avatar" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          </Panel>
+        )}
+
         <Panel title={t('account.plans')} icon={<CreditCard size={22} weight="duotone" />}>
           <div className="pricing-grid">
             {(plans.length ? plans : fallbackPlans(language)).map((plan) => {
@@ -2225,10 +2377,19 @@ function CommercialAccount({
                   <button
                     className={current ? 'success-pill full' : 'primary-btn full'}
                     disabled={current || (commercial.user ? busy : false)}
-                    onClick={() => (commercial.user ? startCheckout(plan.id) : goToLogin())}
+                    onClick={() => (commercial.user ? startCheckout(plan.id, 'mercadopago') : goToLogin())}
                   >
                     {current ? t('account.current') : commercial.user ? t('account.buy') : t('account.enterToBuy')}
                   </button>
+                  {!current && commercial.user && (
+                    <button
+                      className="ghost-btn full intl-checkout-btn"
+                      disabled={busy}
+                      onClick={() => startCheckout(plan.id, 'stripe')}
+                    >
+                      <Globe size={14} /> Pagar em USD ${plan.priceUsd?.toFixed(2) ?? '-'} (cartao internacional)
+                    </button>
+                  )}
                 </article>
               );
             })}
@@ -2257,20 +2418,45 @@ function CommercialAccount({
             <h2>{commercial.user.name}</h2>
             <p>{commercial.user.email}</p>
             <div className="account-facts">
-              <span><strong>{commercial.user.role}</strong> Papel</span>
-              <span><strong>{commercial.user.license?.plan ?? 'sem licenca'}</strong> Plano</span>
-              <span><strong>{commercial.user.license?.status ?? 'pendente'}</strong> Status</span>
+              <span><strong>{commercial.user.role === 'owner' ? t('account.roleOwner') : t('account.roleStudent')}</strong> {t('account.roleLabel')}</span>
+              <span>
+                <strong>
+                  {commercial.user.license?.plan === 'lifetime'
+                    ? t('account.planLifetime')
+                    : commercial.user.license?.plan === 'pro'
+                      ? t('account.planPro')
+                      : commercial.user.license?.plan === 'starter'
+                        ? t('account.planStarter')
+                        : t('account.planNone')}
+                </strong> {t('account.planLabel')}
+              </span>
+              <span>
+                <strong>
+                  {commercial.user.license?.status === 'active'
+                    ? t('account.licenseActive')
+                    : commercial.user.license?.status === 'expired'
+                      ? t('account.licenseExpired')
+                      : t('account.licensePending')}
+                </strong> {t('account.statusLabel')}
+              </span>
             </div>
-            <label className="field-label">{t('account.license')}</label>
-            <input
-              className="field-input"
-              value={licenseKey}
-              onChange={(event) => setLicenseKey(event.target.value)}
-              placeholder="DEVQUEST-XXXX-XXXX"
-            />
-            <button className="primary-btn full" disabled={busy || !licenseKey.trim()} onClick={activateLicense}>
-              {t('account.activate')}
-            </button>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!(busy || !licenseKey.trim())) activateLicense();
+              }}
+            >
+              <label className="field-label">{t('account.license')}</label>
+              <input
+                className="field-input"
+                value={licenseKey}
+                onChange={(event) => setLicenseKey(event.target.value)}
+                placeholder="DEVQUEST-XXXX-XXXX"
+              />
+              <button type="submit" className="primary-btn full" disabled={busy || !licenseKey.trim()}>
+                {t('account.activate')}
+              </button>
+            </form>
             {commercial.user.role === 'owner' && !commercial.access && (
               <>
                 <button className="ghost-btn full owner-claim-btn" disabled={busy} onClick={claimOwner}>
@@ -2296,23 +2482,31 @@ function CommercialAccount({
               <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>{t('account.login')}</button>
               <button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>{t('account.register')}</button>
             </div>
-            {mode === 'register' && (
-              <>
-                <label className="field-label">{t('account.name')}</label>
-                <input className="field-input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nome do aluno" />
-              </>
-            )}
-            <label className="field-label">{t('account.email')}</label>
-            <input className="field-input" ref={emailInputRef} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="aluno@email.com" />
-            <label className="field-label">{t('account.password')}</label>
-            <input className="field-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="minimo 8 caracteres" />
-            <button
-              className="primary-btn full"
-              disabled={busy || !commercial.online || !email.trim() || !password.trim() || (mode === 'register' && !name.trim())}
-              onClick={submitAccount}
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                const disabled = busy || !commercial.online || !email.trim() || !password.trim() || (mode === 'register' && !name.trim());
+                if (!disabled) submitAccount();
+              }}
             >
-              {mode === 'login' ? t('account.login') : t('account.register')}
-            </button>
+              {mode === 'register' && (
+                <>
+                  <label className="field-label">{t('account.name')}</label>
+                  <input className="field-input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nome do aluno" />
+                </>
+              )}
+              <label className="field-label">{t('account.email')}</label>
+              <input className="field-input" ref={emailInputRef} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="aluno@email.com" />
+              <label className="field-label">{t('account.password')}</label>
+              <input className="field-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="minimo 8 caracteres" />
+              <button
+                type="submit"
+                className="primary-btn full"
+                disabled={busy || !commercial.online || !email.trim() || !password.trim() || (mode === 'register' && !name.trim())}
+              >
+                {mode === 'login' ? t('account.login') : t('account.register')}
+              </button>
+            </form>
             {!commercial.online && <small className="offline-hint">Botao desabilitado ate a API responder.</small>}
           </>
         )}
@@ -2461,27 +2655,32 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
             <div className="mock-titlebar">
               <span /><span /><span />
             </div>
-            <div className="mock-body">
-              <div className="mock-sidebar">
-                <div className="mock-avatar" />
-                <div className="mock-nav-line active" />
-                <div className="mock-nav-line" />
-                <div className="mock-nav-line" />
-                <div className="mock-nav-line" />
-              </div>
-              <div className="mock-main">
-                <div className="mock-card price-card rarity-legendary">
-                  <span className="rarity-tag">Lendario</span>
-                  <div className="price-icon"><Certificate size={20} weight="duotone" /></div>
-                  <strong>Vitalicio</strong>
-                </div>
-                <div className="mock-lines">
-                  <div className="mock-line w80" />
-                  <div className="mock-line w60" />
-                  <div className="mock-line w70" />
-                </div>
-              </div>
-            </div>
+            <img src="/screenshots/conta.jpg" alt="Tela de planos do DevQuest" loading="lazy" />
+          </div>
+        </Reveal>
+      </section>
+
+      <section className="landing-section">
+        <Reveal>
+          <span className="eyebrow"><Sparkles size={15} /> Veja por dentro</span>
+          <h2>Sem letra miuda, e assim que e de verdade</h2>
+        </Reveal>
+        <Reveal delay={100}>
+          <div className="landing-showcase">
+            {[
+              { src: '/screenshots/trilha.jpg', title: 'Trilha guiada', body: '22 meses organizados em ordem, sem voce ter que adivinhar o que vem depois.' },
+              { src: '/screenshots/laboratorio.jpg', title: 'Laboratorio de codigo', body: 'Sandbox de JavaScript de verdade, roda no navegador, sem enrolacao.' },
+              { src: '/screenshots/arcade.jpg', title: 'Arcade tecnico', body: '34 jogos pra fixar conceito de SQL, Git, seguranca e mais.' },
+              { src: '/screenshots/carreira.jpg', title: 'Carreira simulada', body: 'De Aprendiz a Staff, com tickets que imitam um time de verdade.' },
+            ].map((item) => (
+              <figure className="landing-showcase-item" key={item.title}>
+                <img src={item.src} alt={item.title} loading="lazy" />
+                <figcaption>
+                  <strong>{item.title}</strong>
+                  <p>{item.body}</p>
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </Reveal>
       </section>

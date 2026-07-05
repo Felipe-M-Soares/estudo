@@ -19,6 +19,8 @@ export interface CommercialPlan {
   name: string;
   priceCents: number;
   price: number;
+  priceUsdCents: number;
+  priceUsd: number;
   currency: string;
   billing: 'monthly' | 'lifetime';
   durationDays: number | null;
@@ -134,7 +136,10 @@ export async function claimOwnerLicense(): Promise<Omit<CommercialSession, 'toke
   return apiRequest('/api/owner/claim-license', { method: 'POST' });
 }
 
-export async function createCommercialCheckout(planId: CommercialPlan['id']): Promise<{
+export async function createCommercialCheckout(
+  planId: CommercialPlan['id'],
+  provider: 'mercadopago' | 'stripe' = 'mercadopago',
+): Promise<{
   ok: boolean;
   checkoutUrl: string;
   plan: CommercialPlan;
@@ -147,7 +152,7 @@ export async function createCommercialCheckout(planId: CommercialPlan['id']): Pr
 }> {
   return apiRequest('/api/checkout', {
     method: 'POST',
-    body: JSON.stringify({ planId }),
+    body: JSON.stringify({ planId, provider }),
   });
 }
 

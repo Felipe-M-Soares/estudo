@@ -112,21 +112,56 @@ sobreviveria e cada reinicio invalidaria as sessoes de todo mundo.
 
 ## Planos definidos
 
-- `starter`: R$ 49,90 por mes. Libera meses 1 a 6, aulas, exercicios, revisao e progresso em nuvem.
-- `pro`: R$ 89,90 por mes. Libera os 22 meses, laboratorio, arcade, projetos, analytics e atualizacoes.
-- `lifetime`: R$ 497,00 pagamento unico. Libera todos os conteudos atuais e o sistema vitalicio.
+- `starter`: R$ 49,90/mes (ou US$ 9 no checkout internacional). Libera meses 1 a 6, aulas, exercicios, revisao e progresso em nuvem.
+- `pro`: R$ 89,90/mes (ou US$ 19). Libera os 22 meses, laboratorio, arcade, projetos, analytics e atualizacoes.
+- `lifetime`: R$ 497,00 pagamento unico (ou US$ 89). Libera todos os conteudos atuais e o sistema vitalicio.
 
 Os planos ficam centralizados em `server/app.mjs` e tambem aparecem na tela Conta.
 
-## Pagamento por plano
+## Pagamento por plano - dois provedores
 
-Com `MERCADO_PAGO_ACCESS_TOKEN` configurado, a tela Conta chama `POST /api/checkout`, cria uma preferencia no Mercado Pago e redireciona o aluno para pagar. O webhook `POST /api/payments/mercadopago/webhook` consulta o pagamento na API do Mercado Pago; quando o status volta `approved`, o servidor cria a licenca, vincula ao usuario e libera o plano.
+O app vende tanto no Brasil quanto no exterior, usando dois provedores
+diferentes conforme o aluno escolhe na tela Conta:
+
+- **Mercado Pago** (padrao, cobra em BRL): Pix, boleto e cartao nacional.
+- **Stripe** (checkout internacional, cobra em USD): cartao de qualquer pais.
+
+Ambos usam exatamente a mesma logica de liberacao de licenca por baixo
+(`createLicenseForOrder` em `server/app.mjs`) - nao ha duplicacao de regra
+de negocio entre os dois, so o provedor de cobranca muda.
+
+### Mercado Pago (Brasil)
+
+Com `MERCADO_PAGO_ACCESS_TOKEN` configurado, a tela Conta chama `POST /api/checkout` com `provider: "mercadopago"`, cria uma preferencia no Mercado Pago e redireciona o aluno para pagar. O webhook `POST /api/payments/mercadopago/webhook` consulta o pagamento na API do Mercado Pago; quando o status volta `approved`, o servidor cria a licenca, vincula ao usuario e libera o plano.
 
 Configure no painel do Mercado Pago a URL:
 
 ```text
 https://seudominio.com/api/payments/mercadopago/webhook
 ```
+
+### Stripe (internacional)
+
+1. Crie uma conta em [dashboard.stripe.com](https://dashboard.stripe.com).
+2. Em **Developers > API keys**, copie a **Secret key** → `STRIPE_SECRET_KEY`.
+3. Em **Developers > Webhooks**, clique em **Add endpoint**, informe:
+   ```text
+   https://seudominio.com/api/payments/stripe/webhook
+   ```
+   Selecione os eventos `checkout.session.completed`,
+   `checkout.session.async_payment_succeeded`,
+   `checkout.session.expired` e `checkout.session.async_payment_failed`.
+4. Copie o **Signing secret** desse endpoint → `STRIPE_WEBHOOK_SECRET`.
+
+Com essas duas variaveis definidas, o botao "Pagar em USD (cartao
+internacional)" na tela Conta passa a criar uma sessao real de Checkout do
+Stripe. Sem elas configuradas, o botao responde com um erro claro (503,
+`payments_not_configured`) em vez de falhar silenciosamente.
+
+**Assinatura verificada de verdade nos dois webhooks** (nao e so decorativo):
+Mercado Pago usa HMAC sobre `id:...;request-id:...;ts:...;`, Stripe usa HMAC
+sobre `timestamp.corpo_bruto` - os dois comparados em tempo constante
+(`timingSafeEqual`) para nao vazar informacao por timing.
 
 O servidor valida a assinatura real enviada pelo Mercado Pago (header
 `x-signature`, formato `ts=...,v1=...`, HMAC-SHA256 com `MERCADO_PAGO_WEBHOOK_SECRET`).
@@ -186,6 +221,7 @@ Sem usuario logado e plano ativo, o frontend redireciona qualquer tentativa de a
 - `GET /api/me`
 - `POST /api/checkout`
 - `POST /api/payments/mercadopago/webhook`
+- `POST /api/payments/stripe/webhook`
 - `POST /api/license/activate`
 - `POST /api/owner/claim-license`
 - `GET /api/progress`

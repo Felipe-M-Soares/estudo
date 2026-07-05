@@ -75,6 +75,11 @@ const SEED_DEMO_LICENSE = process.env.SEED_DEMO_LICENSE === 'true';
 const PUBLIC_APP_URL = (process.env.PUBLIC_APP_URL ?? '').replace(/\/$/, '');
 const MERCADO_PAGO_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN ?? '';
 const MERCADO_PAGO_WEBHOOK_SECRET = process.env.MERCADO_PAGO_WEBHOOK_SECRET ?? '';
+// Stripe: usado para checkout internacional (cartao em qualquer moeda/pais).
+// O Mercado Pago continua sendo a opcao para o Brasil (Pix, boleto, cartao
+// nacional). O aluno escolhe qual usar na hora de pagar.
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? '';
 const OWNER_SETUP_TOKEN = process.env.OWNER_SETUP_TOKEN ?? '';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? '')
   .split(',')
@@ -98,6 +103,7 @@ const plans = {
     id: 'starter',
     name: 'Starter',
     priceCents: 4990,
+    priceUsdCents: 900,
     currency: 'BRL',
     billing: 'monthly',
     durationDays: 30,
@@ -125,6 +131,7 @@ const plans = {
     id: 'pro',
     name: 'Pro',
     priceCents: 8990,
+    priceUsdCents: 1900,
     currency: 'BRL',
     billing: 'monthly',
     durationDays: 30,
@@ -152,6 +159,7 @@ const plans = {
     id: 'lifetime',
     name: 'Vitalicio',
     priceCents: 49700,
+    priceUsdCents: 8900,
     currency: 'BRL',
     billing: 'lifetime',
     durationDays: null,
@@ -202,6 +210,7 @@ const licenseSchema = z.object({
 
 const checkoutSchema = z.object({
   planId: z.enum(['starter', 'pro', 'lifetime']),
+  provider: z.enum(['mercadopago', 'stripe']).optional(),
 });
 
 const progressSchema = z.object({
@@ -371,6 +380,8 @@ function planPublic(plan, lang = 'pt') {
     name: plan.name,
     priceCents: plan.priceCents,
     price: plan.priceCents / 100,
+    priceUsdCents: plan.priceUsdCents,
+    priceUsd: plan.priceUsdCents / 100,
     currency: plan.currency,
     billing: plan.billing,
     durationDays: plan.durationDays,
@@ -537,6 +548,26 @@ function parseBody(req) {
         reject(new Error('invalid_json'));
       }
     });
+  });
+}
+
+// Le o corpo da requisicao como TEXTO BRUTO, sem fazer JSON.parse - usado
+// so pelo webhook do Stripe, porque a verificacao de assinatura deles
+// precisa dos bytes exatos que eles enviaram (reserializar o JSON quebraria
+// a assinatura por causa de espacos/ordem de chaves diferentes).
+function readRawBody(req) {
+  if (typeof req.body === 'string') return Promise.resolve(req.body);
+  if (req.body !== undefined && req.body !== null) return Promise.resolve(JSON.stringify(req.body));
+  return new Promise((resolveBody, reject) => {
+    let raw = '';
+    req.on('data', (chunk) => {
+      raw += chunk;
+      if (Buffer.byteLength(raw) > jsonLimitBytes) {
+        reject(new Error('payload_too_large'));
+        req.destroy();
+      }
+    });
+    req.on('end', () => resolveBody(raw));
   });
 }
 
@@ -783,13 +814,18 @@ async function handleApi(req, res, pathname) {
     const body = validateParsed(checkoutSchema, await parseBody(req), res);
     if (!body) return;
     const plan = plans[body.planId];
+    // Mercado Pago (Brasil: Pix, boleto, cartao nacional) e o padrao; Stripe
+    // e usado para checkout internacional (cartao em qualquer pais/moeda).
+    // O aluno escolhe qual provedor usar no momento de pagar.
+    const provider = body.provider === 'stripe' ? 'stripe' : 'mercadopago';
+    const isStripe = provider === 'stripe';
     const order = {
       id: createId('ord'),
       userId: user.id,
       planId: plan.id,
-      amountCents: plan.priceCents,
-      currency: plan.currency,
-      provider: 'mercadopago',
+      amountCents: isStripe ? plan.priceUsdCents : plan.priceCents,
+      currency: isStripe ? 'USD' : plan.currency,
+      provider,
       status: 'pending',
       preferenceId: null,
       checkoutUrl: null,
@@ -798,13 +834,61 @@ async function handleApi(req, res, pathname) {
       paymentMeta: {},
     };
 
+    const appUrl = PUBLIC_APP_URL || `http://${req.headers.host ?? 'localhost'}`;
+
+    if (isStripe) {
+      if (!STRIPE_SECRET_KEY) {
+        await store.insertOrder({ ...order, status: 'configuration_required' });
+        await store.insertEvent('checkout.configuration_required', user.id, { orderId: order.id, planId: plan.id, provider });
+        return sendError(res, 503, 'Configure STRIPE_SECRET_KEY no servidor para gerar checkout internacional.', 'payments_not_configured');
+      }
+
+      // Stripe usa application/x-www-form-urlencoded com chaves aninhadas
+      // (formato classico da API deles, nao JSON).
+      const params = new URLSearchParams();
+      params.set('mode', plan.billing === 'lifetime' ? 'payment' : 'subscription');
+      params.set('success_url', `${appUrl}/?payment=success`);
+      params.set('cancel_url', `${appUrl}/?payment=failure`);
+      params.set('customer_email', user.email);
+      params.set('client_reference_id', order.id);
+      params.set('metadata[orderId]', order.id);
+      params.set('metadata[userId]', user.id);
+      params.set('metadata[planId]', plan.id);
+      params.set('line_items[0][quantity]', '1');
+      params.set('line_items[0][price_data][currency]', 'usd');
+      params.set('line_items[0][price_data][unit_amount]', String(plan.priceUsdCents));
+      params.set('line_items[0][price_data][product_data][name]', `DevQuest ${plan.name}`);
+      if (plan.billing !== 'lifetime') {
+        params.set('line_items[0][price_data][recurring][interval]', 'month');
+      }
+
+      const sessionResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+      });
+      const session = await sessionResponse.json().catch(() => null);
+      if (!sessionResponse.ok || !session?.url) {
+        return sendError(res, 502, 'Nao foi possivel criar o checkout no Stripe.', 'checkout_failed');
+      }
+
+      order.preferenceId = session.id;
+      order.checkoutUrl = session.url;
+      await store.insertOrder(order);
+      await store.insertEvent('checkout.created', user.id, { orderId: order.id, planId: plan.id, provider });
+      sendJson(res, 201, { ok: true, order, plan: planPublic(plan), checkoutUrl: order.checkoutUrl });
+      return;
+    }
+
     if (!MERCADO_PAGO_ACCESS_TOKEN) {
       await store.insertOrder({ ...order, status: 'configuration_required' });
-      await store.insertEvent('checkout.configuration_required', user.id, { orderId: order.id, planId: plan.id });
+      await store.insertEvent('checkout.configuration_required', user.id, { orderId: order.id, planId: plan.id, provider });
       return sendError(res, 503, 'Configure MERCADO_PAGO_ACCESS_TOKEN no servidor para gerar checkout real.', 'payments_not_configured');
     }
 
-    const appUrl = PUBLIC_APP_URL || `http://${req.headers.host ?? 'localhost'}`;
     const preferenceResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
@@ -840,7 +924,7 @@ async function handleApi(req, res, pathname) {
     order.preferenceId = preference.id;
     order.checkoutUrl = preference.init_point;
     await store.insertOrder(order);
-    await store.insertEvent('checkout.created', user.id, { orderId: order.id, planId: plan.id });
+    await store.insertEvent('checkout.created', user.id, { orderId: order.id, planId: plan.id, provider });
     sendJson(res, 201, { ok: true, order, plan: planPublic(plan), checkoutUrl: order.checkoutUrl });
     return;
   }
@@ -908,6 +992,68 @@ async function handleApi(req, res, pathname) {
       await store.updateOrder(order);
       await store.insertEvent('payment.updated', order.userId, { orderId: order.id, status: payment.status });
     }
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/payments/stripe/webhook') {
+    // O Stripe assina o webhook de um jeito diferente do Mercado Pago:
+    // header `Stripe-Signature: t=<epoch>,v1=<hmac_hex>`, calculado sobre
+    // `${timestamp}.${corpo_bruto_exato}` - por isso lemos o corpo cru
+    // (sem re-serializar) antes de validar, e so devolvemos o JSON parseado
+    // depois de confirmar a assinatura.
+    const rawBody = await readRawBody(req);
+
+    if (STRIPE_WEBHOOK_SECRET) {
+      const signatureHeader = String(req.headers['stripe-signature'] ?? '');
+      const parts = Object.fromEntries(
+        signatureHeader
+          .split(',')
+          .map((part) => part.trim().split('='))
+          .filter((pair) => pair.length === 2)
+          .map(([key, value]) => [key.trim(), value.trim()]),
+      );
+      const ts = parts.t;
+      const v1 = parts.v1;
+      const expectedV1 = ts ? createHmac('sha256', STRIPE_WEBHOOK_SECRET).update(`${ts}.${rawBody}`).digest('hex') : '';
+      if (!ts || !v1 || !safeEqualStrings(v1, expectedV1)) {
+        return sendError(res, 401, 'Webhook nao autorizado.', 'webhook_unauthorized');
+      }
+    }
+
+    let event;
+    try {
+      event = JSON.parse(rawBody || '{}');
+    } catch {
+      return sendError(res, 400, 'JSON invalido.', 'invalid_json');
+    }
+
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
+      const session = event.data?.object;
+      const orderId = session?.client_reference_id ?? session?.metadata?.orderId;
+      const order = await store.getOrderById(orderId);
+      if (!order) {
+        sendJson(res, 200, { ok: true, ignored: true });
+        return;
+      }
+      await createLicenseForOrder(order, {
+        providerPaymentId: String(session.id ?? session.payment_intent ?? ''),
+        status: 'approved',
+        paymentMethodId: 'stripe',
+      });
+    } else if (event.type === 'checkout.session.expired' || event.type === 'checkout.session.async_payment_failed') {
+      const session = event.data?.object;
+      const orderId = session?.client_reference_id ?? session?.metadata?.orderId;
+      const order = await store.getOrderById(orderId);
+      if (order) {
+        order.status = 'failed';
+        order.updatedAt = nowIso();
+        order.paymentMeta = { ...(order.paymentMeta ?? {}), status: event.type };
+        await store.updateOrder(order);
+        await store.insertEvent('payment.updated', order.userId, { orderId: order.id, status: event.type });
+      }
+    }
+
     sendJson(res, 200, { ok: true });
     return;
   }
