@@ -1,4 +1,10 @@
 import { useState, useEffect, Fragment } from "react";
+import type { User } from "@supabase/supabase-js";
+import { useAuth } from "../lib/useAuth";
+import { useCloudProfile } from "../lib/useCloudProfile";
+import { useActiveSubscription } from "../lib/useActiveSubscription";
+import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
+import type { ActiveSubscription } from "../lib/useActiveSubscription";
 import {
   LayoutDashboard,
   BookOpen,
@@ -340,16 +346,72 @@ function isExerciseCorrect(exercise: Module["exercises"][number], answer: string
 }
 
 // LOGIN
-function LoginPage({ onLogin }: { onLogin: () => void }) {
-  const [email, setEmail] = useState("ana.silva@email.com");
-  const [password, setPassword] = useState("••••••••");
+function LoginPage() {
+  const { signInWithPassword, signUpWithPassword, signInWithOAuth, resetPassword } = useAuth();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const configWarning = !isSupabaseConfigured;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setNotice(null);
+
+    if (configWarning) {
+      setError("Supabase não está configurado neste ambiente (faltam VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY). Veja o arquivo .env.example.");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 1200);
+    if (mode === "signin") {
+      const { error: signInError } = await signInWithPassword(email, password);
+      setLoading(false);
+      if (signInError) setError(traduzErroAuth(signInError.message));
+    } else {
+      const { error: signUpError } = await signUpWithPassword(email, password, name);
+      setLoading(false);
+      if (signUpError) {
+        setError(traduzErroAuth(signUpError.message));
+      } else {
+        setNotice("Conta criada! Verifique seu e-mail para confirmar o cadastro antes de entrar.");
+      }
+    }
+  };
+
+  const handleOAuth = async (provider: "google" | "github") => {
+    setError(null);
+    if (configWarning) {
+      setError("Supabase não está configurado neste ambiente. Veja o arquivo .env.example.");
+      return;
+    }
+    setOauthLoading(provider);
+    const { error: oauthError } = await signInWithOAuth(provider);
+    if (oauthError) {
+      setOauthLoading(null);
+      setError(traduzErroAuth(oauthError.message));
+    }
+    // Em caso de sucesso o navegador é redirecionado para o provedor —
+    // não há nada mais a fazer aqui.
+  };
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setNotice(null);
+    if (!email) {
+      setError("Digite seu e-mail acima primeiro, depois clique em \"Esqueceu a senha?\".");
+      return;
+    }
+    const { error: resetError } = await resetPassword(email);
+    if (resetError) setError(traduzErroAuth(resetError.message));
+    else setNotice("Enviamos um link de redefinição de senha para o seu e-mail.");
   };
 
   return (
@@ -399,10 +461,35 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
             <span className="text-foreground font-bold text-lg">Code Mage</span>
           </div>
 
-          <h2 className="text-3xl font-extrabold text-foreground mb-1">Bem-vindo de volta</h2>
-          <p className="text-muted-foreground mb-8">Continue sua trilha de programação</p>
+          <h2 className="text-3xl font-extrabold text-foreground mb-1">{mode === "signin" ? "Bem-vindo de volta" : "Criar conta grátis"}</h2>
+          <p className="text-muted-foreground mb-8">{mode === "signin" ? "Continue sua trilha de programação" : "Comece sua trilha de programação agora"}</p>
+
+          {configWarning && (
+            <div className="mb-5 flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200">
+              <Lock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>Supabase não configurado neste ambiente — login está desativado. Configure <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code> (veja <code>.env.example</code>) para ativar.</span>
+            </div>
+          )}
+          {error && (
+            <div className="mb-5 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-xs text-red-300">{error}</div>
+          )}
+          {notice && (
+            <div className="mb-5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-300">{notice}</div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {mode === "signup" && (
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">Nome</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full bg-input-background border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  placeholder="Como podemos te chamar"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">E-mail</label>
               <div className="relative">
@@ -411,6 +498,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="w-full bg-input-background border border-border rounded-xl pl-10 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                   placeholder="seu@email.com"
                 />
@@ -420,7 +508,9 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
             <div>
               <div className="flex justify-between mb-2">
                 <label className="text-sm font-semibold text-foreground">Senha</label>
-                <button type="button" className="text-xs text-purple-400 hover:text-purple-300 transition-colors">Esqueceu a senha?</button>
+                {mode === "signin" && (
+                  <button type="button" onClick={handleForgotPassword} className="text-xs text-purple-400 hover:text-purple-300 transition-colors">Esqueceu a senha?</button>
+                )}
               </div>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -428,6 +518,8 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
                   className="w-full bg-input-background border border-border rounded-xl pl-10 pr-11 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
@@ -444,7 +536,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>Entrar<ChevronRight className="w-4 h-4" /></>
+                <>{mode === "signin" ? "Entrar" : "Criar conta"}<ChevronRight className="w-4 h-4" /></>
               )}
             </button>
           </form>
@@ -455,16 +547,20 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {["Google", "GitHub"].map((p) => (
-              <button key={p} className="flex items-center justify-center gap-2 bg-input-background hover:bg-secondary border border-border rounded-xl py-3 text-sm text-foreground font-medium transition-all">
-                <Globe className="w-4 h-4" />{p}
-              </button>
-            ))}
+            <button onClick={() => handleOAuth("google")} disabled={oauthLoading !== null} className="flex items-center justify-center gap-2 bg-input-background hover:bg-secondary border border-border rounded-xl py-3 text-sm text-foreground font-medium transition-all disabled:opacity-60">
+              {oauthLoading === "google" ? <div className="w-4 h-4 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" /> : <Globe className="w-4 h-4" />}Google
+            </button>
+            <button onClick={() => handleOAuth("github")} disabled={oauthLoading !== null} className="flex items-center justify-center gap-2 bg-input-background hover:bg-secondary border border-border rounded-xl py-3 text-sm text-foreground font-medium transition-all disabled:opacity-60">
+              {oauthLoading === "github" ? <div className="w-4 h-4 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" /> : <Globe className="w-4 h-4" />}GitHub
+            </button>
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-7">
-            Não tem conta?{" "}
-            <button className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Criar conta grátis</button>
+            {mode === "signin" ? (
+              <>Não tem conta?{" "}<button onClick={() => { setMode("signup"); setError(null); setNotice(null); }} className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Criar conta grátis</button></>
+            ) : (
+              <>Já tem conta?{" "}<button onClick={() => { setMode("signin"); setError(null); setNotice(null); }} className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Entrar</button></>
+            )}
           </p>
         </div>
       </div>
@@ -472,8 +568,32 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
   );
 }
 
+function traduzErroAuth(message: string): string {
+  const map: Record<string, string> = {
+    "Invalid login credentials": "E-mail ou senha incorretos.",
+    "Email not confirmed": "Confirme seu e-mail antes de entrar (verifique sua caixa de entrada).",
+    "User already registered": "Este e-mail já tem uma conta. Tente entrar em vez de criar uma nova.",
+    "Password should be at least 6 characters": "A senha precisa ter pelo menos 6 caracteres.",
+  };
+  return map[message] ?? message;
+}
+
 // SIDEBAR
-function Sidebar({ page, setPage, onLogout, equippedCharacterId }: { page: Page; setPage: (p: Page) => void; onLogout: () => void; equippedCharacterId: string }) {
+function Sidebar({
+  page,
+  setPage,
+  onLogout,
+  equippedCharacterId,
+  displayName,
+  planLabel,
+}: {
+  page: Page;
+  setPage: (p: Page) => void;
+  onLogout: () => void;
+  equippedCharacterId: string;
+  displayName: string;
+  planLabel: string;
+}) {
   return (
     <aside className="w-60 bg-sidebar border-r border-sidebar-border flex flex-col flex-shrink-0" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div className="p-5 border-b border-sidebar-border">
@@ -507,10 +627,10 @@ function Sidebar({ page, setPage, onLogout, equippedCharacterId }: { page: Page;
 
       <div className="p-4 border-t border-sidebar-border">
         <button onClick={() => setPage("loja")} className="w-full flex items-center gap-3 mb-4 px-1 group">
-          <Avatar name="Ana Silva" size="sm" src={characterSrc(equippedCharacterId)} />
+          <Avatar name={displayName} size="sm" src={characterSrc(equippedCharacterId)} />
           <div className="min-w-0 text-left">
-            <p className="text-sm font-semibold text-foreground truncate">Ana Silva</p>
-            <p className="text-xs text-muted-foreground truncate group-hover:text-purple-300 transition-colors">Trilha Pro · trocar personagem</p>
+            <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
+            <p className="text-xs text-muted-foreground truncate group-hover:text-purple-300 transition-colors">{planLabel} · trocar personagem</p>
           </div>
         </button>
         <button onClick={onLogout} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all">
@@ -793,12 +913,27 @@ function CursosPage({ setPage, activeModule, setActiveModule }: { setPage: (p: P
 }
 
 // AULAS
-function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => void }) {
+function AulasPage({
+  module,
+  setPage,
+  completedLessons: completedLessonsProp,
+  onCompleteLesson,
+}: {
+  module: Module;
+  setPage: (p: Page) => void;
+  completedLessons?: Record<string, boolean>;
+  onCompleteLesson?: (key: string) => void;
+}) {
   const [selected, setSelected] = useState(0);
   const [contentTab, setContentTab] = useState<"aula" | "exercicios" | "checklist" | "projeto">("aula");
   const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({});
   const [checkedExercises, setCheckedExercises] = useState<Record<string, boolean>>({});
-  const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({});
+  const [localCompletedLessons, setLocalCompletedLessons] = useState<Record<string, boolean>>({});
+  const completedLessons = completedLessonsProp ?? localCompletedLessons;
+  const completeLesson = (key: string) => {
+    if (onCompleteLesson) onCompleteLesson(key);
+    else setLocalCompletedLessons((prev) => ({ ...prev, [key]: true }));
+  };
   const [projectSteps, setProjectSteps] = useState<Record<string, boolean>>({});
   const [projectSolution, setProjectSolution] = useState("");
   const [projectTested, setProjectTested] = useState(false);
@@ -897,7 +1032,7 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
                 )}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() => setCompletedLessons((prev) => ({ ...prev, [lessonKey(currentIndex)]: true }))}
+                    onClick={() => completeLesson(lessonKey(currentIndex))}
                     className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
                   >
                     {isLessonComplete(currentIndex) ? "Aula concluída" : "Concluir aula"}
@@ -2010,430 +2145,221 @@ function LojaPage({
 }
 
 // CHECKOUT
-function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
+function CheckoutPage({
+  setPage,
+  user,
+  subscription,
+}: {
+  setPage: (p: Page) => void;
+  user: User;
+  subscription: ActiveSubscription | null;
+}) {
   const commercialPlans = [
     {
-      id: "starter",
+      id: "starter" as const,
       name: "Starter",
       originalPrice: "R$ 69,86",
       price: "R$ 49,90",
-      usdOriginal: "US$ 13",
-      usdPrice: "US$ 9",
+      usdReference: "US$ 9",
       period: "/mês",
       badge: "Aventureiro",
       features: ["Fundamentos até o mês 6", "Aulas, exercícios e revisão", "Progresso em nuvem com licença ativa"],
       maxMonth: 6,
     },
     {
-      id: "pro",
+      id: "pro" as const,
       name: "Pro",
       originalPrice: "R$ 125,86",
       price: "R$ 89,90",
-      usdOriginal: "US$ 27",
-      usdPrice: "US$ 19",
+      usdReference: "US$ 19",
       period: "/mês",
       badge: "Heroico",
       features: ["Todos os 22 meses", "Laboratório, arcade e analytics", "Projetos e revisões avançadas"],
       maxMonth: 22,
     },
     {
-      id: "lifetime",
+      id: "lifetime" as const,
       name: "Vitalício",
       originalPrice: "R$ 695,80",
       price: "R$ 497,00",
-      usdOriginal: "US$ 129",
-      usdPrice: "US$ 89",
+      usdReference: "US$ 89",
       period: "único",
       badge: "Lendário",
       features: ["Pagamento único", "Acesso completo vitalício", "Apto a próximas atualizações"],
       maxMonth: 22,
     },
-  ] as const;
-
-  type Currency = "BRL" | "USD";
-  type PayMethod = "card" | "pix" | "boleto";
+  ];
 
   const [plan, setPlan] = useState<(typeof commercialPlans)[number]["id"]>("pro");
-  const [currency, setCurrency] = useState<Currency>("BRL");
-  const [payMethod, setPayMethod] = useState<PayMethod>("card");
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [done, setDone] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv] = useState("");
-  const [cardName, setCardName] = useState("");
-  const [touched, setTouched] = useState(false);
-
+  const [creatingCheckout, setCreatingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const selectedPlan = commercialPlans.find((p) => p.id === plan) ?? commercialPlans[1];
-  const displayPrice = currency === "BRL" ? selectedPlan.price : selectedPlan.usdPrice;
-  const displayOriginal = currency === "BRL" ? selectedPlan.originalPrice : selectedPlan.usdOriginal;
 
-  // Internacional (fora do Brasil): só cartão, cobrança em dólar.
-  useEffect(() => {
-    if (currency === "USD" && payMethod !== "card") setPayMethod("card");
-  }, [currency, payMethod]);
+  const isCurrentPlan = subscription?.planId === plan && subscription.status === "approved";
 
-  function luhnValid(num: string) {
-    const digits = num.replace(/\D/g, "");
-    if (digits.length < 13 || digits.length > 19) return false;
-    let sum = 0;
-    let alt = false;
-    for (let i = digits.length - 1; i >= 0; i--) {
-      let n = parseInt(digits[i], 10);
-      if (alt) { n *= 2; if (n > 9) n -= 9; }
-      sum += n;
-      alt = !alt;
-    }
-    return sum % 10 === 0;
-  }
-
-  function expiryValid(value: string) {
-    const match = /^(\d{2})\s*\/\s*(\d{2})$/.exec(value.trim());
-    if (!match) return false;
-    const month = parseInt(match[1], 10);
-    const year = 2000 + parseInt(match[2], 10);
-    if (month < 1 || month > 12) return false;
-    const now = new Date();
-    const expiryDate = new Date(year, month, 0);
-    return expiryDate >= new Date(now.getFullYear(), now.getMonth(), 1);
-  }
-
-  const cardNumberValid = luhnValid(cardNumber);
-  const cardExpiryValid = expiryValid(cardExpiry);
-  const cardCvvValid = /^\d{3,4}$/.test(cardCvv.trim());
-  const cardNameValid = cardName.trim().length >= 3;
-  const cardFormValid = cardNumberValid && cardExpiryValid && cardCvvValid && cardNameValid;
-
-  const pixCode = `00020126580014BR.GOV.BCB.PIX0136codemage-${selectedPlan.id}-${Math.abs(hashKey(selectedPlan.id + plan)).toString(16).slice(0, 8)}5204000053039865802BR5913CODE MAGE LTDA6009SAO PAULO62070503***6304`;
-  const boletoCode = Array.from({ length: 5 }, (_, i) => String(Math.abs(hashKey(selectedPlan.id + i)) % 100000).padStart(5, "0")).join(" ");
-  const boletoDueDate = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 3);
-    return d.toLocaleDateString("pt-BR");
-  })();
-
-  function paymentReady() {
-    if (payMethod === "card") return cardFormValid;
-    return true; // pix/boleto: geração de código não exige validação de formulário
-  }
-
-  async function copyToClipboard(text: string) {
+  async function startCheckout() {
+    setCheckoutError(null);
+    setCreatingCheckout(true);
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  }
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        setCheckoutError("Sua sessão expirou. Recarregue a página e faça login novamente.");
+        setCreatingCheckout(false);
+        return;
+      }
 
-  if (done) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="text-center max-w-sm">
-          <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500/50 flex items-center justify-center mx-auto mb-6">
-            <Check className="w-10 h-10 text-emerald-400" />
-          </div>
-          <h2 className="text-3xl font-extrabold text-foreground mb-2">
-            {payMethod === "boleto" ? "Boleto gerado!" : payMethod === "pix" ? "Pix gerado!" : "Plano ativado!"}
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            {payMethod === "boleto"
-              ? `Pague até ${boletoDueDate}. Seu acesso ao plano ${selectedPlan.name} libera automaticamente após a compensação.`
-              : payMethod === "pix"
-              ? `Assim que o Pix for confirmado, seu plano ${selectedPlan.name} é liberado até o mês ${selectedPlan.maxMonth}.`
-              : `Seu plano ${selectedPlan.name} foi ativado. A trilha foi liberada até o mês ${selectedPlan.maxMonth}.`}
-          </p>
-          <button onClick={() => setPage("dashboard")} className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-8 py-3 rounded-xl transition-colors">
-            Ir para o Dashboard
-          </button>
-        </div>
-      </div>
-    );
+      const response = await fetch("/api/create-preference", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ planId: plan, currency: "BRL" }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setCheckoutError(data.error ?? "Não foi possível iniciar o pagamento. Tente novamente.");
+        setCreatingCheckout(false);
+        return;
+      }
+
+      window.location.href = data.initPoint;
+    } catch (err) {
+      console.error(err);
+      setCheckoutError("Erro de conexão ao iniciar o pagamento. Verifique sua internet e tente novamente.");
+      setCreatingCheckout(false);
+    }
   }
 
   return (
     <div className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-3xl mx-auto">
-        {/* Steps */}
-        <div className="flex items-center gap-2 mb-8">
-          {[{ n: 1, l: "Plano" }, { n: 2, l: "Pagamento" }, { n: 3, l: "Confirmar" }].map((s, i) => (
-            <div key={s.n} className="flex items-center gap-2 flex-1">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${step >= s.n ? "bg-purple-600 text-white" : "bg-input-background border border-border text-muted-foreground"}`}>{step > s.n ? <Check className="w-3.5 h-3.5" /> : s.n}</div>
-              <span className={`text-xs font-semibold hidden sm:block ${step >= s.n ? "text-foreground" : "text-muted-foreground"}`}>{s.l}</span>
-              {i < 2 && <div className={`flex-1 h-px mx-1 ${step > s.n ? "bg-purple-600" : "bg-border"}`} />}
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div>
+          <Badge color="warning">Conta e Plano</Badge>
+          <h2 className="text-2xl font-extrabold text-foreground mt-3">Escolha seu plano</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Pagamento processado pelo Mercado Pago — cartão, Pix e boleto, com opção para clientes de fora do Brasil.
+          </p>
+        </div>
+
+        {subscription && (
+          <Card className="!border-emerald-500/40 bg-emerald-500/5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                <Check className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">
+                  Plano ativo: {subscription.planId === "lifetime" ? "Vitalício" : subscription.planId === "pro" ? "Pro" : "Starter"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {subscription.activeUntil ? `Renova/expira em ${new Date(subscription.activeUntil).toLocaleDateString("pt-BR")}` : "Acesso vitalício — nunca expira"}
+                </p>
+              </div>
             </div>
-          ))}
-        </div>
+          </Card>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Form */}
-          <div className="lg:col-span-3 space-y-4">
-            {step === 1 && (
-              <Card>
-                <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                  <h3 className="font-bold text-foreground">Escolha seu plano</h3>
-                  <div className="flex items-center bg-input-background border border-border rounded-xl p-1 text-xs font-semibold">
-                    <button onClick={() => setCurrency("BRL")} className={`px-3 py-1.5 rounded-lg transition-colors ${currency === "BRL" ? "bg-purple-600 text-white" : "text-muted-foreground hover:text-foreground"}`}>R$ Brasil</button>
-                    <button onClick={() => setCurrency("USD")} className={`px-3 py-1.5 rounded-lg transition-colors ${currency === "USD" ? "bg-purple-600 text-white" : "text-muted-foreground hover:text-foreground"}`}>US$ Internacional</button>
+        <Card>
+          <div className="grid grid-cols-1 gap-3">
+            {commercialPlans.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setPlan(p.id)}
+                className={`text-left border-2 rounded-2xl p-5 transition-all ${plan === p.id ? "border-purple-500/60 bg-purple-500/10" : "border-border bg-input-background hover:border-purple-500/40"}`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 flex-shrink-0">
+                    <img src={badgeForKey(p.id)} alt="" className="w-full h-full object-contain" />
                   </div>
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  {commercialPlans.map((p) => {
-                    const price = currency === "BRL" ? p.price : p.usdPrice;
-                    const original = currency === "BRL" ? p.originalPrice : p.usdOriginal;
-                    return (
-                    <button key={p.id} onClick={() => setPlan(p.id)} className={`text-left border-2 rounded-2xl p-5 transition-all ${plan === p.id ? "border-purple-500/60 bg-purple-500/10" : "border-border bg-input-background hover:border-purple-500/40"}`}>
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 flex-shrink-0">
-                          <img src={badgeForKey(p.id)} alt="" className="w-full h-full object-contain" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-xs font-semibold text-purple-400 uppercase tracking-widest">{p.badge}</p>
-                              <h4 className="font-bold text-foreground">{p.name}</h4>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xs text-muted-foreground line-through">{original}</p>
-                              <p className="text-xl font-extrabold text-foreground">{price}<span className="text-xs font-normal text-muted-foreground"> {p.period}</span></p>
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">Desconto aplicado · cobrança em {currency === "BRL" ? "reais" : "dólares"}</p>
-                          <ul className="grid grid-cols-1 sm:grid-cols-1 gap-1.5 mt-3">
-                            {p.features.map((f) => (
-                              <li key={f} className="flex items-center gap-2 text-xs text-foreground bg-card border border-border rounded-lg px-3 py-2">
-                                <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                                <span>{f}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </button>
-                  );})}
-                </div>
-                <button onClick={() => setStep(2)} className="w-full mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-colors">Continuar</button>
-              </Card>
-            )}
-
-            {step === 2 && (
-              <Card>
-                <h3 className="font-bold text-foreground mb-4">Forma de Pagamento</h3>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <button onClick={() => setPayMethod("card")} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${payMethod === "card" ? "bg-purple-600 text-white" : "bg-input-background border border-border text-muted-foreground hover:text-foreground"}`}>
-                    <CreditCard className="w-3.5 h-3.5" />Cartão
-                  </button>
-                  {currency === "BRL" && (
-                    <>
-                      <button onClick={() => setPayMethod("pix")} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${payMethod === "pix" ? "bg-purple-600 text-white" : "bg-input-background border border-border text-muted-foreground hover:text-foreground"}`}>
-                        <Zap className="w-3.5 h-3.5" />Pix
-                      </button>
-                      <button onClick={() => setPayMethod("boleto")} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${payMethod === "boleto" ? "bg-purple-600 text-white" : "bg-input-background border border-border text-muted-foreground hover:text-foreground"}`}>
-                        <FileText className="w-3.5 h-3.5" />Boleto
-                      </button>
-                    </>
-                  )}
-                  {currency === "USD" && (
-                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground px-2">
-                      <Globe className="w-3.5 h-3.5" />Pix e Boleto disponíveis só para o Brasil (R$)
-                    </span>
-                  )}
-                </div>
-
-                {payMethod === "card" && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Número do Cartão</label>
-                      <div className="relative">
-                        <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <input
-                          value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value.replace(/[^\d\s]/g, "").slice(0, 23))}
-                          onBlur={() => setTouched(true)}
-                          placeholder="0000 0000 0000 0000"
-                          inputMode="numeric"
-                          className={`w-full bg-input-background border rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 transition-colors ${touched && cardNumber && !cardNumberValid ? "border-red-500/60 focus:ring-red-500/50" : "border-border focus:ring-purple-500/50"}`}
-                        />
-                      </div>
-                      {touched && cardNumber && !cardNumberValid && <p className="text-xs text-red-400 mt-1">Número de cartão inválido.</p>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Validade (MM/AA)</label>
-                        <input
-                          value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value.slice(0, 5))}
-                          onBlur={() => setTouched(true)}
-                          placeholder="12/28"
-                          className={`w-full bg-input-background border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 transition-colors ${touched && cardExpiry && !cardExpiryValid ? "border-red-500/60 focus:ring-red-500/50" : "border-border focus:ring-purple-500/50"}`}
-                        />
-                        {touched && cardExpiry && !cardExpiryValid && <p className="text-xs text-red-400 mt-1">Validade inválida ou vencida.</p>}
+                        <p className="text-xs font-semibold text-purple-400 uppercase tracking-widest">{p.badge}</p>
+                        <h4 className="font-bold text-foreground">{p.name}</h4>
                       </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-muted-foreground mb-1.5">CVV</label>
-                        <input
-                          value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                          onBlur={() => setTouched(true)}
-                          placeholder="123"
-                          inputMode="numeric"
-                          className={`w-full bg-input-background border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 transition-colors ${touched && cardCvv && !cardCvvValid ? "border-red-500/60 focus:ring-red-500/50" : "border-border focus:ring-purple-500/50"}`}
-                        />
-                        {touched && cardCvv && !cardCvvValid && <p className="text-xs text-red-400 mt-1">CVV inválido.</p>}
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground line-through">{p.originalPrice}</p>
+                        <p className="text-xl font-extrabold text-foreground">{p.price}<span className="text-xs font-normal text-muted-foreground"> {p.period}</span></p>
+                        <p className="text-xs text-muted-foreground">≈ {p.usdReference} fora do Brasil</p>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Nome no Cartão</label>
-                      <input
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        onBlur={() => setTouched(true)}
-                        placeholder="Como está impresso no cartão"
-                        className={`w-full bg-input-background border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 transition-colors ${touched && cardName && !cardNameValid ? "border-red-500/60 focus:ring-red-500/50" : "border-border focus:ring-purple-500/50"}`}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-input-background rounded-xl p-3">
-                      <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                      Pagamento criptografado (SSL/TLS). Aceitamos Visa, Mastercard, Amex e Elo{currency === "USD" ? " — cobrança internacional em dólar." : "."}
-                    </div>
-                  </div>
-                )}
-
-                {payMethod === "pix" && (
-                  <div className="space-y-4">
-                    <div className="bg-input-background border border-border rounded-xl p-4 text-center">
-                      <div className="w-36 h-36 mx-auto rounded-xl bg-white p-2 grid grid-cols-6 grid-rows-6 gap-0.5">
-                        {Array.from({ length: 36 }, (_, i) => (
-                          <div key={i} className={(hashKey(pixCode + i) % 3 === 0) ? "bg-black rounded-sm" : "bg-white"} />
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-3">Escaneie o QR Code com o app do seu banco</p>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Pix Copia e Cola</label>
-                      <div className="flex gap-2">
-                        <input readOnly value={pixCode} className="flex-1 bg-input-background border border-border rounded-xl px-3 py-2.5 text-xs text-foreground font-mono truncate" />
-                        <button onClick={() => copyToClipboard(pixCode)} className="px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-colors">
-                          {copied ? "Copiado!" : "Copiar"}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-input-background rounded-xl p-3">
-                      <Zap className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                      Aprovação em segundos após o pagamento. Disponível apenas para contas em bancos brasileiros.
-                    </div>
-                  </div>
-                )}
-
-                {payMethod === "boleto" && (
-                  <div className="space-y-4">
-                    <div className="bg-input-background border border-border rounded-xl p-4">
-                      <div className="flex gap-0.5 h-14 items-end mb-3">
-                        {Array.from({ length: 60 }, (_, i) => (
-                          <div key={i} style={{ height: `${30 + (hashKey(boletoCode + i) % 70)}%` }} className={(hashKey(boletoCode + i) % 2 === 0) ? "w-1 bg-foreground" : "w-0.5 bg-foreground/60"} />
-                        ))}
-                      </div>
-                      <p className="text-xs font-mono text-foreground text-center">{boletoCode}</p>
-                    </div>
-                    <div className="flex items-center justify-between text-xs bg-purple-500/10 border border-purple-500/20 rounded-xl p-3">
-                      <span className="text-muted-foreground">Vencimento</span>
-                      <span className="font-bold text-foreground">{boletoDueDate}</span>
-                    </div>
-                    <button onClick={() => copyToClipboard(boletoCode)} className="w-full px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-colors">
-                      {copied ? "Código copiado!" : "Copiar código de barras"}
-                    </button>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-input-background rounded-xl p-3">
-                      <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                      Compensação em até 2 dias úteis. O acesso libera automaticamente após a confirmação do pagamento.
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-3 mt-4">
-                  <button onClick={() => setStep(1)} className="flex-1 border border-border text-foreground font-semibold py-2.5 rounded-xl hover:bg-input-background transition-colors text-sm">Voltar</button>
-                  <button
-                    onClick={() => { setTouched(true); if (paymentReady()) setStep(3); }}
-                    disabled={payMethod === "card" && touched && !cardFormValid && (Boolean(cardNumber) || Boolean(cardExpiry) || Boolean(cardCvv) || Boolean(cardName))}
-                    className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Revisar
-                  </button>
-                </div>
-              </Card>
-            )}
-
-            {step === 3 && (
-              <Card>
-                <h3 className="font-bold text-foreground mb-4">Confirmar Pedido</h3>
-                <div className="space-y-3 mb-5">
-                  {[
-                    { label: "Plano", value: `Code Mage ${selectedPlan.name}` },
-                    { label: "Valor", value: `${displayPrice} ${selectedPlan.period}` },
-                    { label: "Forma de pagamento", value: payMethod === "card" ? `Cartão •••• ${cardNumber.replace(/\D/g, "").slice(-4) || "----"}` : payMethod === "pix" ? "Pix" : "Boleto bancário" },
-                    { label: selectedPlan.id === "lifetime" ? "Tipo" : "Próx. cobrança", value: selectedPlan.id === "lifetime" ? "Acesso vitalício" : payMethod === "boleto" ? `Após compensação (${boletoDueDate})` : "05 Ago 2026" },
-                  ].map((r) => (
-                    <div key={r.label} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{r.label}</span>
-                      <span className="text-foreground font-semibold">{r.value}</span>
-                    </div>
-                  ))}
-                  <div className="border-t border-border pt-3 flex justify-between text-sm font-bold">
-                    <span className="text-foreground">Total {payMethod === "boleto" ? "a pagar" : "hoje"}</span>
-                    <span className="text-purple-400">{displayPrice}</span>
+                    <ul className="grid grid-cols-1 gap-1.5 mt-3">
+                      {p.features.map((f) => (
+                        <li key={f} className="flex items-center gap-2 text-xs text-foreground bg-card border border-border rounded-lg px-3 py-2">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setStep(2)} className="flex-1 border border-border text-foreground font-semibold py-2.5 rounded-xl hover:bg-input-background transition-colors text-sm">Voltar</button>
-                  <button onClick={() => setDone(true)} className="flex-1 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-lg shadow-purple-900/30">
-                    {payMethod === "boleto" ? "Gerar boleto" : payMethod === "pix" ? "Gerar Pix" : "Confirmar e Assinar"}
-                  </button>
-                </div>
-              </Card>
-            )}
+              </button>
+            ))}
           </div>
 
-          {/* Summary */}
-          <div className="lg:col-span-2">
-            <Card>
-              <h3 className="font-bold text-foreground mb-4 text-sm">Resumo</h3>
-              <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center flex-shrink-0">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-foreground">Code Mage {selectedPlan.name}</p>
-                  <p className="text-xs text-muted-foreground">{selectedPlan.id === "lifetime" ? "Plano Vitalício" : "Plano Mensal"} · {currency === "BRL" ? "Brasil (R$)" : "Internacional (US$)"}</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm mb-4">
-                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="text-foreground">{displayPrice}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Acesso</span><span className="text-emerald-400">Até mês {selectedPlan.maxMonth}</span></div>
-                <div className="flex justify-between pt-2 border-t border-border font-bold"><span className="text-foreground">Total</span><span className="text-purple-300">{displayPrice} {selectedPlan.period}</span></div>
-              </div>
-              <div className="space-y-2 text-xs text-muted-foreground">
-                {selectedPlan.id !== "lifetime" && <div className="flex items-center gap-2"><X className="w-3.5 h-3.5 text-emerald-400" />Cancele quando quiser</div>}
-                <div className="flex items-center gap-2"><Lock className="w-3.5 h-3.5 text-emerald-400" />Pagamento seguro (SSL/TLS)</div>
-                <div className="flex items-center gap-2"><Globe className="w-3.5 h-3.5 text-emerald-400" />Compra disponível para o Brasil e para o exterior</div>
-              </div>
-            </Card>
+          {checkoutError && (
+            <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-xs text-red-300">{checkoutError}</div>
+          )}
+
+          <button
+            onClick={startCheckout}
+            disabled={creatingCheckout || isCurrentPlan}
+            className="w-full mt-4 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {creatingCheckout ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : isCurrentPlan ? (
+              "Este já é seu plano atual"
+            ) : (
+              <>Pagar com Mercado Pago<ChevronRight className="w-4 h-4" /></>
+            )}
+          </button>
+
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 bg-input-background border border-border rounded-lg px-3 py-2"><CreditCard className="w-3.5 h-3.5 text-emerald-400" />Cartão (BR e internacional)</div>
+            <div className="flex items-center gap-2 bg-input-background border border-border rounded-lg px-3 py-2"><Zap className="w-3.5 h-3.5 text-emerald-400" />Pix (Brasil)</div>
+            <div className="flex items-center gap-2 bg-input-background border border-border rounded-lg px-3 py-2"><FileText className="w-3.5 h-3.5 text-emerald-400" />Boleto (Brasil)</div>
           </div>
-        </div>
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground bg-input-background rounded-xl p-3">
+            <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            Você será redirecionado para o ambiente seguro do Mercado Pago para pagar — nunca coletamos ou armazenamos dados de cartão neste site.
+          </div>
+        </Card>
+
+        <Card>
+          <h3 className="font-bold text-foreground mb-2 text-sm">Conta</h3>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">E-mail</span>
+            <span className="text-foreground font-semibold">{user.email}</span>
+          </div>
+        </Card>
       </div>
     </div>
   );
 }
 
 // APP SHELL
-function AppShell({ onLogout }: { onLogout: () => void }) {
+function AppShell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [page, setPage] = useState<Page>("dashboard");
   const [activeModule, setActiveModule] = useState<Module>(modules[0]);
   const [completedMissions, setCompletedMissions] = useState<Record<string, boolean>>({});
-  const [coins, setCoins] = useState(2600);
-  const [ownedCharacters, setOwnedCharacters] = useState<string[]>([DEFAULT_CHARACTER_ID]);
-  const [equippedCharacterId, setEquippedCharacterId] = useState(DEFAULT_CHARACTER_ID);
+  const { profile, setCoins, setEquippedCharacterId, setOwnedCharacters, markLessonComplete, cloudEnabled } = useCloudProfile(user.id);
+  const { subscription, refresh: refreshSubscription } = useActiveSubscription(user.id);
+  const [checkoutBanner, setCheckoutBanner] = useState<"success" | "failure" | "pending" | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("checkout");
+    if (status === "success" || status === "failure" || status === "pending") {
+      setCheckoutBanner(status);
+      window.history.replaceState({}, "", window.location.pathname);
+      if (status === "success") {
+        // O webhook do Mercado Pago pode levar alguns segundos a mais que o
+        // redirect do usuário; tenta atualizar a assinatura de novo em 3s.
+        setTimeout(() => refreshSubscription(), 3000);
+      }
+    }
+  }, [refreshSubscription]);
 
   const titles: Record<Page, string> = {
     login: "Login",
@@ -2450,11 +2376,31 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
     checkout: "Conta e Plano",
   };
 
+  const planLabel = subscription
+    ? subscription.planId === "lifetime" ? "Plano Vitalício" : subscription.planId === "pro" ? "Trilha Pro" : "Trilha Starter"
+    : "Sem plano ativo";
+
   return (
     <div className="h-screen flex overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <Sidebar page={page} setPage={setPage} onLogout={onLogout} equippedCharacterId={equippedCharacterId} />
+      <Sidebar page={page} setPage={setPage} onLogout={onLogout} equippedCharacterId={profile.equippedCharacterId} displayName={profile.displayName} planLabel={planLabel} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar title={titles[page]} setPage={setPage} coins={coins} />
+        <Topbar title={titles[page]} setPage={setPage} coins={profile.coins} />
+        {!cloudEnabled && (
+          <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-200 text-xs px-4 py-2 flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+            Supabase não configurado — seu progresso, moedas e personagem não estão sendo salvos entre sessões. Configure o .env para ativar a nuvem.
+          </div>
+        )}
+        {checkoutBanner && (
+          <div className={`text-xs px-4 py-2 flex items-center justify-between gap-2 ${checkoutBanner === "success" ? "bg-emerald-500/10 border-b border-emerald-500/30 text-emerald-200" : checkoutBanner === "pending" ? "bg-amber-500/10 border-b border-amber-500/30 text-amber-200" : "bg-red-500/10 border-b border-red-500/30 text-red-200"}`}>
+            <span>
+              {checkoutBanner === "success" && "Pagamento aprovado! Seu plano será liberado em instantes (confirmação final do Mercado Pago)."}
+              {checkoutBanner === "pending" && "Pagamento em análise (comum em Pix/boleto). Assim que for aprovado, seu plano libera automaticamente."}
+              {checkoutBanner === "failure" && "O pagamento não foi concluído. Você pode tentar novamente na tela de Conta e Plano."}
+            </span>
+            <button onClick={() => setCheckoutBanner(null)} className="text-current opacity-70 hover:opacity-100"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
         {page === "dashboard" && (
           <DashboardPage
             setPage={setPage}
@@ -2465,7 +2411,14 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
           />
         )}
         {page === "cursos" && <CursosPage setPage={setPage} activeModule={activeModule} setActiveModule={setActiveModule} />}
-        {page === "aulas" && <AulasPage module={activeModule} setPage={setPage} />}
+        {page === "aulas" && (
+          <AulasPage
+            module={activeModule}
+            setPage={setPage}
+            completedLessons={profile.completedLessons}
+            onCompleteLesson={markLessonComplete}
+          />
+        )}
         {page === "historia" && <HistoriaPage module={activeModule} setPage={setPage} />}
         {page === "laboratorio" && <LaboratorioPage module={activeModule} onReward={(amount) => setCoins((prev) => prev + amount)} />}
         {page === "arcade" && <ArcadePage setActiveModule={setActiveModule} setPage={setPage} onReward={(amount) => setCoins((prev) => prev + amount)} />}
@@ -2474,26 +2427,30 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
         {page === "progresso" && <ProgressoPage />}
         {page === "loja" && (
           <LojaPage
-            coins={coins}
+            coins={profile.coins}
             setCoins={setCoins}
-            ownedCharacters={ownedCharacters}
+            ownedCharacters={profile.ownedCharacters}
             setOwnedCharacters={setOwnedCharacters}
-            equippedCharacterId={equippedCharacterId}
+            equippedCharacterId={profile.equippedCharacterId}
             setEquippedCharacterId={setEquippedCharacterId}
           />
         )}
-        {page === "checkout" && <CheckoutPage setPage={setPage} />}
+        {page === "checkout" && <CheckoutPage setPage={setPage} user={user} subscription={subscription} />}
       </div>
     </div>
   );
 }
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const { session, user, loading, signOut } = useAuth();
 
-  return loggedIn ? (
-    <AppShell onLogout={() => setLoggedIn(false)} />
-  ) : (
-    <LoginPage onLogin={() => setLoggedIn(true)} />
-  );
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return session && user ? <AppShell user={user} onLogout={signOut} /> : <LoginPage />;
 }
