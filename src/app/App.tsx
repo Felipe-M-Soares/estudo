@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import {
   LayoutDashboard,
   BookOpen,
@@ -243,15 +243,69 @@ function Avatar({ src, name, size = "md" }: { src?: string; name: string; size?:
   const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const image = src ?? characterSrc(DEFAULT_CHARACTER_ID);
   return (
-    <div className={`${sizes[size]} rounded-full overflow-hidden flex-shrink-0 border-2 border-purple-500/40 bg-gradient-to-br from-purple-600/30 to-cyan-500/20 flex items-center justify-center`}>
-      <img src={image} alt={name} className="w-[118%] h-[118%] object-contain translate-y-0.5" />
+    <div className={`${sizes[size]} flex-shrink-0 flex items-center justify-center`}>
+      <img src={image} alt={name} className="w-full h-full object-contain" />
       {!src && <span className="sr-only">{initials}</span>}
     </div>
   );
 }
 
-function cleanText(text: string) {
-  return text.replace(/\*\*/g, "").replace(/`/g, "");
+function renderInlineMarkdown(text: string, keyPrefix: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter((p) => p.length > 0);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={`${keyPrefix}-${i}`} className="text-foreground font-bold">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return <code key={`${keyPrefix}-${i}`} className="bg-black/30 text-purple-200 rounded px-1.5 py-0.5 text-xs font-mono">{part.slice(1, -1)}</code>;
+    }
+    return <Fragment key={`${keyPrefix}-${i}`}>{part}</Fragment>;
+  });
+}
+
+function LessonBody({ text }: { text: string }) {
+  const blocks = text.split("\n\n").filter((b) => b.trim().length > 0);
+  return (
+    <div className="space-y-4">
+      {blocks.map((block, bIndex) => {
+        const lines = block.split("\n").filter((l) => l.trim().length > 0);
+        const isList = lines.length > 0 && lines.every((l) => l.trim().startsWith("- "));
+        if (isList) {
+          return (
+            <ul key={bIndex} className="space-y-2">
+              {lines.map((l, i) => (
+                <li key={i} className="flex gap-2.5 text-sm text-muted-foreground leading-relaxed bg-input-background/60 border border-border/60 rounded-lg px-3 py-2">
+                  <span className="text-purple-400 flex-shrink-0">▸</span>
+                  <span>{renderInlineMarkdown(l.replace(/^- /, ""), `${bIndex}-${i}`)}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+        return (
+          <p key={bIndex} className="text-sm text-muted-foreground leading-relaxed">
+            {lines.map((line, i) => (
+              <Fragment key={i}>
+                {i > 0 && <br />}
+                {renderInlineMarkdown(line, `${bIndex}-${i}`)}
+              </Fragment>
+            ))}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function estimateReadingMinutes(...texts: (string | undefined)[]) {
+  const words = texts.filter(Boolean).join(" ").trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(2, Math.round(words / 130));
+}
+
+function keyPointsFromBody(text: string): string[] {
+  const bulletBlocks = text.split("\n\n").filter((block) => block.split("\n").every((l) => l.trim().startsWith("- ") || l.trim().length === 0));
+  const points = bulletBlocks.flatMap((block) => block.split("\n").filter((l) => l.trim().startsWith("- ")).map((l) => l.replace(/^- /, "").replace(/\*\*/g, "").trim()));
+  return points.slice(0, 5);
 }
 
 function missionTargetPage(missionId: string): Page {
@@ -707,8 +761,8 @@ function CursosPage({ setPage, activeModule, setActiveModule }: { setPage: (p: P
               {phaseModules.map((c, index) => (
                 <Card key={c.id} hover className="!p-4" onClick={() => { setActiveModule(c); setPage("aulas"); }}>
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 overflow-hidden flex-shrink-0">
-                      <img src={badgeForKey(c.id)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
+                    <div className="w-10 h-10 flex-shrink-0">
+                      <img src={badgeForKey(c.id)} alt="" className="w-full h-full object-contain" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -756,6 +810,8 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
   const completedLessonsCount = module.lessons.filter((_, index) => isLessonComplete(index)).length;
   const story = module.storyLessons?.[currentIndex % Math.max(module.storyLessons.length, 1)];
   const debugCase = module.debugCases?.[currentIndex % Math.max(module.debugCases.length, 1)];
+  const scenario = module.scenarios?.[currentIndex % Math.max(module.scenarios.length, 1)];
+  const [scenarioCheckAnswer, setScenarioCheckAnswer] = useState<number | null>(null);
   const projectItems =
     module.projectBrief?.requirements ??
     module.sprintLab?.sprints.map((sprint) => `${sprint.title}: ${sprint.objective} Entrega: ${sprint.deliverable}`) ??
@@ -769,32 +825,30 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
     setContentTab("aula");
   }, [module.id]);
 
+  useEffect(() => {
+    setScenarioCheckAnswer(null);
+  }, [module.id, currentIndex]);
+
   return (
     <div className="flex-1 overflow-hidden flex">
       {/* Player area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="relative bg-black aspect-video max-h-80 flex-shrink-0 flex items-center justify-center">
-          <img src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=900&h=500&fit=crop&auto=format" alt="Aula de programação" className="w-full h-full object-cover opacity-60" />
-          <button className="absolute w-16 h-16 rounded-full bg-purple-600/90 backdrop-blur hover:bg-purple-500 transition-colors flex items-center justify-center shadow-xl shadow-purple-900/60">
-            <Play className="w-7 h-7 text-white ml-1" />
-          </button>
-          <div className="absolute bottom-3 left-3 right-3 flex items-center gap-3">
-            <div className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-purple-400 rounded-full" style={{ width: "34%" }} />
+        <div className="relative bg-gradient-to-br from-purple-900 via-violet-800 to-indigo-900 flex-shrink-0 px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Badge color="primary">Mês {module.month}</Badge>
+              <Badge color="accent">{module.track}</Badge>
             </div>
-            <span className="text-white text-xs font-mono">7:32 / 22:10</span>
+            <h2 className="text-xl font-extrabold text-white">{current.heading}</h2>
+            <p className="text-sm text-purple-200 mt-1">{module.emoji} {module.title} · {module.tagline}</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-purple-100 bg-white/10 backdrop-blur px-3 py-1.5 rounded-xl">
+            <BookOpen className="w-3.5 h-3.5" />
+            ~{estimateReadingMinutes(current.body, story?.mission, story?.tension, debugCase?.context, scenario?.situation, scenario?.whatHappens, scenario?.howToSolve)} min de leitura
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Badge color="primary">Mês {module.month}</Badge>
-              <Badge color="accent">{module.track}</Badge>
-            </div>
-            <h2 className="text-xl font-extrabold text-foreground">{current.heading}</h2>
-            <p className="text-sm text-muted-foreground mt-1">{module.emoji} {module.title} · {module.tagline}</p>
-          </div>
           <div className="flex flex-wrap gap-2">
             {[
               { label: "Aula", tab: "aula" as const, locked: false },
@@ -828,12 +882,18 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
           {contentTab === "aula" && (
             <div className="space-y-4">
               <Card>
-                <h3 className="font-bold text-foreground mb-3">Aula explicada</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{cleanText(current.body)}</p>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-foreground">Aula explicada</h3>
+                  <span className="text-xs text-muted-foreground">{currentIndex + 1}/{module.lessons.length}</span>
+                </div>
+                <LessonBody text={current.body} />
                 {current.codeExample && (
-                  <pre className="mt-4 overflow-x-auto rounded-xl bg-black/40 border border-purple-500/20 p-4 text-xs text-purple-100">
-                    <code>{current.codeExample.code}</code>
-                  </pre>
+                  <div className="mt-4">
+                    <p className="text-xs font-semibold text-purple-300 uppercase tracking-wide mb-1.5">Exemplo · {current.codeExample.lang}</p>
+                    <pre className="overflow-x-auto rounded-xl bg-black/40 border border-purple-500/20 p-4 text-xs text-purple-100">
+                      <code>{current.codeExample.code}</code>
+                    </pre>
+                  </div>
                 )}
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <button
@@ -849,6 +909,20 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
                   )}
                 </div>
               </Card>
+
+              {keyPointsFromBody(current.body).length > 0 && (
+                <Card>
+                  <Badge color="success">Pontos-chave</Badge>
+                  <ul className="mt-3 space-y-2">
+                    {keyPointsFromBody(current.body).map((point, i) => (
+                      <li key={i} className="flex gap-2.5 text-sm text-foreground">
+                        <Check className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              )}
 
               {story && (
                 <Card>
@@ -870,6 +944,55 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
                   <p className="text-sm text-muted-foreground">{debugCase.context}</p>
                   <pre className="mt-3 overflow-x-auto rounded-xl bg-black/40 border border-border p-4 text-xs text-purple-100">{debugCase.log}</pre>
                   <p className="text-xs text-emerald-300 mt-3">Correção esperada: {debugCase.fix}</p>
+                </Card>
+              )}
+
+              {scenario && (
+                <Card>
+                  <Badge color="primary">Cenário do dia a dia · {scenario.context === "trabalho" ? "no trabalho" : "uso pessoal"}</Badge>
+                  <h3 className="font-bold text-foreground mt-3 mb-2">{scenario.emoji} {scenario.title}</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-1">A situação</p>
+                      <p className="text-sm text-foreground">{scenario.situation}</p>
+                    </div>
+                    <div className="bg-input-background border border-border rounded-xl p-3">
+                      <p className="text-xs font-semibold text-amber-300 mb-1">O que acontece</p>
+                      <p className="text-sm text-foreground">{scenario.whatHappens}</p>
+                    </div>
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                      <p className="text-xs font-semibold text-emerald-300 mb-1">Como resolver</p>
+                      <p className="text-sm text-foreground">{scenario.howToSolve}</p>
+                    </div>
+                  </div>
+                  {scenario.check && (
+                    <div className="mt-4 border-t border-border pt-4">
+                      <p className="text-sm font-bold text-foreground mb-2">Checagem rápida: {scenario.check.question}</p>
+                      <div className="grid gap-2">
+                        {scenario.check.options.map((option, i) => {
+                          const isChosen = scenarioCheckAnswer === i;
+                          const isCorrect = i === scenario.check!.correctIndex;
+                          const showState = scenarioCheckAnswer !== null;
+                          return (
+                            <button
+                              key={option}
+                              onClick={() => setScenarioCheckAnswer(i)}
+                              className={`text-left rounded-lg border px-3 py-2 text-xs transition-colors ${
+                                showState && isCorrect ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-200"
+                                : showState && isChosen && !isCorrect ? "border-red-500/60 bg-red-500/10 text-red-200"
+                                : "border-border bg-card text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {scenarioCheckAnswer !== null && (
+                        <p className="text-xs text-muted-foreground mt-2">{scenario.check.explanation}</p>
+                      )}
+                    </div>
+                  )}
                 </Card>
               )}
             </div>
@@ -1558,8 +1681,8 @@ function ArcadePage({ setActiveModule, setPage, onReward }: { setActiveModule: (
         {games.map((game) => (
           <Card key={`${game.module.id}-${game.gameId}`} hover onClick={() => { setLastScore(null); setSelectedGameKey(`${game.module.id}-${game.gameId}`); }}>
             <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 overflow-hidden flex-shrink-0">
-                <img src={badgeForKey(`${game.module.id}-${game.gameId}`)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
+              <div className="w-12 h-12 flex-shrink-0">
+                <img src={badgeForKey(`${game.module.id}-${game.gameId}`)} alt="" className="w-full h-full object-contain" />
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1822,15 +1945,15 @@ function LojaPage({
                 className={`!p-3 text-center ${equipped ? "!border-purple-500/60 ring-1 ring-purple-500/40" : ""}`}
                 onClick={() => (owned ? equipCharacter(character) : buyCharacter(character))}
               >
-                <div className="relative w-full aspect-square rounded-xl bg-gradient-to-br from-purple-500/10 to-cyan-500/5 border border-purple-500/20 overflow-hidden flex items-center justify-center">
-                  <img src={character.src} alt={character.name} className="w-[92%] h-[92%] object-contain" />
+                <div className="relative w-full aspect-square flex items-center justify-center">
+                  <img src={character.src} alt={character.name} className="w-full h-full object-contain" />
                   {equipped && (
-                    <span className="absolute top-1.5 right-1.5 bg-purple-600 text-white rounded-full p-1">
+                    <span className="absolute top-0 right-0 bg-purple-600 text-white rounded-full p-1">
                       <Check className="w-3 h-3" />
                     </span>
                   )}
                   {!owned && (
-                    <span className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="absolute inset-0 bg-black/30 rounded-xl flex items-center justify-center">
                       <Lock className="w-5 h-5 text-white/80" />
                     </span>
                   )}
@@ -1865,8 +1988,8 @@ function LojaPage({
           {marketplace.map((item) => (
             <Card key={item.id} hover>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 overflow-hidden flex-shrink-0">
-                  <img src={badgeForKey(item.id)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
+                <div className="w-10 h-10 flex-shrink-0">
+                  <img src={badgeForKey(item.id)} alt="" className="w-full h-full object-contain" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
@@ -1894,8 +2017,9 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
       name: "Starter",
       originalPrice: "R$ 69,86",
       price: "R$ 49,90",
+      usdOriginal: "US$ 13",
+      usdPrice: "US$ 9",
       period: "/mês",
-      usd: "US$ 9",
       badge: "Aventureiro",
       features: ["Fundamentos até o mês 6", "Aulas, exercícios e revisão", "Progresso em nuvem com licença ativa"],
       maxMonth: 6,
@@ -1905,8 +2029,9 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
       name: "Pro",
       originalPrice: "R$ 125,86",
       price: "R$ 89,90",
+      usdOriginal: "US$ 27",
+      usdPrice: "US$ 19",
       period: "/mês",
-      usd: "US$ 19",
       badge: "Heroico",
       features: ["Todos os 22 meses", "Laboratório, arcade e analytics", "Projetos e revisões avançadas"],
       maxMonth: 22,
@@ -1916,17 +2041,93 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
       name: "Vitalício",
       originalPrice: "R$ 695,80",
       price: "R$ 497,00",
+      usdOriginal: "US$ 129",
+      usdPrice: "US$ 89",
       period: "único",
-      usd: "US$ 89",
       badge: "Lendário",
-      features: ["Pagamento único", "Acesso completo vitalício", "Ideal para venda direta"],
+      features: ["Pagamento único", "Acesso completo vitalício", "Apto a próximas atualizações"],
       maxMonth: 22,
     },
   ] as const;
+
+  type Currency = "BRL" | "USD";
+  type PayMethod = "card" | "pix" | "boleto";
+
   const [plan, setPlan] = useState<(typeof commercialPlans)[number]["id"]>("pro");
+  const [currency, setCurrency] = useState<Currency>("BRL");
+  const [payMethod, setPayMethod] = useState<PayMethod>("card");
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [done, setDone] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [touched, setTouched] = useState(false);
+
   const selectedPlan = commercialPlans.find((p) => p.id === plan) ?? commercialPlans[1];
+  const displayPrice = currency === "BRL" ? selectedPlan.price : selectedPlan.usdPrice;
+  const displayOriginal = currency === "BRL" ? selectedPlan.originalPrice : selectedPlan.usdOriginal;
+
+  // Internacional (fora do Brasil): só cartão, cobrança em dólar.
+  useEffect(() => {
+    if (currency === "USD" && payMethod !== "card") setPayMethod("card");
+  }, [currency, payMethod]);
+
+  function luhnValid(num: string) {
+    const digits = num.replace(/\D/g, "");
+    if (digits.length < 13 || digits.length > 19) return false;
+    let sum = 0;
+    let alt = false;
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let n = parseInt(digits[i], 10);
+      if (alt) { n *= 2; if (n > 9) n -= 9; }
+      sum += n;
+      alt = !alt;
+    }
+    return sum % 10 === 0;
+  }
+
+  function expiryValid(value: string) {
+    const match = /^(\d{2})\s*\/\s*(\d{2})$/.exec(value.trim());
+    if (!match) return false;
+    const month = parseInt(match[1], 10);
+    const year = 2000 + parseInt(match[2], 10);
+    if (month < 1 || month > 12) return false;
+    const now = new Date();
+    const expiryDate = new Date(year, month, 0);
+    return expiryDate >= new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  const cardNumberValid = luhnValid(cardNumber);
+  const cardExpiryValid = expiryValid(cardExpiry);
+  const cardCvvValid = /^\d{3,4}$/.test(cardCvv.trim());
+  const cardNameValid = cardName.trim().length >= 3;
+  const cardFormValid = cardNumberValid && cardExpiryValid && cardCvvValid && cardNameValid;
+
+  const pixCode = `00020126580014BR.GOV.BCB.PIX0136codemage-${selectedPlan.id}-${Math.abs(hashKey(selectedPlan.id + plan)).toString(16).slice(0, 8)}5204000053039865802BR5913CODE MAGE LTDA6009SAO PAULO62070503***6304`;
+  const boletoCode = Array.from({ length: 5 }, (_, i) => String(Math.abs(hashKey(selectedPlan.id + i)) % 100000).padStart(5, "0")).join(" ");
+  const boletoDueDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return d.toLocaleDateString("pt-BR");
+  })();
+
+  function paymentReady() {
+    if (payMethod === "card") return cardFormValid;
+    return true; // pix/boleto: geração de código não exige validação de formulário
+  }
+
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   if (done) {
     return (
@@ -1935,8 +2136,16 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
           <div className="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-500/50 flex items-center justify-center mx-auto mb-6">
             <Check className="w-10 h-10 text-emerald-400" />
           </div>
-          <h2 className="text-3xl font-extrabold text-foreground mb-2">Plano completo ativado!</h2>
-          <p className="text-muted-foreground mb-6">Seu plano {selectedPlan.name} foi ativado. A trilha foi liberada até o mês {selectedPlan.maxMonth}.</p>
+          <h2 className="text-3xl font-extrabold text-foreground mb-2">
+            {payMethod === "boleto" ? "Boleto gerado!" : payMethod === "pix" ? "Pix gerado!" : "Plano ativado!"}
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            {payMethod === "boleto"
+              ? `Pague até ${boletoDueDate}. Seu acesso ao plano ${selectedPlan.name} libera automaticamente após a compensação.`
+              : payMethod === "pix"
+              ? `Assim que o Pix for confirmado, seu plano ${selectedPlan.name} é liberado até o mês ${selectedPlan.maxMonth}.`
+              : `Seu plano ${selectedPlan.name} foi ativado. A trilha foi liberada até o mês ${selectedPlan.maxMonth}.`}
+          </p>
           <button onClick={() => setPage("dashboard")} className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-8 py-3 rounded-xl transition-colors">
             Ir para o Dashboard
           </button>
@@ -1964,13 +2173,22 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
           <div className="lg:col-span-3 space-y-4">
             {step === 1 && (
               <Card>
-                <h3 className="font-bold text-foreground mb-4">Escolha seu plano</h3>
+                <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+                  <h3 className="font-bold text-foreground">Escolha seu plano</h3>
+                  <div className="flex items-center bg-input-background border border-border rounded-xl p-1 text-xs font-semibold">
+                    <button onClick={() => setCurrency("BRL")} className={`px-3 py-1.5 rounded-lg transition-colors ${currency === "BRL" ? "bg-purple-600 text-white" : "text-muted-foreground hover:text-foreground"}`}>R$ Brasil</button>
+                    <button onClick={() => setCurrency("USD")} className={`px-3 py-1.5 rounded-lg transition-colors ${currency === "USD" ? "bg-purple-600 text-white" : "text-muted-foreground hover:text-foreground"}`}>US$ Internacional</button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 gap-3">
-                  {commercialPlans.map((p) => (
+                  {commercialPlans.map((p) => {
+                    const price = currency === "BRL" ? p.price : p.usdPrice;
+                    const original = currency === "BRL" ? p.originalPrice : p.usdOriginal;
+                    return (
                     <button key={p.id} onClick={() => setPlan(p.id)} className={`text-left border-2 rounded-2xl p-5 transition-all ${plan === p.id ? "border-purple-500/60 bg-purple-500/10" : "border-border bg-input-background hover:border-purple-500/40"}`}>
                       <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-purple-500/20 bg-purple-500/10 flex-shrink-0">
-                          <img src={badgeForKey(p.id)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
+                        <div className="w-12 h-12 flex-shrink-0">
+                          <img src={badgeForKey(p.id)} alt="" className="w-full h-full object-contain" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-3">
@@ -1979,20 +2197,23 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
                               <h4 className="font-bold text-foreground">{p.name}</h4>
                             </div>
                             <div className="text-right">
-                              <p className="text-xs text-muted-foreground line-through">{p.originalPrice}</p>
-                              <p className="text-xl font-extrabold text-foreground">{p.price}<span className="text-xs font-normal text-muted-foreground"> {p.period}</span></p>
+                              <p className="text-xs text-muted-foreground line-through">{original}</p>
+                              <p className="text-xl font-extrabold text-foreground">{price}<span className="text-xs font-normal text-muted-foreground"> {p.period}</span></p>
                             </div>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">Desconto aplicado · também disponível em {p.usd}</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+                          <p className="text-xs text-muted-foreground mt-1">Desconto aplicado · cobrança em {currency === "BRL" ? "reais" : "dólares"}</p>
+                          <ul className="grid grid-cols-1 sm:grid-cols-1 gap-1.5 mt-3">
                             {p.features.map((f) => (
-                              <span key={f} className="text-xs text-foreground bg-card border border-border rounded-lg p-2">{f}</span>
+                              <li key={f} className="flex items-center gap-2 text-xs text-foreground bg-card border border-border rounded-lg px-3 py-2">
+                                <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                                <span>{f}</span>
+                              </li>
                             ))}
-                          </div>
+                          </ul>
                         </div>
                       </div>
                     </button>
-                  ))}
+                  );})}
                 </div>
                 <button onClick={() => setStep(2)} className="w-full mt-4 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-colors">Continuar</button>
               </Card>
@@ -2000,50 +2221,159 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
 
             {step === 2 && (
               <Card>
-                <h3 className="font-bold text-foreground mb-4">Dados de Pagamento</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Número do Cartão</label>
-                    <div className="relative">
-                      <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <input defaultValue="4532 •••• •••• 1234" className="w-full bg-input-background border border-border rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/50" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Validade</label>
-                      <input defaultValue="12/27" className="w-full bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/50" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">CVV</label>
-                      <input defaultValue="•••" className="w-full bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/50" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Nome no Cartão</label>
-                    <input defaultValue="Ana Silva" className="w-full bg-input-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/50" />
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-input-background rounded-xl p-3">
-                    <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    Pagamento 100% seguro. Dados criptografados com SSL.
-                  </div>
+                <h3 className="font-bold text-foreground mb-4">Forma de Pagamento</h3>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <button onClick={() => setPayMethod("card")} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${payMethod === "card" ? "bg-purple-600 text-white" : "bg-input-background border border-border text-muted-foreground hover:text-foreground"}`}>
+                    <CreditCard className="w-3.5 h-3.5" />Cartão
+                  </button>
+                  {currency === "BRL" && (
+                    <>
+                      <button onClick={() => setPayMethod("pix")} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${payMethod === "pix" ? "bg-purple-600 text-white" : "bg-input-background border border-border text-muted-foreground hover:text-foreground"}`}>
+                        <Zap className="w-3.5 h-3.5" />Pix
+                      </button>
+                      <button onClick={() => setPayMethod("boleto")} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${payMethod === "boleto" ? "bg-purple-600 text-white" : "bg-input-background border border-border text-muted-foreground hover:text-foreground"}`}>
+                        <FileText className="w-3.5 h-3.5" />Boleto
+                      </button>
+                    </>
+                  )}
+                  {currency === "USD" && (
+                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground px-2">
+                      <Globe className="w-3.5 h-3.5" />Pix e Boleto disponíveis só para o Brasil (R$)
+                    </span>
+                  )}
                 </div>
+
+                {payMethod === "card" && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Número do Cartão</label>
+                      <div className="relative">
+                        <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <input
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(e.target.value.replace(/[^\d\s]/g, "").slice(0, 23))}
+                          onBlur={() => setTouched(true)}
+                          placeholder="0000 0000 0000 0000"
+                          inputMode="numeric"
+                          className={`w-full bg-input-background border rounded-xl pl-10 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 transition-colors ${touched && cardNumber && !cardNumberValid ? "border-red-500/60 focus:ring-red-500/50" : "border-border focus:ring-purple-500/50"}`}
+                        />
+                      </div>
+                      {touched && cardNumber && !cardNumberValid && <p className="text-xs text-red-400 mt-1">Número de cartão inválido.</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Validade (MM/AA)</label>
+                        <input
+                          value={cardExpiry}
+                          onChange={(e) => setCardExpiry(e.target.value.slice(0, 5))}
+                          onBlur={() => setTouched(true)}
+                          placeholder="12/28"
+                          className={`w-full bg-input-background border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 transition-colors ${touched && cardExpiry && !cardExpiryValid ? "border-red-500/60 focus:ring-red-500/50" : "border-border focus:ring-purple-500/50"}`}
+                        />
+                        {touched && cardExpiry && !cardExpiryValid && <p className="text-xs text-red-400 mt-1">Validade inválida ou vencida.</p>}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-muted-foreground mb-1.5">CVV</label>
+                        <input
+                          value={cardCvv}
+                          onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                          onBlur={() => setTouched(true)}
+                          placeholder="123"
+                          inputMode="numeric"
+                          className={`w-full bg-input-background border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 transition-colors ${touched && cardCvv && !cardCvvValid ? "border-red-500/60 focus:ring-red-500/50" : "border-border focus:ring-purple-500/50"}`}
+                        />
+                        {touched && cardCvv && !cardCvvValid && <p className="text-xs text-red-400 mt-1">CVV inválido.</p>}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Nome no Cartão</label>
+                      <input
+                        value={cardName}
+                        onChange={(e) => setCardName(e.target.value)}
+                        onBlur={() => setTouched(true)}
+                        placeholder="Como está impresso no cartão"
+                        className={`w-full bg-input-background border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 transition-colors ${touched && cardName && !cardNameValid ? "border-red-500/60 focus:ring-red-500/50" : "border-border focus:ring-purple-500/50"}`}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-input-background rounded-xl p-3">
+                      <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      Pagamento criptografado (SSL/TLS). Aceitamos Visa, Mastercard, Amex e Elo{currency === "USD" ? " — cobrança internacional em dólar." : "."}
+                    </div>
+                  </div>
+                )}
+
+                {payMethod === "pix" && (
+                  <div className="space-y-4">
+                    <div className="bg-input-background border border-border rounded-xl p-4 text-center">
+                      <div className="w-36 h-36 mx-auto rounded-xl bg-white p-2 grid grid-cols-6 grid-rows-6 gap-0.5">
+                        {Array.from({ length: 36 }, (_, i) => (
+                          <div key={i} className={(hashKey(pixCode + i) % 3 === 0) ? "bg-black rounded-sm" : "bg-white"} />
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-3">Escaneie o QR Code com o app do seu banco</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Pix Copia e Cola</label>
+                      <div className="flex gap-2">
+                        <input readOnly value={pixCode} className="flex-1 bg-input-background border border-border rounded-xl px-3 py-2.5 text-xs text-foreground font-mono truncate" />
+                        <button onClick={() => copyToClipboard(pixCode)} className="px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-colors">
+                          {copied ? "Copiado!" : "Copiar"}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-input-background rounded-xl p-3">
+                      <Zap className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      Aprovação em segundos após o pagamento. Disponível apenas para contas em bancos brasileiros.
+                    </div>
+                  </div>
+                )}
+
+                {payMethod === "boleto" && (
+                  <div className="space-y-4">
+                    <div className="bg-input-background border border-border rounded-xl p-4">
+                      <div className="flex gap-0.5 h-14 items-end mb-3">
+                        {Array.from({ length: 60 }, (_, i) => (
+                          <div key={i} style={{ height: `${30 + (hashKey(boletoCode + i) % 70)}%` }} className={(hashKey(boletoCode + i) % 2 === 0) ? "w-1 bg-foreground" : "w-0.5 bg-foreground/60"} />
+                        ))}
+                      </div>
+                      <p className="text-xs font-mono text-foreground text-center">{boletoCode}</p>
+                    </div>
+                    <div className="flex items-center justify-between text-xs bg-purple-500/10 border border-purple-500/20 rounded-xl p-3">
+                      <span className="text-muted-foreground">Vencimento</span>
+                      <span className="font-bold text-foreground">{boletoDueDate}</span>
+                    </div>
+                    <button onClick={() => copyToClipboard(boletoCode)} className="w-full px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-colors">
+                      {copied ? "Código copiado!" : "Copiar código de barras"}
+                    </button>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-input-background rounded-xl p-3">
+                      <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      Compensação em até 2 dias úteis. O acesso libera automaticamente após a confirmação do pagamento.
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-3 mt-4">
                   <button onClick={() => setStep(1)} className="flex-1 border border-border text-foreground font-semibold py-2.5 rounded-xl hover:bg-input-background transition-colors text-sm">Voltar</button>
-                  <button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Revisar</button>
+                  <button
+                    onClick={() => { setTouched(true); if (paymentReady()) setStep(3); }}
+                    disabled={payMethod === "card" && touched && !cardFormValid && (Boolean(cardNumber) || Boolean(cardExpiry) || Boolean(cardCvv) || Boolean(cardName))}
+                    className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Revisar
+                  </button>
                 </div>
               </Card>
             )}
 
             {step === 3 && (
               <Card>
-                <h3 className="font-bold text-foreground mb-4">Confirmar Assinatura</h3>
+                <h3 className="font-bold text-foreground mb-4">Confirmar Pedido</h3>
                 <div className="space-y-3 mb-5">
                   {[
                     { label: "Plano", value: `Code Mage ${selectedPlan.name}` },
-                    { label: "Valor", value: `${selectedPlan.price} ${selectedPlan.period}` },
-                    { label: "Cartão", value: "Visa •••• 1234" },
-                    { label: selectedPlan.id === "lifetime" ? "Tipo" : "Próx. cobrança", value: selectedPlan.id === "lifetime" ? "Acesso vitalício" : "05 Ago 2026" },
+                    { label: "Valor", value: `${displayPrice} ${selectedPlan.period}` },
+                    { label: "Forma de pagamento", value: payMethod === "card" ? `Cartão •••• ${cardNumber.replace(/\D/g, "").slice(-4) || "----"}` : payMethod === "pix" ? "Pix" : "Boleto bancário" },
+                    { label: selectedPlan.id === "lifetime" ? "Tipo" : "Próx. cobrança", value: selectedPlan.id === "lifetime" ? "Acesso vitalício" : payMethod === "boleto" ? `Após compensação (${boletoDueDate})` : "05 Ago 2026" },
                   ].map((r) => (
                     <div key={r.label} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{r.label}</span>
@@ -2051,14 +2381,14 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
                     </div>
                   ))}
                   <div className="border-t border-border pt-3 flex justify-between text-sm font-bold">
-                    <span className="text-foreground">Total hoje</span>
-                    <span className="text-purple-400">{selectedPlan.price}</span>
+                    <span className="text-foreground">Total {payMethod === "boleto" ? "a pagar" : "hoje"}</span>
+                    <span className="text-purple-400">{displayPrice}</span>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => setStep(2)} className="flex-1 border border-border text-foreground font-semibold py-2.5 rounded-xl hover:bg-input-background transition-colors text-sm">Voltar</button>
                   <button onClick={() => setDone(true)} className="flex-1 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold py-2.5 rounded-xl transition-all text-sm shadow-lg shadow-purple-900/30">
-                    Confirmar e Assinar
+                    {payMethod === "boleto" ? "Gerar boleto" : payMethod === "pix" ? "Gerar Pix" : "Confirmar e Assinar"}
                   </button>
                 </div>
               </Card>
@@ -2075,18 +2405,18 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-foreground">Code Mage {selectedPlan.name}</p>
-                  <p className="text-xs text-muted-foreground">{selectedPlan.id === "lifetime" ? "Plano Vitalício" : "Plano Mensal"}</p>
+                  <p className="text-xs text-muted-foreground">{selectedPlan.id === "lifetime" ? "Plano Vitalício" : "Plano Mensal"} · {currency === "BRL" ? "Brasil (R$)" : "Internacional (US$)"}</p>
                 </div>
               </div>
               <div className="space-y-2 text-sm mb-4">
-                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="text-foreground">{selectedPlan.price}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="text-foreground">{displayPrice}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Acesso</span><span className="text-emerald-400">Até mês {selectedPlan.maxMonth}</span></div>
-                <div className="flex justify-between pt-2 border-t border-border font-bold"><span className="text-foreground">Total</span><span className="text-purple-300">{selectedPlan.price} {selectedPlan.period}</span></div>
+                <div className="flex justify-between pt-2 border-t border-border font-bold"><span className="text-foreground">Total</span><span className="text-purple-300">{displayPrice} {selectedPlan.period}</span></div>
               </div>
               <div className="space-y-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2"><Shield className="w-3.5 h-3.5 text-emerald-400" />Garantia de 7 dias</div>
-                <div className="flex items-center gap-2"><X className="w-3.5 h-3.5 text-emerald-400" />Cancele quando quiser</div>
-                <div className="flex items-center gap-2"><Lock className="w-3.5 h-3.5 text-emerald-400" />Pagamento seguro</div>
+                {selectedPlan.id !== "lifetime" && <div className="flex items-center gap-2"><X className="w-3.5 h-3.5 text-emerald-400" />Cancele quando quiser</div>}
+                <div className="flex items-center gap-2"><Lock className="w-3.5 h-3.5 text-emerald-400" />Pagamento seguro (SSL/TLS)</div>
+                <div className="flex items-center gap-2"><Globe className="w-3.5 h-3.5 text-emerald-400" />Compra disponível para o Brasil e para o exterior</div>
               </div>
             </Card>
           </div>
