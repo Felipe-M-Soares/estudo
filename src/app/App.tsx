@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   BookOpen,
@@ -69,28 +69,145 @@ const NAV_ITEMS = [
   { id: "checkout", label: "Conta", icon: Settings },
 ];
 
-const DEV_ICONS = [
-  "/dev-icons/icon-02.png",
-  "/dev-icons/icon-03.png",
-  "/dev-icons/icon-04.png",
-  "/dev-icons/icon-05.png",
-  "/dev-icons/icon-07.png",
-  "/dev-icons/icon-08.png",
-  "/dev-icons/icon-10.png",
-  "/dev-icons/icon-12.png",
-  "/dev-icons/icon-15.png",
-  "/dev-icons/icon-18.png",
-  "/dev-icons/icon-19.png",
-  "/dev-icons/icon-27.png",
-  "/dev-icons/icon-29.png",
-  "/dev-icons/icon-33.png",
-  "/dev-icons/icon-36.png",
-  "/dev-icons/icon-37.png",
-];
-const CHARACTER_ICON = "/dev-icons/icon-02.png";
+// Marca Code Mage
+const LOGO_SRC = "/brand/logo.png";
 
-function iconForIndex(index: number) {
-  return DEV_ICONS[index % DEV_ICONS.length];
+// Emblemas circulares (temáticos, decorativos) usados em jogos, cursos e itens da loja.
+// NUNCA usar aqui os personagens — personagens ficam só na Loja/Perfil.
+const GAME_BADGES = Array.from({ length: 52 }, (_, i) => `/game-icons/badge-${String(i + 1).padStart(2, "0")}.png`);
+
+function hashKey(key: string) {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return hash;
+}
+
+// Emblema determinístico por chave estável (mesmo jogo/curso sempre mostra o mesmo emblema).
+function badgeForKey(key: string) {
+  return GAME_BADGES[hashKey(key) % GAME_BADGES.length];
+}
+
+function badgeForIndex(index: number) {
+  return GAME_BADGES[index % GAME_BADGES.length];
+}
+
+// Sinalização de linguagem/tecnologia por jogo do Arcade.
+type TechFamily =
+  | "js" | "ts" | "python" | "go" | "java" | "sql" | "nosql" | "css" | "git"
+  | "cloud" | "arch" | "security" | "logic" | "http" | "graphql" | "practice" | "lang";
+
+const TECH_STYLES: Record<TechFamily, string> = {
+  js: "bg-yellow-500/15 text-yellow-300 border border-yellow-500/30",
+  ts: "bg-blue-500/15 text-blue-300 border border-blue-500/30",
+  python: "bg-sky-500/15 text-sky-300 border border-sky-500/30",
+  go: "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30",
+  java: "bg-orange-500/15 text-orange-300 border border-orange-500/30",
+  sql: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
+  nosql: "bg-lime-500/15 text-lime-300 border border-lime-500/30",
+  css: "bg-pink-500/15 text-pink-300 border border-pink-500/30",
+  git: "bg-amber-500/15 text-amber-300 border border-amber-500/30",
+  cloud: "bg-indigo-500/15 text-indigo-300 border border-indigo-500/30",
+  arch: "bg-purple-500/15 text-purple-300 border border-purple-500/30",
+  security: "bg-red-500/15 text-red-300 border border-red-500/30",
+  logic: "bg-violet-500/15 text-violet-300 border border-violet-500/30",
+  http: "bg-teal-500/15 text-teal-300 border border-teal-500/30",
+  graphql: "bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30",
+  practice: "bg-slate-500/15 text-slate-300 border border-slate-500/30",
+  lang: "bg-rose-500/15 text-rose-300 border border-rose-500/30",
+};
+
+const GAME_TECH: Record<string, { label: string; family: TechFamily }> = {
+  "architecture-builder": { label: "Arquitetura", family: "arch" },
+  "architecture-review-board": { label: "Arquitetura", family: "arch" },
+  "aws-service-matcher": { label: "AWS", family: "cloud" },
+  "bug-hunter": { label: "JavaScript", family: "js" },
+  "cicd-pipeline-builder": { label: "CI/CD", family: "cloud" },
+  "code-review-simulator": { label: "Boas práticas", family: "practice" },
+  "css-selector-hunt": { label: "CSS", family: "css" },
+  "docker-compose-builder": { label: "Docker", family: "cloud" },
+  "flexbox-dojo": { label: "CSS", family: "css" },
+  "fullstack-wiring": { label: "Full-Stack", family: "arch" },
+  "git-branch-simulator": { label: "Git", family: "git" },
+  "go-concurrency": { label: "Go", family: "go" },
+  "graphql-query-shaper": { label: "GraphQL", family: "graphql" },
+  "http-status-match": { label: "HTTP/API", family: "http" },
+  "java-stream-builder": { label: "Java", family: "java" },
+  "js-console-detective": { label: "JavaScript", family: "js" },
+  "k8s-resource-builder": { label: "Kubernetes", family: "cloud" },
+  "logic-maze": { label: "Lógica", family: "logic" },
+  "memory-concepts": { label: "Lógica", family: "logic" },
+  "microservices-architect": { label: "Arquitetura", family: "arch" },
+  "middleware-pipeline": { label: "Node.js", family: "js" },
+  "nosql-command": { label: "NoSQL", family: "nosql" },
+  "python-detective": { label: "Python", family: "python" },
+  "react-state-lab": { label: "React", family: "js" },
+  "rendering-strategy-picker": { label: "Next.js", family: "js" },
+  "solid-principles-sorter": { label: "SOLID", family: "practice" },
+  "sort-visualizer": { label: "Algoritmos", family: "logic" },
+  "sql-query-builder": { label: "SQL", family: "sql" },
+  "system-design-whiteboard": { label: "System Design", family: "arch" },
+  "tech-english-flashcards": { label: "Inglês Técnico", family: "lang" },
+  "terminal-simulator": { label: "Terminal/Shell", family: "practice" },
+  "tic-tac-toe-build": { label: "JavaScript", family: "js" },
+  "typescript-type-detective": { label: "TypeScript", family: "ts" },
+  "vulnerability-hunter": { label: "Segurança", family: "security" },
+};
+
+function techForGame(gameId: string) {
+  return GAME_TECH[gameId] ?? { label: "Prática", family: "practice" as TechFamily };
+}
+
+function LanguageTag({ gameId }: { gameId: string }) {
+  const tech = techForGame(gameId);
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${TECH_STYLES[tech.family]}`}>
+      {tech.label}
+    </span>
+  );
+}
+
+// Personagens: exclusivos da Loja / Perfil (nunca aparecem em jogos ou cursos).
+interface CharacterDef {
+  id: string;
+  src: string;
+  name: string;
+  price: number;
+  rarity: "Comum" | "Raro" | "Epico" | "Lendario";
+}
+
+const CHARACTER_NAMES = [
+  "Cavaleiro Templário", "Mago Ancião", "Guerreira Valquíria", "Bárbaro do Norte",
+  "Clériga da Luz", "Espadachim Errante", "Guardião de Prata", "Bardo Itinerante",
+  "Anão Artilheiro", "Orc Batedor", "Bárbaro Duplo-Machado", "Elfa Arcana",
+  "Feiticeiro Rubro", "Demônio Menor", "Orc Guerreiro", "Cavaleiro Negro",
+  "Morcego Sombrio", "Bardo de Botas Roxas", "Esqueleto Guerreiro", "Monge Punho de Ferro",
+  "Arqueira Élfica", "Caçador da Floresta",
+];
+
+const CHARACTER_PRICES = [0, 350, 350, 400, 450, 500, 550, 600, 650, 700, 750, 900, 950, 1000, 1050, 1100, 1150, 1200, 1300, 1400, 1500, 1600];
+
+function rarityForPrice(price: number): CharacterDef["rarity"] {
+  if (price === 0) return "Comum";
+  if (price < 700) return "Comum";
+  if (price < 1100) return "Raro";
+  if (price < 1450) return "Epico";
+  return "Lendario";
+}
+
+const CHARACTERS: CharacterDef[] = Array.from({ length: 22 }, (_, i) => {
+  const price = CHARACTER_PRICES[i] ?? 400 + i * 60;
+  return {
+    id: `char-${String(i + 1).padStart(2, "0")}`,
+    src: `/characters/char-${String(i + 1).padStart(2, "0")}.png`,
+    name: CHARACTER_NAMES[i] ?? `Personagem ${i + 1}`,
+    price,
+    rarity: rarityForPrice(price),
+  };
+});
+
+const DEFAULT_CHARACTER_ID = "char-01";
+function characterSrc(id: string) {
+  return CHARACTERS.find((c) => c.id === id)?.src ?? CHARACTERS[0].src;
 }
 
 function Badge({ children, color = "primary" }: { children: React.ReactNode; color?: "primary" | "accent" | "success" | "warning" }) {
@@ -107,9 +224,15 @@ function Badge({ children, color = "primary" }: { children: React.ReactNode; col
   );
 }
 
-function Card({ children, className = "", hover = false }: { children: React.ReactNode; className?: string; hover?: boolean }) {
+function Card({ children, className = "", hover = false, onClick }: { children: React.ReactNode; className?: string; hover?: boolean; onClick?: () => void }) {
   return (
-    <div className={`bg-card border border-border rounded-2xl p-5 ${hover ? "hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-900/20 transition-all duration-200 cursor-pointer" : ""} ${className}`}>
+    <div
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+      className={`bg-card border border-border rounded-2xl p-5 ${hover ? "hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-900/20 transition-all duration-200 cursor-pointer" : ""} ${className}`}
+    >
       {children}
     </div>
   );
@@ -118,7 +241,7 @@ function Card({ children, className = "", hover = false }: { children: React.Rea
 function Avatar({ src, name, size = "md" }: { src?: string; name: string; size?: "sm" | "md" | "lg" }) {
   const sizes = { sm: "w-8 h-8 text-xs", md: "w-10 h-10 text-sm", lg: "w-14 h-14 text-lg" };
   const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-  const image = src ?? CHARACTER_ICON;
+  const image = src ?? characterSrc(DEFAULT_CHARACTER_ID);
   return (
     <div className={`${sizes[size]} rounded-full overflow-hidden flex-shrink-0 border-2 border-purple-500/40 bg-gradient-to-br from-purple-600/30 to-cyan-500/20 flex items-center justify-center`}>
       <img src={image} alt={name} className="w-[118%] h-[118%] object-contain translate-y-0.5" />
@@ -183,10 +306,10 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
         <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle at 30% 70%, rgba(124,58,237,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(6,182,212,0.3) 0%, transparent 50%)" }} />
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <img src={iconForIndex(0)} alt="" className="w-7 h-7 object-contain" />
+            <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center overflow-hidden">
+              <img src={LOGO_SRC} alt="Code Mage" className="w-full h-full object-contain" />
             </div>
-            <span className="text-white font-bold text-xl tracking-tight">DevRoad</span>
+            <span className="text-white font-bold text-xl tracking-tight">Code Mage</span>
           </div>
           <div>
             <p className="text-purple-200 text-sm font-medium mb-4 tracking-widest uppercase">Plano de Programação</p>
@@ -216,10 +339,10 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-10">
-            <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center">
-              <img src={iconForIndex(0)} alt="" className="w-6 h-6 object-contain" />
+            <div className="w-9 h-9 rounded-lg bg-purple-600/10 flex items-center justify-center overflow-hidden">
+              <img src={LOGO_SRC} alt="Code Mage" className="w-full h-full object-contain" />
             </div>
-            <span className="text-foreground font-bold text-lg">DevRoad</span>
+            <span className="text-foreground font-bold text-lg">Code Mage</span>
           </div>
 
           <h2 className="text-3xl font-extrabold text-foreground mb-1">Bem-vindo de volta</h2>
@@ -296,15 +419,15 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
 }
 
 // SIDEBAR
-function Sidebar({ page, setPage, onLogout }: { page: Page; setPage: (p: Page) => void; onLogout: () => void }) {
+function Sidebar({ page, setPage, onLogout, equippedCharacterId }: { page: Page; setPage: (p: Page) => void; onLogout: () => void; equippedCharacterId: string }) {
   return (
     <aside className="w-60 bg-sidebar border-r border-sidebar-border flex flex-col flex-shrink-0" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <div className="p-5 border-b border-sidebar-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center">
-            <img src={iconForIndex(0)} alt="" className="w-6 h-6 object-contain" />
+          <div className="w-9 h-9 rounded-xl bg-purple-600/10 flex items-center justify-center overflow-hidden">
+            <img src={LOGO_SRC} alt="Code Mage" className="w-full h-full object-contain" />
           </div>
-            <span className="text-foreground font-bold text-lg tracking-tight">DevRoad</span>
+            <span className="text-foreground font-bold text-lg tracking-tight">Code Mage</span>
         </div>
       </div>
 
@@ -329,13 +452,13 @@ function Sidebar({ page, setPage, onLogout }: { page: Page; setPage: (p: Page) =
       </div>
 
       <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 mb-4 px-1">
-          <Avatar name="Ana Silva" size="sm" />
-          <div className="min-w-0">
+        <button onClick={() => setPage("loja")} className="w-full flex items-center gap-3 mb-4 px-1 group">
+          <Avatar name="Ana Silva" size="sm" src={characterSrc(equippedCharacterId)} />
+          <div className="min-w-0 text-left">
             <p className="text-sm font-semibold text-foreground truncate">Ana Silva</p>
-            <p className="text-xs text-muted-foreground truncate">Trilha Pro</p>
+            <p className="text-xs text-muted-foreground truncate group-hover:text-purple-300 transition-colors">Trilha Pro · trocar personagem</p>
           </div>
-        </div>
+        </button>
         <button onClick={onLogout} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all">
           <LogOut className="w-4 h-4" />Sair
         </button>
@@ -345,7 +468,7 @@ function Sidebar({ page, setPage, onLogout }: { page: Page; setPage: (p: Page) =
 }
 
 // TOPBAR
-function Topbar({ title, setPage }: { title: string; setPage: (p: Page) => void }) {
+function Topbar({ title, setPage, coins }: { title: string; setPage: (p: Page) => void; coins: number }) {
   return (
     <header className="h-14 border-b border-border flex items-center justify-between px-6 flex-shrink-0 bg-background/80 backdrop-blur-sm">
       <h1 className="text-base font-semibold text-foreground">{title}</h1>
@@ -354,6 +477,9 @@ function Topbar({ title, setPage }: { title: string; setPage: (p: Page) => void 
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input className="bg-input-background border border-border rounded-xl pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/50 w-44 transition-all" placeholder="Buscar..." />
         </div>
+        <button onClick={() => setPage("loja")} className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-amber-500/20 transition-colors">
+          <Coins className="w-3.5 h-3.5" />{coins.toLocaleString("pt-BR")}
+        </button>
         <button className="relative w-8 h-8 rounded-xl bg-input-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
           <Bell className="w-4 h-4" />
           <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-purple-500 rounded-full" />
@@ -579,10 +705,10 @@ function CursosPage({ setPage, activeModule, setActiveModule }: { setPage: (p: P
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
               {phaseModules.map((c, index) => (
-                <Card key={c.id} hover className="!p-4" >
+                <Card key={c.id} hover className="!p-4" onClick={() => { setActiveModule(c); setPage("aulas"); }}>
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 overflow-hidden flex-shrink-0">
-                      <img src={iconForIndex(c.month + index)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
+                      <img src={badgeForKey(c.id)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -598,7 +724,7 @@ function CursosPage({ setPage, activeModule, setActiveModule }: { setPage: (p: P
                   </div>
                   <div className="flex items-center justify-between mt-3">
                     <span className="text-xs text-muted-foreground">{c.lessons.length} aulas · {c.exercises.length} exercícios</span>
-                    <button onClick={() => { setActiveModule(c); setPage("aulas"); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1">
+                    <button onClick={(e) => { e.stopPropagation(); setActiveModule(c); setPage("aulas"); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1">
                       {activeModule.id === c.id ? "Continuar" : "Abrir"}<ChevronRight className="w-3 h-3" />
                     </button>
                   </div>
@@ -630,13 +756,18 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
   const completedLessonsCount = module.lessons.filter((_, index) => isLessonComplete(index)).length;
   const story = module.storyLessons?.[currentIndex % Math.max(module.storyLessons.length, 1)];
   const debugCase = module.debugCases?.[currentIndex % Math.max(module.debugCases.length, 1)];
-  const scenario = module.scenarios?.[currentIndex % Math.max(module.scenarios.length, 1)];
   const projectItems =
     module.projectBrief?.requirements ??
     module.sprintLab?.sprints.map((sprint) => `${sprint.title}: ${sprint.objective} Entrega: ${sprint.deliverable}`) ??
     module.checklist.map((item) => item.label);
   const completedProjectSteps = projectItems.filter((_, index) => projectSteps[`${module.id}-${index}`]).length;
   const projectPass = completedProjectSteps >= Math.min(2, projectItems.length) && projectSolution.trim().length >= 80;
+  const tabsUnlocked = completedLessonsCount >= module.lessons.length;
+
+  useEffect(() => {
+    setSelected(0);
+    setContentTab("aula");
+  }, [module.id]);
 
   return (
     <div className="flex-1 overflow-hidden flex">
@@ -666,15 +797,33 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
           </div>
           <div className="flex flex-wrap gap-2">
             {[
-              { label: "Aula", tab: "aula" as const },
-              { label: `Exercícios (${module.exercises.length})`, tab: "exercicios" as const },
-              { label: `Checklist (${module.checklist.length})`, tab: "checklist" as const },
-              { label: "Projeto", tab: "projeto" as const },
+              { label: "Aula", tab: "aula" as const, locked: false },
+              { label: `Exercícios (${module.exercises.length})`, tab: "exercicios" as const, locked: completedLessonsCount < module.lessons.length },
+              { label: `Checklist (${module.checklist.length})`, tab: "checklist" as const, locked: completedLessonsCount < module.lessons.length },
+              { label: "Projeto", tab: "projeto" as const, locked: completedLessonsCount < module.lessons.length },
             ].map((t) => (
-              <button key={t.label} onClick={() => setContentTab(t.tab)} className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${contentTab === t.tab ? "bg-purple-600 text-white" : "bg-input-background border border-border text-muted-foreground hover:text-foreground"}`}>{t.label}</button>
+              <button
+                key={t.label}
+                onClick={() => { if (!t.locked) setContentTab(t.tab); }}
+                disabled={t.locked}
+                title={t.locked ? "Conclua todas as aulas do módulo para liberar" : undefined}
+                className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 ${contentTab === t.tab ? "bg-purple-600 text-white" : t.locked ? "bg-input-background border border-border text-muted-foreground/50 cursor-not-allowed" : "bg-input-background border border-border text-muted-foreground hover:text-foreground"}`}
+              >
+                {t.locked && <Lock className="w-3 h-3" />}{t.label}
+              </button>
             ))}
             <button onClick={() => setPage("laboratorio")} className="px-3 py-1.5 rounded-xl text-sm font-semibold bg-input-background border border-border text-muted-foreground hover:text-foreground">Laboratório</button>
           </div>
+
+          {completedLessonsCount < module.lessons.length && (
+            <div className="flex items-center gap-3 bg-purple-500/10 border border-purple-500/20 rounded-xl px-4 py-2.5">
+              <Lock className="w-3.5 h-3.5 text-purple-300 flex-shrink-0" />
+              <p className="text-xs text-purple-200">
+                Termine todo o conteúdo primeiro: {completedLessonsCount}/{module.lessons.length} aulas concluídas.
+                Exercícios, checklist e projeto liberam automaticamente ao concluir a última aula — assim você só pratica depois de aprender.
+              </p>
+            </div>
+          )}
 
           {contentTab === "aula" && (
             <div className="space-y-4">
@@ -723,29 +872,21 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
                   <p className="text-xs text-emerald-300 mt-3">Correção esperada: {debugCase.fix}</p>
                 </Card>
               )}
-
-              <Card>
-                <h3 className="font-bold text-foreground mb-3">Conteúdo incorporado</h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Os recursos externos viraram apoio direto da aula: leia os tópicos abaixo como material complementar do módulo, sem sair da trilha.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {module.resources.map((resource) => (
-                    <div key={resource.url} className="text-xs text-foreground bg-input-background border border-border rounded-xl p-3">
-                      {resource.label}
-                    </div>
-                  ))}
-                  {scenario && (
-                    <div className="text-xs text-foreground bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 md:col-span-2">
-                      {scenario.emoji} {scenario.title}: {scenario.howToSolve}
-                    </div>
-                  )}
-                </div>
-              </Card>
             </div>
           )}
 
-          {contentTab === "exercicios" && (
+          {contentTab !== "aula" && !tabsUnlocked && (
+            <Card className="text-center py-10">
+              <Lock className="w-6 h-6 text-purple-300 mx-auto mb-3" />
+              <h3 className="font-bold text-foreground">Conteúdo bloqueado</h3>
+              <p className="text-sm text-muted-foreground mt-1">Termine todas as aulas deste módulo ({completedLessonsCount}/{module.lessons.length}) para liberar esta seção.</p>
+              <button onClick={() => setContentTab("aula")} className="mt-4 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors">
+                Voltar para a aula
+              </button>
+            </Card>
+          )}
+
+          {contentTab === "exercicios" && tabsUnlocked && (
             <Card>
               <h3 className="font-bold text-foreground mb-3">Treino Guiado Completo</h3>
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
@@ -831,7 +972,7 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
             </Card>
           )}
 
-          {contentTab === "checklist" && (
+          {contentTab === "checklist" && tabsUnlocked && (
             <Card>
               <h3 className="font-bold text-foreground mb-3">Checklist do Módulo</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -847,7 +988,7 @@ function AulasPage({ module, setPage }: { module: Module; setPage: (p: Page) => 
             </Card>
           )}
 
-          {contentTab === "projeto" && (
+          {contentTab === "projeto" && tabsUnlocked && (
             <Card>
               <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <div>
@@ -1072,27 +1213,28 @@ function HistoriaPage({ module, setPage }: { module: Module; setPage: (p: Page) 
   );
 }
 
-function LaboratorioPage({ module }: { module: Module }) {
+function LaboratorioPage({ module, onReward }: { module: Module; onReward: (amount: number) => void }) {
   const lab = module.sprintLab;
   const campaigns = projectCampaigns;
-  const [labCode, setLabCode] = useState(`// Laboratório: ${module.title}
+
+  const starterTemplate = `// Laboratório: ${module.title}
 function resolverDesafio() {
   // escreva sua solução usando o que aprendeu no módulo
   return "solução pronta";
 }
 
-console.log(resolverDesafio());`);
-  const [testResult, setTestResult] = useState<string | null>(null);
+console.log(resolverDesafio());`;
 
-  const runLabTest = () => {
-    const checks = [
-      labCode.includes("function") || labCode.includes("=>"),
-      labCode.includes("return") || labCode.includes("console.log"),
-      labCode.trim().split("\n").length >= 4,
-    ];
-    const score = checks.filter(Boolean).length;
-    setTestResult(score >= 2 ? "Teste passou: sua solução tem estrutura, saída e corpo suficiente para evoluir." : "Teste ainda falhou: crie uma função, gere uma saída e detalhe melhor a solução.");
-  };
+  const [labCode, setLabCode] = useState(starterTemplate);
+  const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
+  const [validatedSprints, setValidatedSprints] = useState<Record<string, boolean>>({});
+  const [rewardedRuns, setRewardedRuns] = useState<Record<string, boolean>>({});
+  const [consoleLines, setConsoleLines] = useState<{ type: "log" | "error" | "result"; text: string }[]>([]);
+  const [testChecks, setTestChecks] = useState<{ label: string; pass: boolean }[] | null>(null);
+  const [running, setRunning] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+
+  const activeCampaign = campaigns.find((c) => c.id === activeCampaignId) ?? null;
 
   const campaignTemplate = (campaign: (typeof projectCampaigns)[number]) => `// Roteiro de laboratório: ${campaign.title}
 // Empresa: ${campaign.company}
@@ -1113,6 +1255,92 @@ function executarSprint(indice) {
 }
 
 console.log(executarSprint(0));`;
+
+  function runLabCode() {
+    setRunning(true);
+    const logs: { type: "log" | "error" | "result"; text: string }[] = [];
+    const fakeConsole = {
+      log: (...args: unknown[]) => logs.push({ type: "log", text: args.map(stringifyArg).join(" ") }),
+      error: (...args: unknown[]) => logs.push({ type: "error", text: args.map(stringifyArg).join(" ") }),
+      warn: (...args: unknown[]) => logs.push({ type: "log", text: "⚠ " + args.map(stringifyArg).join(" ") }),
+    };
+
+    let threw = false;
+    let hasFunction = /function\s+\w+\s*\(|=>\s*{|=>\s*[^{]/i.test(labCode);
+    try {
+      // eslint-disable-next-line no-new-func
+      const sandboxed = new Function("console", `"use strict";\n${labCode}`);
+      sandboxed(fakeConsole);
+    } catch (err) {
+      threw = true;
+      logs.push({ type: "error", text: err instanceof Error ? `${err.name}: ${err.message}` : String(err) });
+    }
+    setConsoleLines(logs);
+    setRunning(false);
+
+    const producedOutput = logs.some((l) => l.type === "log");
+    const checks: { label: string; pass: boolean }[] = [
+      { label: "O código roda sem lançar exceção", pass: !threw },
+      { label: "Existe pelo menos uma função ou arrow function", pass: hasFunction },
+      { label: "O código produz alguma saída (console.log)", pass: producedOutput },
+    ];
+
+    if (activeCampaign) {
+      const sprintOutputsOk = activeCampaign.sprints.every((sprint) =>
+        logs.some((l) => l.text.toLowerCase().includes(sprint.goal.toLowerCase().slice(0, 12)))
+        || labCode.includes(sprint.goal) || labCode.toLowerCase().includes(sprint.title.toLowerCase())
+      );
+      checks.push({ label: `Roteiro menciona as sprints de "${activeCampaign.title}"`, pass: sprintOutputsOk });
+    }
+
+    setTestChecks(checks);
+    const allPass = checks.every((c) => c.pass);
+
+    if (allPass && activeCampaign) {
+      setValidatedSprints((prev) => ({ ...prev, [activeCampaign.id]: true }));
+      if (!rewardedRuns[activeCampaign.id]) {
+        onReward(80);
+        setRewardedRuns((prev) => ({ ...prev, [activeCampaign.id]: true }));
+      }
+    } else if (allPass && !rewardedRuns["free"]) {
+      onReward(30);
+      setRewardedRuns((prev) => ({ ...prev, free: true }));
+    }
+  }
+
+  function stringifyArg(arg: unknown) {
+    if (typeof arg === "string") return arg;
+    try { return JSON.stringify(arg); } catch { return String(arg); }
+  }
+
+  function loadCampaign(campaign: (typeof projectCampaigns)[number]) {
+    setActiveCampaignId(campaign.id);
+    setLabCode(campaignTemplate(campaign));
+    setConsoleLines([]);
+    setTestChecks(null);
+    setShowHint(false);
+  }
+
+  function resetEditor() {
+    setLabCode(starterTemplate);
+    setActiveCampaignId(null);
+    setConsoleLines([]);
+    setTestChecks(null);
+    setShowHint(false);
+  }
+
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(labCode);
+      setConsoleLines((prev) => [...prev, { type: "result", text: "Código copiado para a área de transferência." }]);
+    } catch {
+      setConsoleLines((prev) => [...prev, { type: "error", text: "Não foi possível copiar automaticamente. Selecione o texto manualmente." }]);
+    }
+  }
+
+  const passedCount = testChecks?.filter((c) => c.pass).length ?? 0;
+  const totalChecks = testChecks?.length ?? 0;
+  const allGreen = testChecks !== null && passedCount === totalChecks;
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -1146,66 +1374,138 @@ console.log(executarSprint(0));`;
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
             <Badge color="accent">Área de testes</Badge>
-            <h3 className="font-bold text-foreground mt-3">Teste o que aprendeu neste módulo</h3>
-            <p className="text-sm text-muted-foreground mt-1">Use este editor para simular uma solução, validar estrutura e preparar sua entrega do projeto.</p>
+            <h3 className="font-bold text-foreground mt-3">
+              {activeCampaign ? `Roteiro ativo: ${activeCampaign.title}` : "Teste o que aprendeu neste módulo"}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Escreva ou edite código JavaScript real, rode-o no console simulado e valide sua solução com testes automáticos.
+            </p>
           </div>
-          {testResult && <Badge color={testResult.includes("passou") ? "success" : "warning"}>{testResult.includes("passou") ? "teste passou" : "ajustar código"}</Badge>}
+          {testChecks && (
+            <Badge color={allGreen ? "success" : "warning"}>
+              {passedCount}/{totalChecks} testes passaram
+            </Badge>
+          )}
         </div>
-        <textarea
-          value={labCode}
-          onChange={(e) => {
-            setLabCode(e.target.value);
-            setTestResult(null);
-          }}
-          className="w-full min-h-56 bg-black/40 border border-purple-500/20 rounded-xl p-4 text-xs text-purple-100 font-mono focus:outline-none focus:ring-1 focus:ring-purple-500/50"
-        />
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <button onClick={runLabTest} className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors">
-            Rodar teste
-          </button>
-          {testResult && <p className="text-xs text-muted-foreground">{testResult}</p>}
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-1.5">Editor</p>
+            <textarea
+              value={labCode}
+              onChange={(e) => {
+                setLabCode(e.target.value);
+                setTestChecks(null);
+              }}
+              spellCheck={false}
+              className="w-full min-h-64 bg-black/40 border border-purple-500/20 rounded-xl p-4 text-xs text-purple-100 font-mono focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+            />
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button onClick={runLabCode} disabled={running} className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors disabled:opacity-60">
+                {running ? "Rodando..." : "▶ Rodar código"}
+              </button>
+              <button onClick={resetEditor} className="text-xs font-bold text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl border border-border transition-colors">
+                Resetar
+              </button>
+              <button onClick={copyCode} className="text-xs font-bold text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl border border-border transition-colors">
+                Copiar código
+              </button>
+              <button onClick={() => setShowHint((v) => !v)} className="text-xs font-bold text-amber-300 hover:text-amber-200 px-3 py-2 rounded-xl border border-amber-500/30 transition-colors">
+                {showHint ? "Esconder dica" : "Ver dica"}
+              </button>
+            </div>
+            {showHint && (
+              <div className="mt-3 text-xs text-amber-200 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                Sua solução precisa de: uma função nomeada ou arrow function, pelo menos um <code>console.log</code> de saída,
+                {activeCampaign ? ` e deve executar/mencionar as sprints do roteiro "${activeCampaign.title}" (ex.: chame executarSprint para cada índice).` : " sem lançar erros ao rodar."}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-1.5">Console</p>
+            <div className="w-full min-h-64 max-h-64 overflow-y-auto bg-black/60 border border-border rounded-xl p-4 font-mono text-xs space-y-1">
+              {consoleLines.length === 0 && !testChecks && (
+                <p className="text-muted-foreground/60">Rode o código para ver a saída aqui...</p>
+              )}
+              {consoleLines.map((line, i) => (
+                <p key={i} className={line.type === "error" ? "text-red-400" : line.type === "result" ? "text-cyan-300" : "text-emerald-300"}>
+                  {line.type === "error" ? "✗ " : "› "}{line.text}
+                </p>
+              ))}
+            </div>
+            {testChecks && (
+              <div className="mt-3 space-y-1.5">
+                {testChecks.map((check) => (
+                  <div key={check.label} className={`flex items-center gap-2 text-xs rounded-lg px-3 py-2 border ${check.pass ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200" : "border-amber-500/30 bg-amber-500/10 text-amber-200"}`}>
+                    {check.pass ? <Check className="w-3.5 h-3.5 flex-shrink-0" /> : <X className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {check.label}
+                  </div>
+                ))}
+                {allGreen && (
+                  <p className="text-xs text-emerald-300 font-semibold mt-2">
+                    ✓ Solução validada{activeCampaign ? ` para "${activeCampaign.title}"` : ""}! +{activeCampaign ? 80 : 30} moedas creditadas.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {campaigns.map((campaign) => (
-          <Card key={campaign.id} hover>
-            <div className="flex items-center justify-between">
-              <Badge color="primary">{campaign.difficulty}</Badge>
-              <span className="text-xs text-muted-foreground">{campaign.duration}</span>
-            </div>
-            <h3 className="font-bold text-foreground mt-3">{campaign.title}</h3>
-            <p className="text-xs text-muted-foreground mt-1">{campaign.company}</p>
-            <p className="text-xs text-emerald-300 mt-3">{campaign.reward}</p>
-            <div className="mt-4 space-y-2">
-              {campaign.sprints.slice(0, 3).map((sprint) => (
-                <div key={sprint.title} className="text-xs bg-input-background border border-border rounded-lg p-2">
-                  <p><span className="font-semibold text-foreground">{sprint.title}:</span> <span className="text-muted-foreground">{sprint.goal}</span></p>
-                  <p className="text-purple-300 mt-1">Teste no lab: {sprint.output}</p>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => {
-                setLabCode(campaignTemplate(campaign));
-                setTestResult(null);
-              }}
-              className="mt-4 text-xs font-bold text-purple-300 hover:text-purple-200 transition-colors"
-            >
-              Carregar roteiro no editor
-            </button>
-          </Card>
-        ))}
+        {campaigns.map((campaign) => {
+          const validated = Boolean(validatedSprints[campaign.id]);
+          const active = activeCampaignId === campaign.id;
+          return (
+            <Card key={campaign.id} hover className={active ? "!border-purple-500/60 ring-1 ring-purple-500/40" : ""} onClick={() => loadCampaign(campaign)}>
+              <div className="flex items-center justify-between">
+                <Badge color="primary">{campaign.difficulty}</Badge>
+                <span className="text-xs text-muted-foreground">{campaign.duration}</span>
+              </div>
+              <h3 className="font-bold text-foreground mt-3 flex items-center gap-2">
+                {campaign.title}
+                {validated && <Badge color="success">validado</Badge>}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">{campaign.company}</p>
+              <p className="text-xs text-emerald-300 mt-3">{campaign.reward}</p>
+              <div className="mt-4 space-y-2">
+                {campaign.sprints.slice(0, 3).map((sprint) => (
+                  <div key={sprint.title} className="text-xs bg-input-background border border-border rounded-lg p-2">
+                    <p><span className="font-semibold text-foreground">{sprint.title}:</span> <span className="text-muted-foreground">{sprint.goal}</span></p>
+                    <p className="text-purple-300 mt-1">Teste no lab: {sprint.output}</p>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); loadCampaign(campaign); }}
+                className="mt-4 text-xs font-bold text-purple-300 hover:text-purple-200 transition-colors"
+              >
+                Carregar roteiro no editor
+              </button>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function ArcadePage({ setActiveModule, setPage }: { setActiveModule: (m: Module) => void; setPage: (p: Page) => void }) {
+function ArcadePage({ setActiveModule, setPage, onReward }: { setActiveModule: (m: Module) => void; setPage: (p: Page) => void; onReward: (amount: number) => void }) {
   const games = modules.flatMap((m) => m.games.map((game) => ({ ...game, module: m })));
   const [selectedGameKey, setSelectedGameKey] = useState<string | null>(null);
   const [lastScore, setLastScore] = useState<number | null>(null);
+  const [rewardedKey, setRewardedKey] = useState<string | null>(null);
   const selectedGame = games.find((game) => `${game.module.id}-${game.gameId}` === selectedGameKey);
+
+  function handleComplete(score: number) {
+    setLastScore(score);
+    if (selectedGameKey && rewardedKey !== selectedGameKey) {
+      const amount = Math.max(10, Math.round(score));
+      onReward(amount);
+      setRewardedKey(selectedGameKey);
+    }
+  }
 
   if (selectedGame) {
     const game = gameRegistry[selectedGame.gameId];
@@ -1216,16 +1516,26 @@ function ArcadePage({ setActiveModule, setPage }: { setActiveModule: (m: Module)
             <button onClick={() => setSelectedGameKey(null)} className="text-xs font-bold text-purple-400 hover:text-purple-300 mb-3 flex items-center gap-1">
               <ChevronRight className="w-3 h-3 rotate-180" /> Voltar para Arcade
             </button>
-            <Badge color="warning">{selectedGame.module.title}</Badge>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge color="warning">{selectedGame.module.title}</Badge>
+              <LanguageTag gameId={selectedGame.gameId} />
+            </div>
             <h2 className="text-2xl font-extrabold text-foreground mt-3">{selectedGame.label}</h2>
             <p className="text-sm text-muted-foreground mt-1">{selectedGame.description}</p>
           </div>
-          {lastScore !== null && <Badge color="success">Última pontuação: {lastScore}%</Badge>}
+          {lastScore !== null && (
+            <div className="flex items-center gap-2">
+              <Badge color="success">Última pontuação: {lastScore}%</Badge>
+              {rewardedKey === selectedGameKey && (
+                <Badge color="warning"><Coins className="w-3 h-3 inline mr-1" />+{Math.max(10, Math.round(lastScore))}</Badge>
+              )}
+            </div>
+          )}
         </div>
         <Card className="overflow-hidden">
           {game ? (
             <div className="rounded-xl bg-base-950/60 border border-border p-4">
-              {game.render((score) => setLastScore(score))}
+              {game.render((score) => handleComplete(score))}
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">Este jogo ainda não tem componente registrado.</div>
@@ -1245,23 +1555,28 @@ function ArcadePage({ setActiveModule, setPage }: { setActiveModule: (m: Module)
         <Badge color="accent">{games.length} desafios</Badge>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {games.map((game, index) => (
-          <Card key={`${game.module.id}-${game.gameId}`} hover>
+        {games.map((game) => (
+          <Card key={`${game.module.id}-${game.gameId}`} hover onClick={() => { setLastScore(null); setSelectedGameKey(`${game.module.id}-${game.gameId}`); }}>
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 overflow-hidden flex-shrink-0">
-                <img src={iconForIndex(index)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
+                <img src={badgeForKey(`${game.module.id}-${game.gameId}`)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
               </div>
               <div>
-                <h3 className="font-bold text-foreground">{game.label}</h3>
-                <p className="text-xs text-muted-foreground mt-1">{game.module.title}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-bold text-foreground">{game.label}</h3>
+                </div>
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <LanguageTag gameId={game.gameId} />
+                  <span className="text-xs text-muted-foreground">{game.module.title}</span>
+                </div>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4 line-clamp-3">{game.description}</p>
             <div className="mt-4 flex items-center gap-3">
-              <button onClick={() => { setLastScore(null); setSelectedGameKey(`${game.module.id}-${game.gameId}`); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+              <button onClick={(e) => { e.stopPropagation(); setLastScore(null); setSelectedGameKey(`${game.module.id}-${game.gameId}`); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
                 Jogar <ChevronRight className="w-3 h-3" />
               </button>
-              <button onClick={() => { setActiveModule(game.module); setPage("aulas"); }} className="text-xs font-bold text-muted-foreground hover:text-foreground">
+              <button onClick={(e) => { e.stopPropagation(); setActiveModule(game.module); setPage("aulas"); }} className="text-xs font-bold text-muted-foreground hover:text-foreground">
                 Ver módulo
               </button>
             </div>
@@ -1430,27 +1745,143 @@ function RevisaoPage({ setPage, setActiveModule }: { setPage: (p: Page) => void;
   );
 }
 
-function LojaPage() {
+function LojaPage({
+  coins,
+  setCoins,
+  ownedCharacters,
+  setOwnedCharacters,
+  equippedCharacterId,
+  setEquippedCharacterId,
+}: {
+  coins: number;
+  setCoins: (updater: (prev: number) => number) => void;
+  ownedCharacters: string[];
+  setOwnedCharacters: (updater: (prev: string[]) => string[]) => void;
+  equippedCharacterId: string;
+  setEquippedCharacterId: (id: string) => void;
+}) {
+  const [toast, setToast] = useState<string | null>(null);
+
+  function flash(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast((current) => (current === message ? null : current)), 2200);
+  }
+
+  function buyCharacter(character: CharacterDef) {
+    if (ownedCharacters.includes(character.id)) return;
+    if (coins < character.price) {
+      flash(`Moedas insuficientes para ${character.name}. Faltam ${character.price - coins} moedas.`);
+      return;
+    }
+    setCoins((prev) => prev - character.price);
+    setOwnedCharacters((prev) => [...prev, character.id]);
+    setEquippedCharacterId(character.id);
+    flash(`${character.name} comprado e equipado!`);
+  }
+
+  function equipCharacter(character: CharacterDef) {
+    setEquippedCharacterId(character.id);
+    flash(`${character.name} equipado no seu perfil.`);
+  }
+
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      <div>
-        <Badge color="warning">Loja</Badge>
-        <h2 className="text-2xl font-extrabold text-foreground mt-3">Itens, temas e boosts</h2>
-        <p className="text-sm text-muted-foreground mt-1">Conteúdo do marketplace original preservado dentro do visual atual.</p>
+    <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <Badge color="warning">Loja</Badge>
+          <h2 className="text-2xl font-extrabold text-foreground mt-3">Personagens, temas e boosts</h2>
+          <p className="text-sm text-muted-foreground mt-1">Compre personagens para o seu perfil e itens para personalizar sua jornada.</p>
+        </div>
+        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold px-4 py-2 rounded-xl">
+          <Coins className="w-4 h-4" />{coins.toLocaleString("pt-BR")} moedas
+        </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {marketplace.map((item) => (
-          <Card key={item.id} hover>
-            <div className="flex items-center justify-between mb-3">
-              <Badge color={item.rarity === "Lendario" ? "warning" : item.rarity === "Epico" ? "accent" : "primary"}>{item.rarity}</Badge>
-              <span className="text-xs text-emerald-300">{item.price} moedas</span>
-            </div>
-            <h3 className="font-bold text-foreground">{item.title}</h3>
-            <p className="text-xs text-purple-300 mt-1">{item.type}</p>
-            <p className="text-xs text-muted-foreground mt-3">{item.description}</p>
-          </Card>
-        ))}
-      </div>
+
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 bg-card border border-purple-500/40 shadow-xl shadow-purple-900/30 rounded-xl px-4 py-3 text-sm text-foreground animate-in fade-in slide-in-from-top-2">
+          {toast}
+        </div>
+      )}
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-foreground">Personagens</h3>
+            <p className="text-xs text-muted-foreground mt-1">Use moedas ganhas na trilha, jogos e laboratório para desbloquear novos personagens de perfil.</p>
+          </div>
+          <Badge color="accent">{ownedCharacters.length}/{CHARACTERS.length} desbloqueados</Badge>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+          {CHARACTERS.map((character) => {
+            const owned = ownedCharacters.includes(character.id);
+            const equipped = equippedCharacterId === character.id;
+            return (
+              <Card
+                key={character.id}
+                hover
+                className={`!p-3 text-center ${equipped ? "!border-purple-500/60 ring-1 ring-purple-500/40" : ""}`}
+                onClick={() => (owned ? equipCharacter(character) : buyCharacter(character))}
+              >
+                <div className="relative w-full aspect-square rounded-xl bg-gradient-to-br from-purple-500/10 to-cyan-500/5 border border-purple-500/20 overflow-hidden flex items-center justify-center">
+                  <img src={character.src} alt={character.name} className="w-[92%] h-[92%] object-contain" />
+                  {equipped && (
+                    <span className="absolute top-1.5 right-1.5 bg-purple-600 text-white rounded-full p-1">
+                      <Check className="w-3 h-3" />
+                    </span>
+                  )}
+                  {!owned && (
+                    <span className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <Lock className="w-5 h-5 text-white/80" />
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-bold text-foreground mt-2 truncate">{character.name}</p>
+                <Badge color={character.rarity === "Lendario" ? "warning" : character.rarity === "Epico" ? "accent" : character.rarity === "Raro" ? "success" : "primary"}>
+                  {character.rarity}
+                </Badge>
+                <p className="text-xs mt-1.5 font-semibold">
+                  {equipped ? (
+                    <span className="text-purple-300">Equipado</span>
+                  ) : owned ? (
+                    <span className="text-emerald-300">Equipar</span>
+                  ) : character.price === 0 ? (
+                    <span className="text-emerald-300">Grátis</span>
+                  ) : (
+                    <span className="text-amber-300">{character.price} moedas</span>
+                  )}
+                </p>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h3 className="font-bold text-foreground">Temas, wallpapers e boosts</h3>
+          <p className="text-xs text-muted-foreground mt-1">Itens de personalização e vantagens temporárias para acelerar seu progresso.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {marketplace.map((item) => (
+            <Card key={item.id} hover>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 overflow-hidden flex-shrink-0">
+                  <img src={badgeForKey(item.id)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge color={item.rarity === "Lendario" ? "warning" : item.rarity === "Epico" ? "accent" : "primary"}>{item.rarity}</Badge>
+                    <span className="text-xs text-emerald-300 whitespace-nowrap">{item.price} moedas</span>
+                  </div>
+                </div>
+              </div>
+              <h3 className="font-bold text-foreground">{item.title}</h3>
+              <p className="text-xs text-purple-300 mt-1">{item.type}</p>
+              <p className="text-xs text-muted-foreground mt-3">{item.description}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -1535,11 +1966,11 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
               <Card>
                 <h3 className="font-bold text-foreground mb-4">Escolha seu plano</h3>
                 <div className="grid grid-cols-1 gap-3">
-                  {commercialPlans.map((p, index) => (
+                  {commercialPlans.map((p) => (
                     <button key={p.id} onClick={() => setPlan(p.id)} className={`text-left border-2 rounded-2xl p-5 transition-all ${plan === p.id ? "border-purple-500/60 bg-purple-500/10" : "border-border bg-input-background hover:border-purple-500/40"}`}>
                       <div className="flex items-start gap-4">
                         <div className="w-12 h-12 rounded-xl overflow-hidden border border-purple-500/20 bg-purple-500/10 flex-shrink-0">
-                          <img src={iconForIndex(index + 2)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
+                          <img src={badgeForKey(p.id)} alt="" className="w-[112%] h-[112%] object-contain translate-y-0.5" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-3">
@@ -1609,7 +2040,7 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
                 <h3 className="font-bold text-foreground mb-4">Confirmar Assinatura</h3>
                 <div className="space-y-3 mb-5">
                   {[
-                    { label: "Plano", value: `DevRoad ${selectedPlan.name}` },
+                    { label: "Plano", value: `Code Mage ${selectedPlan.name}` },
                     { label: "Valor", value: `${selectedPlan.price} ${selectedPlan.period}` },
                     { label: "Cartão", value: "Visa •••• 1234" },
                     { label: selectedPlan.id === "lifetime" ? "Tipo" : "Próx. cobrança", value: selectedPlan.id === "lifetime" ? "Acesso vitalício" : "05 Ago 2026" },
@@ -1643,7 +2074,7 @@ function CheckoutPage({ setPage }: { setPage: (p: Page) => void }) {
                   <Zap className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground">DevRoad {selectedPlan.name}</p>
+                  <p className="text-sm font-bold text-foreground">Code Mage {selectedPlan.name}</p>
                   <p className="text-xs text-muted-foreground">{selectedPlan.id === "lifetime" ? "Plano Vitalício" : "Plano Mensal"}</p>
                 </div>
               </div>
@@ -1670,6 +2101,9 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
   const [page, setPage] = useState<Page>("dashboard");
   const [activeModule, setActiveModule] = useState<Module>(modules[0]);
   const [completedMissions, setCompletedMissions] = useState<Record<string, boolean>>({});
+  const [coins, setCoins] = useState(2600);
+  const [ownedCharacters, setOwnedCharacters] = useState<string[]>([DEFAULT_CHARACTER_ID]);
+  const [equippedCharacterId, setEquippedCharacterId] = useState(DEFAULT_CHARACTER_ID);
 
   const titles: Record<Page, string> = {
     login: "Login",
@@ -1688,9 +2122,9 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="h-screen flex overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <Sidebar page={page} setPage={setPage} onLogout={onLogout} />
+      <Sidebar page={page} setPage={setPage} onLogout={onLogout} equippedCharacterId={equippedCharacterId} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar title={titles[page]} setPage={setPage} />
+        <Topbar title={titles[page]} setPage={setPage} coins={coins} />
         {page === "dashboard" && (
           <DashboardPage
             setPage={setPage}
@@ -1703,12 +2137,21 @@ function AppShell({ onLogout }: { onLogout: () => void }) {
         {page === "cursos" && <CursosPage setPage={setPage} activeModule={activeModule} setActiveModule={setActiveModule} />}
         {page === "aulas" && <AulasPage module={activeModule} setPage={setPage} />}
         {page === "historia" && <HistoriaPage module={activeModule} setPage={setPage} />}
-        {page === "laboratorio" && <LaboratorioPage module={activeModule} />}
-        {page === "arcade" && <ArcadePage setActiveModule={setActiveModule} setPage={setPage} />}
+        {page === "laboratorio" && <LaboratorioPage module={activeModule} onReward={(amount) => setCoins((prev) => prev + amount)} />}
+        {page === "arcade" && <ArcadePage setActiveModule={setActiveModule} setPage={setPage} onReward={(amount) => setCoins((prev) => prev + amount)} />}
         {page === "carreira" && <CarreiraPage setPage={setPage} setActiveModule={setActiveModule} />}
         {page === "revisao" && <RevisaoPage setPage={setPage} setActiveModule={setActiveModule} />}
         {page === "progresso" && <ProgressoPage />}
-        {page === "loja" && <LojaPage />}
+        {page === "loja" && (
+          <LojaPage
+            coins={coins}
+            setCoins={setCoins}
+            ownedCharacters={ownedCharacters}
+            setOwnedCharacters={setOwnedCharacters}
+            equippedCharacterId={equippedCharacterId}
+            setEquippedCharacterId={setEquippedCharacterId}
+          />
+        )}
         {page === "checkout" && <CheckoutPage setPage={setPage} />}
       </div>
     </div>

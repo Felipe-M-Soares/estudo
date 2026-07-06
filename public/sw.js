@@ -5,8 +5,8 @@
 // deploy, isso prendia o navegador de quem ja visitou o site numa versao
 // antiga do index.html para sempre - apontando pra arquivos JS que nao
 // existem mais no servidor, causando tela branca apos qualquer atualizacao.
-const CACHE_NAME = 'devjourney-v2';
-const APP_SHELL = ['/manifest.webmanifest', '/icon.svg'];
+const CACHE_NAME = 'codemage-v3';
+const APP_SHELL = ['/manifest.webmanifest', '/brand/logo-192.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
