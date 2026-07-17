@@ -16,3 +16,8 @@
   progresso na nuvem e receber pagamentos de verdade via Mercado Pago
   (cartão, Pix e boleto), siga o passo a passo em **[SETUP.md](./SETUP.md)**.
 
+  Se você já tinha um projeto Supabase configurado antes desta versão, volte
+  no **SQL Editor** e rode `supabase/schema.sql` de novo (é idempotente) —
+  ele agora também trava moedas/personagens/aulas contra edição direta pelo
+  navegador e cria as funções usadas pelo bloqueio de conteúdo por plano.
+

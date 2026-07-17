@@ -63,10 +63,18 @@ Em **Authentication → URL Configuration**, defina:
    primeiro para testar todo o fluxo sem mexer com dinheiro real.
 4. Quando estiver tudo validado, troque pelas **Credenciais de produção**
    (Access Token de produção) nas variáveis de ambiente do Vercel.
-5. (Recomendado) Em **Webhooks**, configure a URL
-   `https://SEU-DOMINIO/api/webhook` e copie a **Chave secreta de assinatura**
-   → vira `MP_WEBHOOK_SECRET`. Isso garante que só a Mercado Pago consegue
-   avisar seu sistema que um pagamento foi aprovado.
+5. Em **Webhooks**, configure a URL `https://SEU-DOMINIO/api/webhook` e
+   marque os eventos: `Pagamentos` (payment), `Assinaturas` (subscription
+   preapproval) e `Pagamentos de assinatura` (subscription authorized
+   payment) — os três são usados: o primeiro pelo plano Vitalício (pagamento
+   único), os outros dois pela renovação automática do Starter/Pro. Copie a
+   **Chave secreta de assinatura** → vira `MP_WEBHOOK_SECRET`.
+6. **Antes de ir pra produção**, teste o fluxo completo do Starter/Pro com as
+   credenciais de TESTE: assine, confirme que a tela de Conta e Plano mostra
+   "Plano ativo", espere a Mercado Pago simular a cobrança de teste e
+   confirme que `active_until` avançou ~30 dias na tabela `subscriptions`
+   (Supabase → Table Editor). Esse é o pedaço mais novo da integração — vale
+   a pena confirmar com calma antes de cobrar gente de verdade.
 
 ### Sobre vender para fora do Brasil
 
@@ -131,19 +139,31 @@ funcionam quando publicadas no Vercel (ou via `vercel dev`).
 - "Esqueci minha senha" com e-mail de redefinição.
 - Perfil do jogador (moedas, personagem equipado, aulas concluídas) salvo no
   Supabase e sincronizado automaticamente.
-- Página de Conta e Plano cria uma cobrança real na Mercado Pago (Checkout
-  Pro: cartão, Pix e boleto) e redireciona o usuário para pagar com segurança
-  — nenhum dado de cartão passa pelo nosso servidor.
-- Webhook que confirma o pagamento direto na API da Mercado Pago (nunca
-  confia apenas na notificação recebida) e libera o plano no banco.
+- Página de Conta e Plano cria uma cobrança real na Mercado Pago: pagamento
+  único (Checkout Pro: cartão, Pix e boleto) para o Vitalício, e assinatura
+  recorrente (PreApproval, renovação automática mensal no cartão) para
+  Starter/Pro — nenhum dado de cartão passa pelo nosso servidor.
+- Webhook que confirma pagamentos e cobranças recorrentes direto na API da
+  Mercado Pago (nunca confia apenas na notificação recebida) e libera/renova
+  o plano no banco automaticamente a cada cobrança mensal aprovada.
+- Cancelamento de assinatura self-service: o usuário cancela a renovação
+  automática direto na tela de Conta e Plano, sem precisar de suporte.
+- Bloqueio de conteúdo por plano: sem assinatura ativa só o mês 1 é liberado;
+  Starter libera até o mês 6; Pro/Vitalício liberam os 22 meses (Trilha,
+  Aulas, História, Laboratório e Arcade checam isso e mostram uma tela de
+  upgrade quando bloqueado).
+- Moedas, personagens e aulas concluídas só mudam através de funções no
+  banco (`claim_reward`, `buy_character`, `equip_character`,
+  `mark_lesson_complete`) que validam preço/saldo/posse no servidor — não dá
+  mais pra editar isso direto pelo console do navegador.
+- Progresso fino por aula (respostas de exercício, checklist marcado,
+  rascunho do projeto) é salvo na nuvem por módulo (`save_module_progress`)
+  — atualizar a página não perde mais o que já foi preenchido.
 
 ## O que ainda fica de fora (próximos passos possíveis)
 
-- Cobrança recorrente automática todo mês para os planos Starter/Pro (hoje
-  cada pagamento libera 30 dias; renovar exige o usuário pagar de novo — dá
-  pra evoluir para o `PreApproval` da Mercado Pago para renovação automática
-  por cartão).
-- Bloqueio de conteúdo por plano (hoje todo mundo logado acessa tudo; dá pra
-  usar a tabela `subscriptions` para liberar só até o `maxMonth` do plano).
+- A ordem/pré-requisito das aulas dentro de um módulo ainda é validada só no
+  front-end (o grafo de aulas vive no código, não no banco) — dá pra reforçar
+  espelhando essa estrutura no Supabase, se quiser uma trava 100% server-side.
 - Progresso de exercícios/checklist/projeto por aula ainda fica só na sessão
   do navegador (só a conclusão de aula, moedas e personagem são salvos hoje).

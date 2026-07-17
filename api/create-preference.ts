@@ -23,6 +23,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(400).json({ error: "Plano inválido." });
     return;
   }
+  if (pricing.recurring) {
+    res.status(400).json({ error: "Este plano usa cobrança recorrente. Use /api/create-subscription." });
+    return;
+  }
 
   const externalReference = `${user.id}:${pricing.id}:${randomUUID()}`;
   const siteUrl = process.env.PUBLIC_SITE_URL || `https://${req.headers.host}`;

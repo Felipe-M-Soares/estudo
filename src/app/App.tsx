@@ -216,6 +216,57 @@ function characterSrc(id: string) {
   return CHARACTERS.find((c) => c.id === id)?.src ?? CHARACTERS[0].src;
 }
 
+// ----------------------------------------------------------------------------
+// GATING DE CONTEÚDO POR PLANO
+// Sem isso, qualquer pessoa logada (paga ou não) via tudo — o que tira o
+// motivo de assinar. Os limites abaixo espelham exatamente o que já é
+// prometido nos cards de preço da tela de Conta e Plano (CheckoutPage).
+// ----------------------------------------------------------------------------
+const FREE_TIER_MAX_MONTH = 1; // sem plano ativo: só o mês 1 (gostinho grátis)
+const PLAN_MAX_MONTH: Record<"starter" | "pro" | "lifetime", number> = {
+  starter: 6,
+  pro: 22,
+  lifetime: 22,
+};
+
+function contentMaxMonth(subscription: ActiveSubscription | null): number {
+  if (subscription && subscription.status === "approved") {
+    return PLAN_MAX_MONTH[subscription.planId] ?? FREE_TIER_MAX_MONTH;
+  }
+  return FREE_TIER_MAX_MONTH;
+}
+
+function isModuleLocked(module: Module, maxMonth: number): boolean {
+  return module.month > maxMonth;
+}
+
+// Tela mostrada no lugar de Aulas/História/Laboratório quando o módulo ativo
+// está além do que o plano do usuário libera.
+function UpgradeGate({ module, setPage }: { module: Module; setPage: (p: Page) => void }) {
+  return (
+    <div className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
+      <div className="max-w-md w-full text-center space-y-4 bg-card border border-border rounded-2xl p-8">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
+          <Lock className="w-6 h-6 text-purple-300" />
+        </div>
+        <div>
+          <Badge color="accent">Mês {module.month} · Conteúdo Premium</Badge>
+          <h2 className="text-xl font-extrabold text-foreground mt-3">"{module.title}" é exclusivo de assinantes</h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Seu plano atual libera até este ponto da trilha. Assine o Starter (meses 1-6) ou o Pro/Vitalício (todos os 22 meses) para continuar.
+          </p>
+        </div>
+        <button
+          onClick={() => setPage("checkout")}
+          className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold px-5 py-2.5 rounded-xl transition-colors"
+        >
+          Ver planos <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Badge({ children, color = "primary" }: { children: React.ReactNode; color?: "primary" | "accent" | "success" | "warning" }) {
   const colors = {
     primary: "bg-purple-500/20 text-purple-300 border border-purple-500/30",
@@ -833,7 +884,7 @@ function DashboardPage({
 }
 
 // TRILHA
-function CursosPage({ setPage, activeModule, setActiveModule }: { setPage: (p: Page) => void; activeModule: Module; setActiveModule: (m: Module) => void }) {
+function CursosPage({ setPage, activeModule, setActiveModule, maxMonth }: { setPage: (p: Page) => void; activeModule: Module; setActiveModule: (m: Module) => void; maxMonth: number }) {
   const [tab, setTab] = useState<number | "todos">("todos");
   const visiblePhases = tab === "todos" ? phases : phases.filter((phase) => phase.phase === tab);
 
@@ -878,32 +929,41 @@ function CursosPage({ setPage, activeModule, setActiveModule }: { setPage: (p: P
               <Badge color="accent">Meses {phase.months[0]}-{phase.months[phase.months.length - 1]}</Badge>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-              {phaseModules.map((c, index) => (
-                <Card key={c.id} hover className="!p-4" onClick={() => { setActiveModule(c); setPage("aulas"); }}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 flex-shrink-0">
-                      <img src={badgeForKey(c.id)} alt="" className="w-full h-full object-contain" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                      <Badge color="primary">Mês {c.month}</Badge>
-                      <Badge color="accent">{c.track}</Badge>
+              {phaseModules.map((c, index) => {
+                const locked = isModuleLocked(c, maxMonth);
+                const open = () => (locked ? setPage("checkout") : (setActiveModule(c), setPage("aulas")));
+                return (
+                  <Card key={c.id} hover className={`!p-4 relative ${locked ? "opacity-70" : ""}`} onClick={open}>
+                    {locked && (
+                      <span className="absolute top-3 right-3 bg-black/40 text-white rounded-full p-1.5">
+                        <Lock className="w-3.5 h-3.5" />
+                      </span>
+                    )}
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 flex-shrink-0">
+                        <img src={badgeForKey(c.id)} alt="" className="w-full h-full object-contain" />
                       </div>
-                      <h3 className="font-bold text-foreground text-sm leading-snug">{c.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.tagline}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                        <Badge color="primary">Mês {c.month}</Badge>
+                        <Badge color="accent">{c.track}</Badge>
+                        </div>
+                        <h3 className="font-bold text-foreground text-sm leading-snug">{c.title}</h3>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.tagline}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-purple-400 rounded-full" style={{ width: `${activeModule.id === c.id ? 68 : c.month <= activeModule.month ? 35 : 8}%` }} />
-                  </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <span className="text-xs text-muted-foreground">{c.lessons.length} aulas · {c.exercises.length} exercícios</span>
-                    <button onClick={(e) => { e.stopPropagation(); setActiveModule(c); setPage("aulas"); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1">
-                      {activeModule.id === c.id ? "Continuar" : "Abrir"}<ChevronRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                </Card>
-              ))}
+                    <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-purple-400 rounded-full" style={{ width: `${activeModule.id === c.id ? 68 : c.month <= activeModule.month ? 35 : 8}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-xs text-muted-foreground">{c.lessons.length} aulas · {c.exercises.length} exercícios</span>
+                      <button onClick={(e) => { e.stopPropagation(); open(); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1">
+                        {locked ? "Assinar" : activeModule.id === c.id ? "Continuar" : "Abrir"}<ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           </section>
         );
@@ -913,30 +973,42 @@ function CursosPage({ setPage, activeModule, setActiveModule }: { setPage: (p: P
 }
 
 // AULAS
+type ModuleProgress = Partial<{
+  exerciseAnswers: Record<string, string>;
+  checkedExercises: Record<string, boolean>;
+  projectSteps: Record<string, boolean>;
+  projectSolution: string;
+  projectTested: boolean;
+}>;
+
 function AulasPage({
   module,
   setPage,
   completedLessons: completedLessonsProp,
   onCompleteLesson,
+  progress,
+  onSaveProgress,
 }: {
   module: Module;
   setPage: (p: Page) => void;
   completedLessons?: Record<string, boolean>;
   onCompleteLesson?: (key: string) => void;
+  progress?: ModuleProgress;
+  onSaveProgress?: (moduleId: string, progress: unknown) => void;
 }) {
   const [selected, setSelected] = useState(0);
   const [contentTab, setContentTab] = useState<"aula" | "exercicios" | "checklist" | "projeto">("aula");
-  const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({});
-  const [checkedExercises, setCheckedExercises] = useState<Record<string, boolean>>({});
+  const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>(() => progress?.exerciseAnswers ?? {});
+  const [checkedExercises, setCheckedExercises] = useState<Record<string, boolean>>(() => progress?.checkedExercises ?? {});
   const [localCompletedLessons, setLocalCompletedLessons] = useState<Record<string, boolean>>({});
   const completedLessons = completedLessonsProp ?? localCompletedLessons;
   const completeLesson = (key: string) => {
     if (onCompleteLesson) onCompleteLesson(key);
     else setLocalCompletedLessons((prev) => ({ ...prev, [key]: true }));
   };
-  const [projectSteps, setProjectSteps] = useState<Record<string, boolean>>({});
-  const [projectSolution, setProjectSolution] = useState("");
-  const [projectTested, setProjectTested] = useState(false);
+  const [projectSteps, setProjectSteps] = useState<Record<string, boolean>>(() => progress?.projectSteps ?? {});
+  const [projectSolution, setProjectSolution] = useState(() => progress?.projectSolution ?? "");
+  const [projectTested, setProjectTested] = useState(() => progress?.projectTested ?? false);
   const currentIndex = Math.min(selected, Math.max(module.lessons.length - 1, 0));
   const current = module.lessons[currentIndex] ?? module.lessons[0];
   const lessonKey = (index: number) => `${module.id}-${module.lessons[index]?.id ?? index}`;
@@ -958,11 +1030,25 @@ function AulasPage({
   useEffect(() => {
     setSelected(0);
     setContentTab("aula");
+    setExerciseAnswers(progress?.exerciseAnswers ?? {});
+    setCheckedExercises(progress?.checkedExercises ?? {});
+    setProjectSteps(progress?.projectSteps ?? {});
+    setProjectSolution(progress?.projectSolution ?? "");
+    setProjectTested(progress?.projectTested ?? false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module.id]);
 
   useEffect(() => {
     setScenarioCheckAnswer(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [module.id, currentIndex]);
+
+  // Salva o progresso (exercícios, checklist, projeto) sempre que algo muda.
+  // onSaveProgress já tem debounce interno, então é seguro chamar a cada tecla.
+  useEffect(() => {
+    onSaveProgress?.(module.id, { exerciseAnswers, checkedExercises, projectSteps, projectSolution, projectTested });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exerciseAnswers, checkedExercises, projectSteps, projectSolution, projectTested]);
 
   return (
     <div className="flex-1 overflow-hidden flex">
@@ -1749,12 +1835,21 @@ console.log(executarSprint(0));`;
   );
 }
 
-function ArcadePage({ setActiveModule, setPage, onReward }: { setActiveModule: (m: Module) => void; setPage: (p: Page) => void; onReward: (amount: number) => void }) {
+function ArcadePage({ setActiveModule, setPage, onReward, maxMonth }: { setActiveModule: (m: Module) => void; setPage: (p: Page) => void; onReward: (amount: number) => void; maxMonth: number }) {
   const games = modules.flatMap((m) => m.games.map((game) => ({ ...game, module: m })));
   const [selectedGameKey, setSelectedGameKey] = useState<string | null>(null);
   const [lastScore, setLastScore] = useState<number | null>(null);
   const [rewardedKey, setRewardedKey] = useState<string | null>(null);
   const selectedGame = games.find((game) => `${game.module.id}-${game.gameId}` === selectedGameKey);
+
+  function openGame(key: string, moduleMonth: number) {
+    if (moduleMonth > maxMonth) {
+      setPage("checkout");
+      return;
+    }
+    setLastScore(null);
+    setSelectedGameKey(key);
+  }
 
   function handleComplete(score: number) {
     setLastScore(score);
@@ -1813,11 +1908,19 @@ function ArcadePage({ setActiveModule, setPage, onReward }: { setActiveModule: (
         <Badge color="accent">{games.length} desafios</Badge>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {games.map((game) => (
-          <Card key={`${game.module.id}-${game.gameId}`} hover onClick={() => { setLastScore(null); setSelectedGameKey(`${game.module.id}-${game.gameId}`); }}>
+        {games.map((game) => {
+          const key = `${game.module.id}-${game.gameId}`;
+          const locked = game.module.month > maxMonth;
+          return (
+          <Card key={key} hover className={locked ? "opacity-70 relative" : "relative"} onClick={() => openGame(key, game.module.month)}>
+            {locked && (
+              <span className="absolute top-3 right-3 bg-black/40 text-white rounded-full p-1.5">
+                <Lock className="w-3.5 h-3.5" />
+              </span>
+            )}
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 flex-shrink-0">
-                <img src={badgeForKey(`${game.module.id}-${game.gameId}`)} alt="" className="w-full h-full object-contain" />
+                <img src={badgeForKey(key)} alt="" className="w-full h-full object-contain" />
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1831,15 +1934,18 @@ function ArcadePage({ setActiveModule, setPage, onReward }: { setActiveModule: (
             </div>
             <p className="text-sm text-muted-foreground mt-4 line-clamp-3">{game.description}</p>
             <div className="mt-4 flex items-center gap-3">
-              <button onClick={(e) => { e.stopPropagation(); setLastScore(null); setSelectedGameKey(`${game.module.id}-${game.gameId}`); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
-                Jogar <ChevronRight className="w-3 h-3" />
+              <button onClick={(e) => { e.stopPropagation(); openGame(key, game.module.month); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                {locked ? "Assinar para jogar" : "Jogar"} <ChevronRight className="w-3 h-3" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); setActiveModule(game.module); setPage("aulas"); }} className="text-xs font-bold text-muted-foreground hover:text-foreground">
-                Ver módulo
-              </button>
+              {!locked && (
+                <button onClick={(e) => { e.stopPropagation(); setActiveModule(game.module); setPage("aulas"); }} className="text-xs font-bold text-muted-foreground hover:text-foreground">
+                  Ver módulo
+                </button>
+              )}
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -2005,41 +2111,45 @@ function RevisaoPage({ setPage, setActiveModule }: { setPage: (p: Page) => void;
 
 function LojaPage({
   coins,
-  setCoins,
   ownedCharacters,
-  setOwnedCharacters,
   equippedCharacterId,
-  setEquippedCharacterId,
+  onBuyCharacter,
+  onEquipCharacter,
 }: {
   coins: number;
-  setCoins: (updater: (prev: number) => number) => void;
   ownedCharacters: string[];
-  setOwnedCharacters: (updater: (prev: string[]) => string[]) => void;
   equippedCharacterId: string;
-  setEquippedCharacterId: (id: string) => void;
+  onBuyCharacter: (characterId: string, localPrice: number) => Promise<{ error?: { message: string } }>;
+  onEquipCharacter: (characterId: string) => Promise<{ error?: { message: string } }>;
 }) {
   const [toast, setToast] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   function flash(message: string) {
     setToast(message);
     window.setTimeout(() => setToast((current) => (current === message ? null : current)), 2200);
   }
 
-  function buyCharacter(character: CharacterDef) {
-    if (ownedCharacters.includes(character.id)) return;
+  // Checagem client-side é só pra feedback instantâneo — quem decide de
+  // verdade (preço, saldo, posse) é a função no servidor (buy_character).
+  async function buyCharacter(character: CharacterDef) {
+    if (ownedCharacters.includes(character.id) || pendingId) return;
     if (coins < character.price) {
       flash(`Moedas insuficientes para ${character.name}. Faltam ${character.price - coins} moedas.`);
       return;
     }
-    setCoins((prev) => prev - character.price);
-    setOwnedCharacters((prev) => [...prev, character.id]);
-    setEquippedCharacterId(character.id);
-    flash(`${character.name} comprado e equipado!`);
+    setPendingId(character.id);
+    const { error } = await onBuyCharacter(character.id, character.price);
+    setPendingId(null);
+    flash(error ? error.message : `${character.name} comprado e equipado!`);
   }
 
-  function equipCharacter(character: CharacterDef) {
-    setEquippedCharacterId(character.id);
-    flash(`${character.name} equipado no seu perfil.`);
+  async function equipCharacter(character: CharacterDef) {
+    if (pendingId) return;
+    setPendingId(character.id);
+    const { error } = await onEquipCharacter(character.id);
+    setPendingId(null);
+    flash(error ? error.message : `${character.name} equipado no seu perfil.`);
   }
 
   return (
@@ -2149,10 +2259,12 @@ function CheckoutPage({
   setPage,
   user,
   subscription,
+  refreshSubscription,
 }: {
   setPage: (p: Page) => void;
   user: User;
   subscription: ActiveSubscription | null;
+  refreshSubscription: () => void;
 }) {
   const commercialPlans = [
     {
@@ -2163,8 +2275,9 @@ function CheckoutPage({
       usdReference: "US$ 9",
       period: "/mês",
       badge: "Aventureiro",
-      features: ["Fundamentos até o mês 6", "Aulas, exercícios e revisão", "Progresso em nuvem com licença ativa"],
+      features: ["Fundamentos até o mês 6", "Aulas, exercícios e revisão", "Progresso em nuvem com licença ativa", "Renovação automática mensal"],
       maxMonth: 6,
+      recurring: true,
     },
     {
       id: "pro" as const,
@@ -2174,8 +2287,9 @@ function CheckoutPage({
       usdReference: "US$ 19",
       period: "/mês",
       badge: "Heroico",
-      features: ["Todos os 22 meses", "Laboratório, arcade e analytics", "Projetos e revisões avançadas"],
+      features: ["Todos os 22 meses", "Laboratório, arcade e analytics", "Projetos e revisões avançadas", "Renovação automática mensal"],
       maxMonth: 22,
+      recurring: true,
     },
     {
       id: "lifetime" as const,
@@ -2187,15 +2301,18 @@ function CheckoutPage({
       badge: "Lendário",
       features: ["Pagamento único", "Acesso completo vitalício", "Apto a próximas atualizações"],
       maxMonth: 22,
+      recurring: false,
     },
   ];
 
   const [plan, setPlan] = useState<(typeof commercialPlans)[number]["id"]>("pro");
   const [creatingCheckout, setCreatingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const selectedPlan = commercialPlans.find((p) => p.id === plan) ?? commercialPlans[1];
 
   const isCurrentPlan = subscription?.planId === plan && subscription.status === "approved";
+  const hasRecurringActivePlan = subscription?.status === "approved" && subscription.planId !== "lifetime";
 
   async function startCheckout() {
     setCheckoutError(null);
@@ -2209,7 +2326,10 @@ function CheckoutPage({
         return;
       }
 
-      const response = await fetch("/api/create-preference", {
+      // Starter/Pro usam cobrança recorrente (renova sozinho todo mês);
+      // Vitalício usa pagamento único.
+      const endpoint = selectedPlan.recurring ? "/api/create-subscription" : "/api/create-preference";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ planId: plan, currency: "BRL" }),
@@ -2230,6 +2350,36 @@ function CheckoutPage({
     }
   }
 
+  async function cancelSubscription() {
+    setCheckoutError(null);
+    setCancelling(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        setCheckoutError("Sua sessão expirou. Recarregue a página e faça login novamente.");
+        setCancelling(false);
+        return;
+      }
+      const response = await fetch("/api/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setCheckoutError(data.error ?? "Não foi possível cancelar agora. Tente novamente.");
+        setCancelling(false);
+        return;
+      }
+      refreshSubscription();
+    } catch (err) {
+      console.error(err);
+      setCheckoutError("Erro de conexão ao cancelar. Verifique sua internet e tente novamente.");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -2243,18 +2393,29 @@ function CheckoutPage({
 
         {subscription && (
           <Card className="!border-emerald-500/40 bg-emerald-500/5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                <Check className="w-5 h-5 text-emerald-400" />
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    Plano ativo: {subscription.planId === "lifetime" ? "Vitalício" : subscription.planId === "pro" ? "Pro" : "Starter"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {subscription.activeUntil ? `Renova/expira em ${new Date(subscription.activeUntil).toLocaleDateString("pt-BR")}` : "Acesso vitalício — nunca expira"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-bold text-foreground">
-                  Plano ativo: {subscription.planId === "lifetime" ? "Vitalício" : subscription.planId === "pro" ? "Pro" : "Starter"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {subscription.activeUntil ? `Renova/expira em ${new Date(subscription.activeUntil).toLocaleDateString("pt-BR")}` : "Acesso vitalício — nunca expira"}
-                </p>
-              </div>
+              {hasRecurringActivePlan && (
+                <button
+                  onClick={cancelSubscription}
+                  disabled={cancelling}
+                  className="text-xs font-bold text-red-300 hover:text-red-200 border border-red-500/30 hover:bg-red-500/10 px-3 py-1.5 rounded-xl transition-colors disabled:opacity-60"
+                >
+                  {cancelling ? "Cancelando..." : "Cancelar renovação automática"}
+                </button>
+              )}
             </div>
           </Card>
         )}
@@ -2343,9 +2504,11 @@ function AppShell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [page, setPage] = useState<Page>("dashboard");
   const [activeModule, setActiveModule] = useState<Module>(modules[0]);
   const [completedMissions, setCompletedMissions] = useState<Record<string, boolean>>({});
-  const { profile, setCoins, setEquippedCharacterId, setOwnedCharacters, markLessonComplete, cloudEnabled } = useCloudProfile(user.id);
+  const { profile, claimReward, buyCharacter, equipCharacter, markLessonComplete, saveModuleProgress, cloudEnabled } = useCloudProfile(user.id);
   const { subscription, refresh: refreshSubscription } = useActiveSubscription(user.id);
   const [checkoutBanner, setCheckoutBanner] = useState<"success" | "failure" | "pending" | null>(null);
+  const maxMonth = contentMaxMonth(subscription);
+  const moduleLocked = isModuleLocked(activeModule, maxMonth);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2410,32 +2573,43 @@ function AppShell({ user, onLogout }: { user: User; onLogout: () => void }) {
             completeMission={(id) => setCompletedMissions((prev) => ({ ...prev, [id]: true }))}
           />
         )}
-        {page === "cursos" && <CursosPage setPage={setPage} activeModule={activeModule} setActiveModule={setActiveModule} />}
+        {page === "cursos" && <CursosPage setPage={setPage} activeModule={activeModule} setActiveModule={setActiveModule} maxMonth={maxMonth} />}
         {page === "aulas" && (
-          <AulasPage
-            module={activeModule}
-            setPage={setPage}
-            completedLessons={profile.completedLessons}
-            onCompleteLesson={markLessonComplete}
-          />
+          moduleLocked ? (
+            <UpgradeGate module={activeModule} setPage={setPage} />
+          ) : (
+            <AulasPage
+              module={activeModule}
+              setPage={setPage}
+              completedLessons={profile.completedLessons}
+              onCompleteLesson={markLessonComplete}
+              progress={profile.lessonProgress[activeModule.id] as ModuleProgress | undefined}
+              onSaveProgress={saveModuleProgress}
+            />
+          )
         )}
-        {page === "historia" && <HistoriaPage module={activeModule} setPage={setPage} />}
-        {page === "laboratorio" && <LaboratorioPage module={activeModule} onReward={(amount) => setCoins((prev) => prev + amount)} />}
-        {page === "arcade" && <ArcadePage setActiveModule={setActiveModule} setPage={setPage} onReward={(amount) => setCoins((prev) => prev + amount)} />}
+        {page === "historia" && (moduleLocked ? <UpgradeGate module={activeModule} setPage={setPage} /> : <HistoriaPage module={activeModule} setPage={setPage} />)}
+        {page === "laboratorio" && (
+          moduleLocked ? (
+            <UpgradeGate module={activeModule} setPage={setPage} />
+          ) : (
+            <LaboratorioPage module={activeModule} onReward={(amount) => { void claimReward(amount, "laboratorio"); }} />
+          )
+        )}
+        {page === "arcade" && <ArcadePage setActiveModule={setActiveModule} setPage={setPage} onReward={(amount) => { void claimReward(amount, "arcade"); }} maxMonth={maxMonth} />}
         {page === "carreira" && <CarreiraPage setPage={setPage} setActiveModule={setActiveModule} />}
         {page === "revisao" && <RevisaoPage setPage={setPage} setActiveModule={setActiveModule} />}
         {page === "progresso" && <ProgressoPage />}
         {page === "loja" && (
           <LojaPage
             coins={profile.coins}
-            setCoins={setCoins}
             ownedCharacters={profile.ownedCharacters}
-            setOwnedCharacters={setOwnedCharacters}
             equippedCharacterId={profile.equippedCharacterId}
-            setEquippedCharacterId={setEquippedCharacterId}
+            onBuyCharacter={buyCharacter}
+            onEquipCharacter={equipCharacter}
           />
         )}
-        {page === "checkout" && <CheckoutPage setPage={setPage} user={user} subscription={subscription} />}
+        {page === "checkout" && <CheckoutPage setPage={setPage} user={user} subscription={subscription} refreshSubscription={refreshSubscription} />}
       </div>
     </div>
   );
