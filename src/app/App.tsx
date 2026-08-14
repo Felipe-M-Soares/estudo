@@ -1,18 +1,11 @@
 import { useState, useEffect, Fragment } from "react";
-import type { User } from "@supabase/supabase-js";
-import { useAuth } from "../lib/useAuth";
-import { useCloudProfile } from "../lib/useCloudProfile";
-import { useActiveSubscription } from "../lib/useActiveSubscription";
-import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
-import type { ActiveSubscription } from "../lib/useActiveSubscription";
+import { useProfile } from "../lib/useCloudProfile";
 import {
   LayoutDashboard,
   BookOpen,
   PlayCircle,
   BarChart3,
   Users,
-  Settings,
-  LogOut,
   ChevronRight,
   Star,
   Clock,
@@ -20,11 +13,7 @@ import {
   TrendingUp,
   MessageCircle,
   Heart,
-  ShoppingCart,
   Lock,
-  Mail,
-  Eye,
-  EyeOff,
   Check,
   X,
   Bell,
@@ -33,9 +22,6 @@ import {
   FileText,
   Zap,
   Target,
-  Globe,
-  CreditCard,
-  Shield,
   Home,
   Map,
   Sparkles,
@@ -60,7 +46,7 @@ import {
 } from "./study-data/platform";
 import { gameRegistry } from "./components/games/registry";
 
-type Page = "login" | "dashboard" | "cursos" | "aulas" | "historia" | "laboratorio" | "arcade" | "carreira" | "revisao" | "progresso" | "loja" | "checkout";
+type Page = "dashboard" | "cursos" | "aulas" | "historia" | "laboratorio" | "arcade" | "carreira" | "revisao" | "progresso" | "loja";
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Começar", icon: Home },
@@ -72,7 +58,6 @@ const NAV_ITEMS = [
   { id: "revisao", label: "Revisão", icon: ShieldCheck },
   { id: "progresso", label: "Analytics", icon: BarChart3 },
   { id: "loja", label: "Loja", icon: Coins },
-  { id: "checkout", label: "Conta", icon: Settings },
 ];
 
 // Marca Code Mage
@@ -217,55 +202,9 @@ function characterSrc(id: string) {
 }
 
 // ----------------------------------------------------------------------------
-// GATING DE CONTEÚDO POR PLANO
-// Sem isso, qualquer pessoa logada (paga ou não) via tudo — o que tira o
-// motivo de assinar. Os limites abaixo espelham exatamente o que já é
-// prometido nos cards de preço da tela de Conta e Plano (CheckoutPage).
+// Uso pessoal: nenhum conteúdo é bloqueado por plano/login — toda a trilha
+// (todos os 22 meses, aulas, laboratório e arcade) fica sempre liberada.
 // ----------------------------------------------------------------------------
-const FREE_TIER_MAX_MONTH = 1; // sem plano ativo: só o mês 1 (gostinho grátis)
-const PLAN_MAX_MONTH: Record<"starter" | "pro" | "lifetime", number> = {
-  starter: 6,
-  pro: 22,
-  lifetime: 22,
-};
-
-function contentMaxMonth(subscription: ActiveSubscription | null): number {
-  if (subscription && subscription.status === "approved") {
-    return PLAN_MAX_MONTH[subscription.planId] ?? FREE_TIER_MAX_MONTH;
-  }
-  return FREE_TIER_MAX_MONTH;
-}
-
-function isModuleLocked(module: Module, maxMonth: number): boolean {
-  return module.month > maxMonth;
-}
-
-// Tela mostrada no lugar de Aulas/História/Laboratório quando o módulo ativo
-// está além do que o plano do usuário libera.
-function UpgradeGate({ module, setPage }: { module: Module; setPage: (p: Page) => void }) {
-  return (
-    <div className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
-      <div className="max-w-md w-full text-center space-y-4 bg-card border border-border rounded-2xl p-8">
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
-          <Lock className="w-6 h-6 text-purple-300" />
-        </div>
-        <div>
-          <Badge color="accent">Mês {module.month} · Conteúdo Premium</Badge>
-          <h2 className="text-xl font-extrabold text-foreground mt-3">"{module.title}" é exclusivo de assinantes</h2>
-          <p className="text-sm text-muted-foreground mt-2">
-            Seu plano atual libera até este ponto da trilha. Assine o Starter (meses 1-6) ou o Pro/Vitalício (todos os 22 meses) para continuar.
-          </p>
-        </div>
-        <button
-          onClick={() => setPage("checkout")}
-          className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold px-5 py-2.5 rounded-xl transition-colors"
-        >
-          Ver planos <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function Badge({ children, color = "primary" }: { children: React.ReactNode; color?: "primary" | "accent" | "success" | "warning" }) {
   const colors = {
@@ -396,254 +335,17 @@ function isExerciseCorrect(exercise: Module["exercises"][number], answer: string
   return exercise.pairs.every((pair) => normalized.includes(pair.left.toLowerCase()) && normalized.includes(pair.right.toLowerCase()));
 }
 
-// LOGIN
-function LoginPage() {
-  const { signInWithPassword, signUpWithPassword, signInWithOAuth, resetPassword } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-
-  const configWarning = !isSupabaseConfigured;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setNotice(null);
-
-    if (configWarning) {
-      setError("Supabase não está configurado neste ambiente (faltam VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY). Veja o arquivo .env.example.");
-      return;
-    }
-
-    setLoading(true);
-    if (mode === "signin") {
-      const { error: signInError } = await signInWithPassword(email, password);
-      setLoading(false);
-      if (signInError) setError(traduzErroAuth(signInError.message));
-    } else {
-      const { error: signUpError } = await signUpWithPassword(email, password, name);
-      setLoading(false);
-      if (signUpError) {
-        setError(traduzErroAuth(signUpError.message));
-      } else {
-        setNotice("Conta criada! Verifique seu e-mail para confirmar o cadastro antes de entrar.");
-      }
-    }
-  };
-
-  const handleOAuth = async (provider: "google" | "github") => {
-    setError(null);
-    if (configWarning) {
-      setError("Supabase não está configurado neste ambiente. Veja o arquivo .env.example.");
-      return;
-    }
-    setOauthLoading(provider);
-    const { error: oauthError } = await signInWithOAuth(provider);
-    if (oauthError) {
-      setOauthLoading(null);
-      setError(traduzErroAuth(oauthError.message));
-    }
-    // Em caso de sucesso o navegador é redirecionado para o provedor —
-    // não há nada mais a fazer aqui.
-  };
-
-  const handleForgotPassword = async () => {
-    setError(null);
-    setNotice(null);
-    if (!email) {
-      setError("Digite seu e-mail acima primeiro, depois clique em \"Esqueceu a senha?\".");
-      return;
-    }
-    const { error: resetError } = await resetPassword(email);
-    if (resetError) setError(traduzErroAuth(resetError.message));
-    else setNotice("Enviamos um link de redefinição de senha para o seu e-mail.");
-  };
-
-  return (
-    <div className="min-h-screen bg-background flex" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-violet-800 to-indigo-900" />
-        <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle at 30% 70%, rgba(124,58,237,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(6,182,212,0.3) 0%, transparent 50%)" }} />
-        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center overflow-hidden">
-              <img src={LOGO_SRC} alt="Code Mage" className="w-full h-full object-contain" />
-            </div>
-            <span className="text-white font-bold text-xl tracking-tight">Code Mage</span>
-          </div>
-          <div>
-            <p className="text-purple-200 text-sm font-medium mb-4 tracking-widest uppercase">Plano de Programação</p>
-            <h1 className="text-5xl font-extrabold text-white leading-tight mb-6">
-              Evolua de júnior<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300">a sênior com método.</span>
-            </h1>
-            <p className="text-purple-200 text-lg leading-relaxed max-w-sm">
-              Trilhas práticas de lógica, front-end, back-end, arquitetura, carreira e projetos para construir repertório real.
-            </p>
-            <div className="flex gap-8 mt-10">
-              {[{ n: "22", l: "Módulos" }, { n: "196", l: "Lições" }, { n: "30", l: "Jogos" }].map((s) => (
-                <div key={s.n}>
-                  <div className="text-2xl font-bold text-white">{s.n}</div>
-                  <div className="text-purple-300 text-sm">{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <p className="text-purple-200 text-sm">Do zero técnico até decisões de arquitetura</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Right panel */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-10">
-            <div className="w-9 h-9 rounded-lg bg-purple-600/10 flex items-center justify-center overflow-hidden">
-              <img src={LOGO_SRC} alt="Code Mage" className="w-full h-full object-contain" />
-            </div>
-            <span className="text-foreground font-bold text-lg">Code Mage</span>
-          </div>
-
-          <h2 className="text-3xl font-extrabold text-foreground mb-1">{mode === "signin" ? "Bem-vindo de volta" : "Criar conta grátis"}</h2>
-          <p className="text-muted-foreground mb-8">{mode === "signin" ? "Continue sua trilha de programação" : "Comece sua trilha de programação agora"}</p>
-
-          {configWarning && (
-            <div className="mb-5 flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200">
-              <Lock className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>Supabase não configurado neste ambiente — login está desativado. Configure <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code> (veja <code>.env.example</code>) para ativar.</span>
-            </div>
-          )}
-          {error && (
-            <div className="mb-5 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-xs text-red-300">{error}</div>
-          )}
-          {notice && (
-            <div className="mb-5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-300">{notice}</div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {mode === "signup" && (
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">Nome</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="w-full bg-input-background border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                  placeholder="Como podemos te chamar"
-                />
-              </div>
-            )}
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">E-mail</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full bg-input-background border border-border rounded-xl pl-10 pr-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                  placeholder="seu@email.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between mb-2">
-                <label className="text-sm font-semibold text-foreground">Senha</label>
-                {mode === "signin" && (
-                  <button type="button" onClick={handleForgotPassword} className="text-xs text-purple-400 hover:text-purple-300 transition-colors">Esqueceu a senha?</button>
-                )}
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full bg-input-background border border-border rounded-xl pl-10 pr-11 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-purple-900/40 disabled:opacity-70"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>{mode === "signin" ? "Entrar" : "Criar conta"}<ChevronRight className="w-4 h-4" /></>
-              )}
-            </button>
-          </form>
-
-          <div className="relative my-7">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-            <div className="relative text-center"><span className="bg-background px-3 text-xs text-muted-foreground">ou continue com</span></div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => handleOAuth("google")} disabled={oauthLoading !== null} className="flex items-center justify-center gap-2 bg-input-background hover:bg-secondary border border-border rounded-xl py-3 text-sm text-foreground font-medium transition-all disabled:opacity-60">
-              {oauthLoading === "google" ? <div className="w-4 h-4 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" /> : <Globe className="w-4 h-4" />}Google
-            </button>
-            <button onClick={() => handleOAuth("github")} disabled={oauthLoading !== null} className="flex items-center justify-center gap-2 bg-input-background hover:bg-secondary border border-border rounded-xl py-3 text-sm text-foreground font-medium transition-all disabled:opacity-60">
-              {oauthLoading === "github" ? <div className="w-4 h-4 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" /> : <Globe className="w-4 h-4" />}GitHub
-            </button>
-          </div>
-
-          <p className="text-center text-sm text-muted-foreground mt-7">
-            {mode === "signin" ? (
-              <>Não tem conta?{" "}<button onClick={() => { setMode("signup"); setError(null); setNotice(null); }} className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Criar conta grátis</button></>
-            ) : (
-              <>Já tem conta?{" "}<button onClick={() => { setMode("signin"); setError(null); setNotice(null); }} className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">Entrar</button></>
-            )}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function traduzErroAuth(message: string): string {
-  const map: Record<string, string> = {
-    "Invalid login credentials": "E-mail ou senha incorretos.",
-    "Email not confirmed": "Confirme seu e-mail antes de entrar (verifique sua caixa de entrada).",
-    "User already registered": "Este e-mail já tem uma conta. Tente entrar em vez de criar uma nova.",
-    "Password should be at least 6 characters": "A senha precisa ter pelo menos 6 caracteres.",
-  };
-  return map[message] ?? message;
-}
-
 // SIDEBAR
 function Sidebar({
   page,
   setPage,
-  onLogout,
   equippedCharacterId,
   displayName,
-  planLabel,
 }: {
   page: Page;
   setPage: (p: Page) => void;
-  onLogout: () => void;
   equippedCharacterId: string;
   displayName: string;
-  planLabel: string;
 }) {
   return (
     <aside className="w-60 bg-sidebar border-r border-sidebar-border flex flex-col flex-shrink-0" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -677,15 +379,12 @@ function Sidebar({
       </div>
 
       <div className="p-4 border-t border-sidebar-border">
-        <button onClick={() => setPage("loja")} className="w-full flex items-center gap-3 mb-4 px-1 group">
+        <button onClick={() => setPage("loja")} className="w-full flex items-center gap-3 px-1 group">
           <Avatar name={displayName} size="sm" src={characterSrc(equippedCharacterId)} />
           <div className="min-w-0 text-left">
             <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
-            <p className="text-xs text-muted-foreground truncate group-hover:text-purple-300 transition-colors">{planLabel} · trocar personagem</p>
+            <p className="text-xs text-muted-foreground truncate group-hover:text-purple-300 transition-colors">trocar personagem</p>
           </div>
-        </button>
-        <button onClick={onLogout} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all">
-          <LogOut className="w-4 h-4" />Sair
         </button>
       </div>
     </aside>
@@ -708,9 +407,6 @@ function Topbar({ title, setPage, coins }: { title: string; setPage: (p: Page) =
         <button className="relative w-8 h-8 rounded-xl bg-input-background border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
           <Bell className="w-4 h-4" />
           <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-purple-500 rounded-full" />
-        </button>
-        <button onClick={() => setPage("checkout")} className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors">
-          <ShoppingCart className="w-3.5 h-3.5" />Plano
         </button>
       </div>
     </header>
@@ -884,7 +580,7 @@ function DashboardPage({
 }
 
 // TRILHA
-function CursosPage({ setPage, activeModule, setActiveModule, maxMonth }: { setPage: (p: Page) => void; activeModule: Module; setActiveModule: (m: Module) => void; maxMonth: number }) {
+function CursosPage({ setPage, activeModule, setActiveModule }: { setPage: (p: Page) => void; activeModule: Module; setActiveModule: (m: Module) => void }) {
   const [tab, setTab] = useState<number | "todos">("todos");
   const visiblePhases = tab === "todos" ? phases : phases.filter((phase) => phase.phase === tab);
 
@@ -930,15 +626,9 @@ function CursosPage({ setPage, activeModule, setActiveModule, maxMonth }: { setP
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
               {phaseModules.map((c, index) => {
-                const locked = isModuleLocked(c, maxMonth);
-                const open = () => (locked ? setPage("checkout") : (setActiveModule(c), setPage("aulas")));
+                const open = () => { setActiveModule(c); setPage("aulas"); };
                 return (
-                  <Card key={c.id} hover className={`!p-4 relative ${locked ? "opacity-70" : ""}`} onClick={open}>
-                    {locked && (
-                      <span className="absolute top-3 right-3 bg-black/40 text-white rounded-full p-1.5">
-                        <Lock className="w-3.5 h-3.5" />
-                      </span>
-                    )}
+                  <Card key={c.id} hover className="!p-4 relative" onClick={open}>
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 flex-shrink-0">
                         <img src={badgeForKey(c.id)} alt="" className="w-full h-full object-contain" />
@@ -958,7 +648,7 @@ function CursosPage({ setPage, activeModule, setActiveModule, maxMonth }: { setP
                     <div className="flex items-center justify-between mt-3">
                       <span className="text-xs text-muted-foreground">{c.lessons.length} aulas · {c.exercises.length} exercícios</span>
                       <button onClick={(e) => { e.stopPropagation(); open(); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1">
-                        {locked ? "Assinar" : activeModule.id === c.id ? "Continuar" : "Abrir"}<ChevronRight className="w-3 h-3" />
+                        {activeModule.id === c.id ? "Continuar" : "Abrir"}<ChevronRight className="w-3 h-3" />
                       </button>
                     </div>
                   </Card>
@@ -1835,18 +1525,14 @@ console.log(executarSprint(0));`;
   );
 }
 
-function ArcadePage({ setActiveModule, setPage, onReward, maxMonth }: { setActiveModule: (m: Module) => void; setPage: (p: Page) => void; onReward: (amount: number) => void; maxMonth: number }) {
+function ArcadePage({ setActiveModule, setPage, onReward }: { setActiveModule: (m: Module) => void; setPage: (p: Page) => void; onReward: (amount: number) => void }) {
   const games = modules.flatMap((m) => m.games.map((game) => ({ ...game, module: m })));
   const [selectedGameKey, setSelectedGameKey] = useState<string | null>(null);
   const [lastScore, setLastScore] = useState<number | null>(null);
   const [rewardedKey, setRewardedKey] = useState<string | null>(null);
   const selectedGame = games.find((game) => `${game.module.id}-${game.gameId}` === selectedGameKey);
 
-  function openGame(key: string, moduleMonth: number) {
-    if (moduleMonth > maxMonth) {
-      setPage("checkout");
-      return;
-    }
+  function openGame(key: string) {
     setLastScore(null);
     setSelectedGameKey(key);
   }
@@ -1910,14 +1596,8 @@ function ArcadePage({ setActiveModule, setPage, onReward, maxMonth }: { setActiv
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {games.map((game) => {
           const key = `${game.module.id}-${game.gameId}`;
-          const locked = game.module.month > maxMonth;
           return (
-          <Card key={key} hover className={locked ? "opacity-70 relative" : "relative"} onClick={() => openGame(key, game.module.month)}>
-            {locked && (
-              <span className="absolute top-3 right-3 bg-black/40 text-white rounded-full p-1.5">
-                <Lock className="w-3.5 h-3.5" />
-              </span>
-            )}
+          <Card key={key} hover className="relative" onClick={() => openGame(key)}>
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 flex-shrink-0">
                 <img src={badgeForKey(key)} alt="" className="w-full h-full object-contain" />
@@ -1934,14 +1614,12 @@ function ArcadePage({ setActiveModule, setPage, onReward, maxMonth }: { setActiv
             </div>
             <p className="text-sm text-muted-foreground mt-4 line-clamp-3">{game.description}</p>
             <div className="mt-4 flex items-center gap-3">
-              <button onClick={(e) => { e.stopPropagation(); openGame(key, game.module.month); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
-                {locked ? "Assinar para jogar" : "Jogar"} <ChevronRight className="w-3 h-3" />
+              <button onClick={(e) => { e.stopPropagation(); openGame(key); }} className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                Jogar <ChevronRight className="w-3 h-3" />
               </button>
-              {!locked && (
-                <button onClick={(e) => { e.stopPropagation(); setActiveModule(game.module); setPage("aulas"); }} className="text-xs font-bold text-muted-foreground hover:text-foreground">
-                  Ver módulo
-                </button>
-              )}
+              <button onClick={(e) => { e.stopPropagation(); setActiveModule(game.module); setPage("aulas"); }} className="text-xs font-bold text-muted-foreground hover:text-foreground">
+                Ver módulo
+              </button>
             </div>
           </Card>
           );
@@ -2254,278 +1932,14 @@ function LojaPage({
   );
 }
 
-// CHECKOUT
-function CheckoutPage({
-  setPage,
-  user,
-  subscription,
-  refreshSubscription,
-}: {
-  setPage: (p: Page) => void;
-  user: User;
-  subscription: ActiveSubscription | null;
-  refreshSubscription: () => void;
-}) {
-  const commercialPlans = [
-    {
-      id: "starter" as const,
-      name: "Starter",
-      originalPrice: "R$ 69,86",
-      price: "R$ 49,90",
-      usdReference: "US$ 9",
-      period: "/mês",
-      badge: "Aventureiro",
-      features: ["Fundamentos até o mês 6", "Aulas, exercícios e revisão", "Progresso em nuvem com licença ativa", "Renovação automática mensal"],
-      maxMonth: 6,
-      recurring: true,
-    },
-    {
-      id: "pro" as const,
-      name: "Pro",
-      originalPrice: "R$ 125,86",
-      price: "R$ 89,90",
-      usdReference: "US$ 19",
-      period: "/mês",
-      badge: "Heroico",
-      features: ["Todos os 22 meses", "Laboratório, arcade e analytics", "Projetos e revisões avançadas", "Renovação automática mensal"],
-      maxMonth: 22,
-      recurring: true,
-    },
-    {
-      id: "lifetime" as const,
-      name: "Vitalício",
-      originalPrice: "R$ 695,80",
-      price: "R$ 497,00",
-      usdReference: "US$ 89",
-      period: "único",
-      badge: "Lendário",
-      features: ["Pagamento único", "Acesso completo vitalício", "Apto a próximas atualizações"],
-      maxMonth: 22,
-      recurring: false,
-    },
-  ];
-
-  const [plan, setPlan] = useState<(typeof commercialPlans)[number]["id"]>("pro");
-  const [creatingCheckout, setCreatingCheckout] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [cancelling, setCancelling] = useState(false);
-  const selectedPlan = commercialPlans.find((p) => p.id === plan) ?? commercialPlans[1];
-
-  const isCurrentPlan = subscription?.planId === plan && subscription.status === "approved";
-  const hasRecurringActivePlan = subscription?.status === "approved" && subscription.planId !== "lifetime";
-
-  async function startCheckout() {
-    setCheckoutError(null);
-    setCreatingCheckout(true);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (!accessToken) {
-        setCheckoutError("Sua sessão expirou. Recarregue a página e faça login novamente.");
-        setCreatingCheckout(false);
-        return;
-      }
-
-      // Starter/Pro usam cobrança recorrente (renova sozinho todo mês);
-      // Vitalício usa pagamento único.
-      const endpoint = selectedPlan.recurring ? "/api/create-subscription" : "/api/create-preference";
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ planId: plan, currency: "BRL" }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        setCheckoutError(data.error ?? "Não foi possível iniciar o pagamento. Tente novamente.");
-        setCreatingCheckout(false);
-        return;
-      }
-
-      window.location.href = data.initPoint;
-    } catch (err) {
-      console.error(err);
-      setCheckoutError("Erro de conexão ao iniciar o pagamento. Verifique sua internet e tente novamente.");
-      setCreatingCheckout(false);
-    }
-  }
-
-  async function cancelSubscription() {
-    setCheckoutError(null);
-    setCancelling(true);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (!accessToken) {
-        setCheckoutError("Sua sessão expirou. Recarregue a página e faça login novamente.");
-        setCancelling(false);
-        return;
-      }
-      const response = await fetch("/api/cancel-subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setCheckoutError(data.error ?? "Não foi possível cancelar agora. Tente novamente.");
-        setCancelling(false);
-        return;
-      }
-      refreshSubscription();
-    } catch (err) {
-      console.error(err);
-      setCheckoutError("Erro de conexão ao cancelar. Verifique sua internet e tente novamente.");
-    } finally {
-      setCancelling(false);
-    }
-  }
-
-  return (
-    <div className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <Badge color="warning">Conta e Plano</Badge>
-          <h2 className="text-2xl font-extrabold text-foreground mt-3">Escolha seu plano</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Pagamento processado pelo Mercado Pago — cartão, Pix e boleto, com opção para clientes de fora do Brasil.
-          </p>
-        </div>
-
-        {subscription && (
-          <Card className="!border-emerald-500/40 bg-emerald-500/5">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-foreground">
-                    Plano ativo: {subscription.planId === "lifetime" ? "Vitalício" : subscription.planId === "pro" ? "Pro" : "Starter"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {subscription.activeUntil ? `Renova/expira em ${new Date(subscription.activeUntil).toLocaleDateString("pt-BR")}` : "Acesso vitalício — nunca expira"}
-                  </p>
-                </div>
-              </div>
-              {hasRecurringActivePlan && (
-                <button
-                  onClick={cancelSubscription}
-                  disabled={cancelling}
-                  className="text-xs font-bold text-red-300 hover:text-red-200 border border-red-500/30 hover:bg-red-500/10 px-3 py-1.5 rounded-xl transition-colors disabled:opacity-60"
-                >
-                  {cancelling ? "Cancelando..." : "Cancelar renovação automática"}
-                </button>
-              )}
-            </div>
-          </Card>
-        )}
-
-        <Card>
-          <div className="grid grid-cols-1 gap-3">
-            {commercialPlans.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setPlan(p.id)}
-                className={`text-left border-2 rounded-2xl p-5 transition-all ${plan === p.id ? "border-purple-500/60 bg-purple-500/10" : "border-border bg-input-background hover:border-purple-500/40"}`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 flex-shrink-0">
-                    <img src={badgeForKey(p.id)} alt="" className="w-full h-full object-contain" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-semibold text-purple-400 uppercase tracking-widest">{p.badge}</p>
-                        <h4 className="font-bold text-foreground">{p.name}</h4>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground line-through">{p.originalPrice}</p>
-                        <p className="text-xl font-extrabold text-foreground">{p.price}<span className="text-xs font-normal text-muted-foreground"> {p.period}</span></p>
-                        <p className="text-xs text-muted-foreground">≈ {p.usdReference} fora do Brasil</p>
-                      </div>
-                    </div>
-                    <ul className="grid grid-cols-1 gap-1.5 mt-3">
-                      {p.features.map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-xs text-foreground bg-card border border-border rounded-lg px-3 py-2">
-                          <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {checkoutError && (
-            <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-xs text-red-300">{checkoutError}</div>
-          )}
-
-          <button
-            onClick={startCheckout}
-            disabled={creatingCheckout || isCurrentPlan}
-            className="w-full mt-4 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {creatingCheckout ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : isCurrentPlan ? (
-              "Este já é seu plano atual"
-            ) : (
-              <>Pagar com Mercado Pago<ChevronRight className="w-4 h-4" /></>
-            )}
-          </button>
-
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2 bg-input-background border border-border rounded-lg px-3 py-2"><CreditCard className="w-3.5 h-3.5 text-emerald-400" />Cartão (BR e internacional)</div>
-            <div className="flex items-center gap-2 bg-input-background border border-border rounded-lg px-3 py-2"><Zap className="w-3.5 h-3.5 text-emerald-400" />Pix (Brasil)</div>
-            <div className="flex items-center gap-2 bg-input-background border border-border rounded-lg px-3 py-2"><FileText className="w-3.5 h-3.5 text-emerald-400" />Boleto (Brasil)</div>
-          </div>
-          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground bg-input-background rounded-xl p-3">
-            <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            Você será redirecionado para o ambiente seguro do Mercado Pago para pagar — nunca coletamos ou armazenamos dados de cartão neste site.
-          </div>
-        </Card>
-
-        <Card>
-          <h3 className="font-bold text-foreground mb-2 text-sm">Conta</h3>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">E-mail</span>
-            <span className="text-foreground font-semibold">{user.email}</span>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
 // APP SHELL
-function AppShell({ user, onLogout }: { user: User; onLogout: () => void }) {
+function AppShell() {
   const [page, setPage] = useState<Page>("dashboard");
   const [activeModule, setActiveModule] = useState<Module>(modules[0]);
   const [completedMissions, setCompletedMissions] = useState<Record<string, boolean>>({});
-  const { profile, claimReward, buyCharacter, equipCharacter, markLessonComplete, saveModuleProgress, cloudEnabled } = useCloudProfile(user.id);
-  const { subscription, refresh: refreshSubscription } = useActiveSubscription(user.id);
-  const [checkoutBanner, setCheckoutBanner] = useState<"success" | "failure" | "pending" | null>(null);
-  const maxMonth = contentMaxMonth(subscription);
-  const moduleLocked = isModuleLocked(activeModule, maxMonth);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get("checkout");
-    if (status === "success" || status === "failure" || status === "pending") {
-      setCheckoutBanner(status);
-      window.history.replaceState({}, "", window.location.pathname);
-      if (status === "success") {
-        // O webhook do Mercado Pago pode levar alguns segundos a mais que o
-        // redirect do usuário; tenta atualizar a assinatura de novo em 3s.
-        setTimeout(() => refreshSubscription(), 3000);
-      }
-    }
-  }, [refreshSubscription]);
+  const { profile, claimReward, buyCharacter, equipCharacter, markLessonComplete, saveModuleProgress } = useProfile();
 
   const titles: Record<Page, string> = {
-    login: "Login",
     dashboard: "Começar",
     cursos: "Trilha",
     aulas: "Aulas",
@@ -2536,34 +1950,13 @@ function AppShell({ user, onLogout }: { user: User; onLogout: () => void }) {
     revisao: "Revisão",
     progresso: "Analytics",
     loja: "Loja",
-    checkout: "Conta e Plano",
   };
-
-  const planLabel = subscription
-    ? subscription.planId === "lifetime" ? "Plano Vitalício" : subscription.planId === "pro" ? "Trilha Pro" : "Trilha Starter"
-    : "Sem plano ativo";
 
   return (
     <div className="h-screen flex overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <Sidebar page={page} setPage={setPage} onLogout={onLogout} equippedCharacterId={profile.equippedCharacterId} displayName={profile.displayName} planLabel={planLabel} />
+      <Sidebar page={page} setPage={setPage} equippedCharacterId={profile.equippedCharacterId} displayName={profile.displayName} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Topbar title={titles[page]} setPage={setPage} coins={profile.coins} />
-        {!cloudEnabled && (
-          <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-200 text-xs px-4 py-2 flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-            Supabase não configurado — seu progresso, moedas e personagem não estão sendo salvos entre sessões. Configure o .env para ativar a nuvem.
-          </div>
-        )}
-        {checkoutBanner && (
-          <div className={`text-xs px-4 py-2 flex items-center justify-between gap-2 ${checkoutBanner === "success" ? "bg-emerald-500/10 border-b border-emerald-500/30 text-emerald-200" : checkoutBanner === "pending" ? "bg-amber-500/10 border-b border-amber-500/30 text-amber-200" : "bg-red-500/10 border-b border-red-500/30 text-red-200"}`}>
-            <span>
-              {checkoutBanner === "success" && "Pagamento aprovado! Seu plano será liberado em instantes (confirmação final do Mercado Pago)."}
-              {checkoutBanner === "pending" && "Pagamento em análise (comum em Pix/boleto). Assim que for aprovado, seu plano libera automaticamente."}
-              {checkoutBanner === "failure" && "O pagamento não foi concluído. Você pode tentar novamente na tela de Conta e Plano."}
-            </span>
-            <button onClick={() => setCheckoutBanner(null)} className="text-current opacity-70 hover:opacity-100"><X className="w-3.5 h-3.5" /></button>
-          </div>
-        )}
         {page === "dashboard" && (
           <DashboardPage
             setPage={setPage}
@@ -2573,30 +1966,22 @@ function AppShell({ user, onLogout }: { user: User; onLogout: () => void }) {
             completeMission={(id) => setCompletedMissions((prev) => ({ ...prev, [id]: true }))}
           />
         )}
-        {page === "cursos" && <CursosPage setPage={setPage} activeModule={activeModule} setActiveModule={setActiveModule} maxMonth={maxMonth} />}
+        {page === "cursos" && <CursosPage setPage={setPage} activeModule={activeModule} setActiveModule={setActiveModule} />}
         {page === "aulas" && (
-          moduleLocked ? (
-            <UpgradeGate module={activeModule} setPage={setPage} />
-          ) : (
-            <AulasPage
-              module={activeModule}
-              setPage={setPage}
-              completedLessons={profile.completedLessons}
-              onCompleteLesson={markLessonComplete}
-              progress={profile.lessonProgress[activeModule.id] as ModuleProgress | undefined}
-              onSaveProgress={saveModuleProgress}
-            />
-          )
+          <AulasPage
+            module={activeModule}
+            setPage={setPage}
+            completedLessons={profile.completedLessons}
+            onCompleteLesson={markLessonComplete}
+            progress={profile.lessonProgress[activeModule.id] as ModuleProgress | undefined}
+            onSaveProgress={saveModuleProgress}
+          />
         )}
-        {page === "historia" && (moduleLocked ? <UpgradeGate module={activeModule} setPage={setPage} /> : <HistoriaPage module={activeModule} setPage={setPage} />)}
+        {page === "historia" && <HistoriaPage module={activeModule} setPage={setPage} />}
         {page === "laboratorio" && (
-          moduleLocked ? (
-            <UpgradeGate module={activeModule} setPage={setPage} />
-          ) : (
-            <LaboratorioPage module={activeModule} onReward={(amount) => { void claimReward(amount, "laboratorio"); }} />
-          )
+          <LaboratorioPage module={activeModule} onReward={(amount) => { void claimReward(amount, "laboratorio"); }} />
         )}
-        {page === "arcade" && <ArcadePage setActiveModule={setActiveModule} setPage={setPage} onReward={(amount) => { void claimReward(amount, "arcade"); }} maxMonth={maxMonth} />}
+        {page === "arcade" && <ArcadePage setActiveModule={setActiveModule} setPage={setPage} onReward={(amount) => { void claimReward(amount, "arcade"); }} />}
         {page === "carreira" && <CarreiraPage setPage={setPage} setActiveModule={setActiveModule} />}
         {page === "revisao" && <RevisaoPage setPage={setPage} setActiveModule={setActiveModule} />}
         {page === "progresso" && <ProgressoPage />}
@@ -2609,22 +1994,12 @@ function AppShell({ user, onLogout }: { user: User; onLogout: () => void }) {
             onEquipCharacter={equipCharacter}
           />
         )}
-        {page === "checkout" && <CheckoutPage setPage={setPage} user={user} subscription={subscription} refreshSubscription={refreshSubscription} />}
       </div>
     </div>
   );
 }
 
+// App de uso pessoal: sem login/conta, sempre entra direto no app.
 export default function App() {
-  const { session, user, loading, signOut } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return session && user ? <AppShell user={user} onLogout={signOut} /> : <LoginPage />;
+  return <AppShell />;
 }
